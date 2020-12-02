@@ -64,12 +64,12 @@ def parse_dices(data):
         parsed['dice'] = pre_parse[1]
     if pre_parse[1].find('+') > 0:
         parsed['effect'] = '+'
-        parsed['value'] = pre_parse[1].split('+')[0]
-        parsed['dice'] = pre_parse[1].split('+')[1]
+        parsed['value'] = pre_parse[1].split('+')[1]
+        parsed['dice'] = pre_parse[1].split('+')[0]
     if pre_parse[1].find('-') > 0:
         parsed['effect'] = '-'
-        parsed['value'] = pre_parse[1].split('-')[0]
-        parsed['dice'] = pre_parse[1].split('-')[1]
+        parsed['value'] = pre_parse[1].split('-')[1]
+        parsed['dice'] = pre_parse[1].split('-')[0]
     return parsed
 
 
@@ -78,10 +78,14 @@ def roll_dice(dice, times):
 
 
 def process(dices_data):
-    results = []
-    for dice, times in dices_data:
-        results.append({f"d{dice}": roll_dice(dice, times)})
-    return results
+    parsed = parse_dices(dices_data)
+    result = roll_dice(parsed['number_of_dices'], parsed['dice'])})
+    effect = parsed.get('effect'):
+    if effect and effect == "+":
+        total = result + parsed['value']
+    if effect and effect == "-":
+        total = result - parsed['value']
+    return result
 
 
 # COMMANDS ================

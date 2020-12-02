@@ -1,6 +1,6 @@
-# Critical Hit/Fumble cards for discord
+# Simple roll dice with Advantage and Disadvantage options for discord
 
-Choose a random image to CRITICAL or FAIL situations and send it.
+Roll n dies 
 
 ## Get our own bot
 
