@@ -9,6 +9,14 @@ secrets.json
 
 # don't commit our env variables
 env.json
+venv
+# dotenv
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
 
 # don't commit our images
 images_critical/*

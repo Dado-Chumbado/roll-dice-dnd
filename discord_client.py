@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import json
-from datetime import datetime
 from discord.ext import commands
-import discord
-from get_file import rdm
 import os
 import random
 
@@ -19,8 +16,6 @@ with open("./env.json", "r") as env:
 COMMAND_CHAR = ENV['command_char']
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disavantage"]
-
-COMMAND_CHAR = ENV['command_char']  # Command used to activate bot on discord
 
 
 COLORS = {
@@ -51,41 +46,59 @@ with open("secrets.json", "r") as secrets:
 
 bot = commands.Bot(
     command_prefix=COMMAND_CHAR,
-    description="Roll a random dices, normal, with advantages or disavantages"
+    description="Roll a random dices, normal, with advantages or disadvantages"
 )
 
 
 def parse_dices(data):
-    parsed = {}
-    pre_parse = data.upper().replace(" ", "").split("D")
-    if pre_parse[0] is None:
-        pre_parse[0] = 1
-        parsed['number_of_dices'] = pre_parse[0]
-        parsed['dice'] = pre_parse[1]
-    if pre_parse[1].find('+') > 0:
-        parsed['effect'] = '+'
-        parsed['value'] = pre_parse[1].split('+')[1]
-        parsed['dice'] = pre_parse[1].split('+')[0]
-    if pre_parse[1].find('-') > 0:
-        parsed['effect'] = '-'
-        parsed['value'] = pre_parse[1].split('-')[1]
-        parsed['dice'] = pre_parse[1].split('-')[0]
-    return parsed
+    import re
+    return re.findall('(\d+)?d(\d+)?', data)
+    # ([+-]\d)?[^0-9d][+-]?[^0-9d]?
 
 
-def roll_dice(dice, times):
-    return [random.randint(1, dice) for i in range(times)]
+def parse_additional(data):
+    parsed_minus = data.split('-')
+    minus = []
+    for i in parsed_minus:
+        item = try_convert_to_int_or_pass(i)
+        if item:
+            minus.append(item)
+
+    parsed_plus = data.split('+')
+    plus = []
+    for i in parsed_plus:
+        item = try_convert_to_int_or_pass(i)
+        if item:
+            plus.append(item)
+    return {"minus": minus, "plus": plus}
+
+
+def try_convert_to_int_or_pass(data):
+    try:
+        return int(data)
+    except:
+        return None
+
+
+def roll_dice(times, dice):
+    return [random.randint(1, int(dice)) for _ in range(int(times))]
 
 
 def process(dices_data):
-    parsed = parse_dices(dices_data)
-    result = roll_dice(parsed['number_of_dices'], parsed['dice'])})
-    effect = parsed.get('effect'):
-    if effect and effect == "+":
-        total = result + parsed['value']
-    if effect and effect == "-":
-        total = result - parsed['value']
-    return result
+    dices = parse_dices(dices_data)
+    aditional = parse_additional(dices_data)
+    result_dices_verbose = []
+    result_dices = 0
+    for number, dice in dices:
+        results = roll_dice(number, dice)
+        result_dices += sum(results)
+        result_dices_verbose.append(f"{number}d{dice} = {results}")
+
+    for i in aditional['plus']:
+        result_dices += i
+    for i in aditional['minus']:
+        result_dices -= i
+    return result_dices_verbose, result_dices
 
 
 # COMMANDS ================
@@ -93,18 +106,23 @@ def process(dices_data):
     name=COMMAND_CHAR,
     description="!"
 )
-async def command_roll_dices(context, dex="", name_arg=""):
+async def command_roll_dices(context, data):
     try:
-        dex = int(dex)
-        name = name_arg if name_arg else context.message.author.display_name
-
-        init_items.add(name, random.randint(1, 20), dex)
-        await init_items.show(context)
+        '''
+            process("1d10+1d4-1")
+            (['1d10 = [3]', '1d4 = [2]'], 4)
+        '''
+        result = process(data) #  Parse and roll dices
+        text = ""
+        for dice in result[0]:
+            text += f"{dice}\n"
+        text += f"**{result[1]}**"
+        context.send(text)
 
     except Exception as e:
-        await context.send(f"Digite um numero (normalmente sua destreza). {dex} não é válido... ")
+        await context.send(f"Comando nao reconhecido, use: 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
-                
+
 
 @bot.event
 async def on_ready():
