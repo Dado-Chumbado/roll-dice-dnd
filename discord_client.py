@@ -14,6 +14,8 @@ with open("./env.json", "r") as env:
     ENV = json.load(env)
 
 COMMAND_CHAR = ENV['command_char']
+COMMAND_ROLL = ENV['command_roll']
+
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disavantage"]
 
@@ -50,49 +52,53 @@ bot = commands.Bot(
 )
 
 
-def parse_dices(data):
+async def parse_dices(data):
     import re
     return re.findall('(\d+)?d(\d+)?', data)
-    # ([+-]\d)?[^0-9d][+-]?[^0-9d]?
 
 
-def parse_additional(data):
+async def parse_additional(data):
     parsed_minus = data.split('-')
     minus = []
     for i in parsed_minus:
-        item = try_convert_to_int_or_pass(i)
-        if item:
-            minus.append(item)
+        try:
+            item = await int(i)
+            if item:
+                minus.append(item)
+        except:
+            pass
 
     parsed_plus = data.split('+')
     plus = []
     for i in parsed_plus:
-        item = try_convert_to_int_or_pass(i)
-        if item:
-            plus.append(item)
+        try:
+            item = await int(i)
+            if item:
+                plus.append(item)
+        except:
+            pass
     return {"minus": minus, "plus": plus}
 
+async def roll_dice(times, dice):
+    if int(times) > 10:
+        times = 10
 
-def try_convert_to_int_or_pass(data):
-    try:
-        return int(data)
-    except:
-        return None
-
-
-def roll_dice(times, dice):
     return [random.randint(1, int(dice)) for _ in range(int(times))]
 
 
-def process(dices_data):
-    dices = parse_dices(dices_data)
-    aditional = parse_additional(dices_data)
+async def process(dices_data):
+    dices = await parse_dices(dices_data)
+    aditional = await parse_additional(dices_data)
     result_dices_verbose = []
     result_dices = 0
     for number, dice in dices:
-        results = roll_dice(number, dice)
+        number = number if number else 1
+        results = await roll_dice(number, dice)
         result_dices += sum(results)
-        result_dices_verbose.append(f"{number}d{dice} = {results}")
+        result_dices_verbose.append({"verbose": f"{number}d{dice} = {results}", 
+                                     "critical": int(number)*int(dice)==sum(results), 
+                                     "result": results,
+                                     "fail": sum(results)==int(number)}) 
 
     for i in aditional['plus']:
         result_dices += i
@@ -101,10 +107,24 @@ def process(dices_data):
     return result_dices_verbose, result_dices
 
 
+async def send_text(context, result):
+    text = ""
+
+    for dices in result[0]:
+        text += "```"
+        if dices["critical"]:
+            text += 'fix\n'
+        if dices["fail"]:
+            text += "diff\n"
+
+        text += f"{dices['verbose']}```"
+        #await context.send(text)
+    await context.send(f"{text} **{result[1]}**")
+
 # COMMANDS ================
 @bot.command(
-    name=COMMAND_CHAR,
-    description="!"
+    name=COMMAND_ROLL,
+    description="Roll dices?"
 )
 async def command_roll_dices(context, data):
     try:
@@ -112,15 +132,11 @@ async def command_roll_dices(context, data):
             process("1d10+1d4-1")
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
-        result = process(data) #  Parse and roll dices
-        text = ""
-        for dice in result[0]:
-            text += f"{dice}\n"
-        text += f"**{result[1]}**"
-        context.send(text)
+        result = await process(data) #  Parse and roll dices
+        await send_text(context, result)
 
     except Exception as e:
-        await context.send(f"Comando nao reconhecido, use: 1d20+2 por exemplo")
+        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
 
 
