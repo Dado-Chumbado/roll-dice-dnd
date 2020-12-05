@@ -62,9 +62,8 @@ async def parse_additional(data):
     minus = []
     for i in parsed_minus:
         try:
-            item = await int(i)
-            if item:
-                minus.append(item)
+            if int(i):
+                minus.append(int(i))
         except:
             pass
 
@@ -72,9 +71,8 @@ async def parse_additional(data):
     plus = []
     for i in parsed_plus:
         try:
-            item = await int(i)
-            if item:
-                plus.append(item)
+            if int(i):
+                plus.append(int(i))
         except:
             pass
     return {"minus": minus, "plus": plus}
@@ -89,22 +87,24 @@ async def roll_dice(times, dice):
 async def process(dices_data):
     dices = await parse_dices(dices_data)
     aditional = await parse_additional(dices_data)
+
     result_dices_verbose = []
-    result_dices = 0
+    only_dices = 0
     for number, dice in dices:
         number = number if number else 1
         results = await roll_dice(number, dice)
-        result_dices += sum(results)
+        only_dices += sum(results)
         result_dices_verbose.append({"verbose": f"{number}d{dice} = {results}", 
                                      "critical": int(number)*int(dice)==sum(results), 
-                                     "result": results,
+                                     "result": sum(results),
                                      "fail": sum(results)==int(number)}) 
 
+    result_final = only_dices
     for i in aditional['plus']:
-        result_dices += i
+        result_final += i
     for i in aditional['minus']:
-        result_dices -= i
-    return result_dices_verbose, result_dices
+        result_final -= i
+    return result_dices_verbose, result_final, only_dices, aditional
 
 
 async def send_text(context, result):
@@ -117,9 +117,20 @@ async def send_text(context, result):
         if dices["fail"]:
             text += "diff\n"
 
-        text += f"{dices['verbose']}```"
-        #await context.send(text)
-    await context.send(f"{text} **{result[1]}**")
+        text += f"{dices['verbose']} = {dices['result']}```"
+        #await context.send(texti)
+    extra_text = ""
+    if result[3]['plus']:
+        for i in result[3]['plus']:
+            extra_text = f" + {i} "
+        extra_text += "="
+
+    if result[3]['minus']:
+        for i in result[3]['minus']:
+            extra_text += f" - {i} "
+        extra_text += "="
+    only_dices = result[2]
+    await context.send(f"{text} \n {only_dices}{extra_text} **{result[1]}**")
 
 # COMMANDS ================
 @bot.command(
