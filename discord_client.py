@@ -14,6 +14,8 @@ with open("./env.json", "r") as env:
     ENV = json.load(env)
 
 COMMAND_CHAR = ENV['command_char']
+ALTERNATIVE_COMMAND_CHAR = ENV['alternative_char']
+
 COMMAND_ROLL = ENV['command_roll']
 
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
@@ -47,7 +49,7 @@ with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 
 bot = commands.Bot(
-    command_prefix=COMMAND_CHAR,
+    command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
     description="Roll a random dices, normal or with advantages/disadvantages"
 )
 
@@ -111,25 +113,29 @@ async def process(dices_data):
 
 async def reroll_and_send_text(context, dices_data=None, adv=True):
     result = await roll_dice(2, 20)
-    print(result, dices_data)
     additional = {'plus': [], 'minus': []}
     if dices_data:
         additional = await parse_additional(dices_data)
-        print(additional)
-    text = "d20 = "
+    text = "1d20 => "
+    dice_1 = dice_2 = ""
+    if result[0] == 20 or result[0] == 1:
+        dice_1 = "!"
+    if result[1] == 20 or result[1] == 1:
+        dice_2 = "!"
+
     if adv:
         if result[0] >= result[1]:
-            text += f"[ {result[0]},  ~~{result[1]}~~ ]"
+            text += f"[ {result[0]}{dice_1},  ~~{result[1]}{dice_2}~~ ]"
             result_final = result[0]
         else:
-            text += f"[ ~~{result[0]}~~, {result[1]} ]"
+            text += f"[ ~~{result[0]}{dice_1}~~, {result[1]}{dice_2} ]"
             result_final = result[1]
     else:
         if result[0] <= result[1]:
-            text += f"[ {result[0]}, ~~{result[1]}~~ ]"
+            text += f"[ {result[0]}{dice_1}, ~~{result[1]}{dice_2}~~ ]"
             result_final = result[0]
         else:
-            text += f"[ ~~{result[0]}~~, {result[1]} ]"
+            text += f"[ ~~{result[0]}{dice_1}~~, {result[1]}{dice_2} ]"
             result_final = result[1]
 
     final_text = f"{result_final} "
