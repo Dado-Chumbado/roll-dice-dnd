@@ -17,7 +17,7 @@ COMMAND_CHAR = ENV['command_char']
 COMMAND_ROLL = ENV['command_roll']
 
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
-COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disavantage"]
+COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
 
 
 COLORS = {
@@ -42,13 +42,13 @@ SIGN = (
 )
 
 
-# read our discord acces token
+# read our discord access token
 with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 
 bot = commands.Bot(
     command_prefix=COMMAND_CHAR,
-    description="Roll a random dices, normal, with advantages or disadvantages"
+    description="Roll a random dices, normal or with advantages/disadvantages"
 )
 
 
@@ -62,7 +62,7 @@ async def parse_additional(data):
     minus = []
     for i in parsed_minus:
         try:
-            if int(i):
+            if int(i) and i.find("+") == -1:
                 minus.append(int(i))
         except:
             pass
@@ -71,7 +71,7 @@ async def parse_additional(data):
     plus = []
     for i in parsed_plus:
         try:
-            if int(i):
+            if int(i) and i.find("-") == -1:
                 plus.append(int(i))
         except:
             pass
@@ -87,7 +87,7 @@ async def roll_dice(times, dice):
 
 async def process(dices_data):
     dices = await parse_dices(dices_data)
-    aditional = await parse_additional(dices_data)
+    additional = await parse_additional(dices_data)
 
     result_dices_verbose = []
     only_dices = 0
@@ -98,17 +98,54 @@ async def process(dices_data):
         result_dices_verbose.append({"verbose": f"{number}d{dice}",
                                      "list_of_result": results,
                                      "dice_base": dice,
-                                     # "critical": int(number)*int(dice)==sum(results),
                                      "result": sum(results),
-                                     # "fail": sum(results)==int(number)
                                      })
 
     result_final = only_dices
-    for i in aditional['plus']:
+    for i in additional['plus']:
         result_final += i
-    for i in aditional['minus']:
+    for i in additional['minus']:
         result_final -= i
-    return result_dices_verbose, result_final, only_dices, aditional
+    return result_dices_verbose, result_final, only_dices, additional
+
+
+async def reroll_and_send_text(context, dices_data=None, adv=True):
+    result = await roll_dice(2, 20)
+    print(result, dices_data)
+    additional = {'plus': [], 'minus': []}
+    if dices_data:
+        additional = await parse_additional(dices_data)
+        print(additional)
+    text = "d20 = "
+    if adv:
+        if result[0] >= result[1]:
+            text += f"[ {result[0]},  ~~{result[1]}~~ ]"
+            result_final = result[0]
+        else:
+            text += f"[ ~~{result[0]}~~, {result[1]} ]"
+            result_final = result[1]
+    else:
+        if result[0] <= result[1]:
+            text += f"[ {result[0]}, ~~{result[1]}~~ ]"
+            result_final = result[0]
+        else:
+            text += f"[ ~~{result[0]}~~, {result[1]} ]"
+            result_final = result[1]
+
+    final_text = f"{result_final} "
+    for i in additional['plus']:
+        result_final += i
+        final_text += f"+ {i}"
+    for i in additional['minus']:
+        result_final -= i
+        final_text += f"- {i}"
+
+    if not additional['minus'] and not additional['plus']:
+        final_text = ""
+    else:
+        final_text += " = "
+
+    await context.send(f"{text} \n{final_text} **{result_final}**")
 
 
 async def send_text(context, result):
@@ -159,6 +196,31 @@ async def command_roll_dices(context, data):
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
 
+
+@bot.command(
+    name=COMMAND_ROLL_ADVANTAGE,
+    description="Roll dices with advantage?"
+)
+async def command_roll_advantage_dices(context, data=None):
+    try:
+        await reroll_and_send_text(context, data, True)
+    except Exception as e:
+        await context.send(
+            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
+        await context.send(f"Exception {e}")
+
+
+@bot.command(
+    name=COMMAND_ROLL_DISADVANTAGE,
+    description="Roll dices with disadvantage?"
+)
+async def command_roll_disadvantage_dices(context, data=None):
+    try:
+        await reroll_and_send_text(context, data, False)
+    except Exception as e:
+        await context.send(
+            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +2 por exemplo")
+        await context.send(f"Exception {e}")
 
 @bot.event
 async def on_ready():
