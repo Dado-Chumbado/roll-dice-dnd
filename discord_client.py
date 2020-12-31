@@ -15,9 +15,9 @@ with open("./env.json", "r") as env:
 
 COMMAND_CHAR = ENV['command_char']
 ALTERNATIVE_COMMAND_CHAR = ENV['alternative_char']
+COMMAND_HELPER = ENV['command_helper']
 
 COMMAND_ROLL = ENV['command_roll']
-
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
 
@@ -116,7 +116,7 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
     additional = {'plus': [], 'minus': []}
     if dices_data:
         additional = await parse_additional(dices_data)
-    text = "1d20 => "
+    text = f"{context.message.author.display_name}: 1d20 => "
     dice_1 = dice_2 = ""
     if result[0] == 20 or result[0] == 1:
         dice_1 = "!"
@@ -155,7 +155,7 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
 
 
 async def send_text(context, result):
-    text = ""
+    text = f"{context.message.author.display_name}: "
     for dices in result[0]:
 
         text += f"``` {dices['verbose']}  => ["
@@ -227,6 +227,21 @@ async def command_roll_disadvantage_dices(context, data=None):
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +2 por exemplo")
         await context.send(f"Exception {e}")
+
+
+@bot.command(
+    name=COMMAND_HELPER,
+    description="Show helpers menu"
+)
+async def command_helper(context):
+    text = "``` COMO USAR \n"
+    text += f" use {COMMAND_CHAR} ou {ALTERNATIVE_COMMAND_CHAR} para acionar + a tecla de comando por exemplo: \n"
+    text += f" {COMMAND_ROLL}) {COMMAND_CHAR}{COMMAND_ROLL} 2d6+3 para rolar 2d6 e somar +3 ao resultado\n"
+    text += f" {COMMAND_ROLL_ADVANTAGE}) {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +1 para rolar 2d20, pegar o maior numero e somar +1 ao resultado\n"
+    text += f" {COMMAND_ROLL_DISADVANTAGE}) {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +1 para rolar 2d20, pegar o menor resultado somar +1 ao resultado\n"
+    text += f" {COMMAND_HELPER}) {COMMAND_CHAR}{COMMAND_HELPER} mostra essa ajuda ```"
+
+    await context.send(f"{text}")
 
 @bot.event
 async def on_ready():
