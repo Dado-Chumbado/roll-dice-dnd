@@ -115,6 +115,12 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
     result = await roll_dice(2, 20)
     additional = {'plus': [], 'minus': []}
     if dices_data:
+        # Force to accept single numbers without signal, adding a + signal to it
+        try:
+            int(dices_data)
+            dices_data = "+" + str(dices_data)
+        except Exception as e:
+            pass
         additional = await parse_additional(dices_data)
     text = f"{context.message.author.display_name}: 1d20 => "
     dice_1 = dice_2 = ""
