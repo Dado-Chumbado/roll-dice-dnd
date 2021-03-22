@@ -59,6 +59,11 @@ async def parse_dices(data):
     return re.findall('(\d+)?d(\d+)?', data)
 
 
+async def parse_repeat(data):
+    import re
+    return re.findall('(\d+)?x', data)
+
+
 async def parse_additional(data):
     parsed_minus = data.split('-')
     minus = []
@@ -88,9 +93,23 @@ async def roll_dice(times, dice):
 
 
 async def process(dices_data):
+    repeat = await parse_repeat(dices_data)
+    if repeat:
+        repeat = int(repeat[0])
+        dices_data = dices_data.split("x(")[1].replace(")", "")
+    else:
+        repeat = 1
+
     dices = await parse_dices(dices_data)
     additional = await parse_additional(dices_data)
+    dices_list = []
+    for _ in range(0, repeat):
+        d = await calculate_dices(dices, additional)
+        dices_list.append(d)
+    return dices_list
 
+
+async def calculate_dices(dices, additional):
     result_dices_verbose = []
     only_dices = 0
     for number, dice in dices:
@@ -108,7 +127,11 @@ async def process(dices_data):
         result_final += i
     for i in additional['minus']:
         result_final -= i
-    return result_dices_verbose, result_final, only_dices, additional
+
+    return {"result_dices_verbose": result_dices_verbose,
+            "result_final": result_final,
+            "only_dices": only_dices,
+            "additional": additional}
 
 
 async def reroll_and_send_text(context, dices_data=None, adv=True):
@@ -160,9 +183,16 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
     await context.send(f"{text} \n{final_text} **{result_final}**")
 
 
-async def send_text(context, result):
-    text = f"{context.message.author.display_name}: "
-    for dices in result[0]:
+async def send_text(context, result, first=True):
+    text = ""
+    if first:
+        text = f"{context.message.author.display_name}: "
+
+    # {"result_dices_verbose": result_dices_verbose,
+    #  "result_final": result_final,
+    #  "only_dices": only_dices,
+    #  "additional": additional}
+    for dices in result['result_dices_verbose']:
 
         text += f"``` {dices['verbose']}  => ["
         for index, dice in enumerate(dices['list_of_result']):
@@ -177,18 +207,18 @@ async def send_text(context, result):
         # {bold_conditional}{dices['result']}{bold_conditional}```"
 
     extra_text = ""
-    if result[3]['plus']:
-        for i in result[3]['plus']:
-            extra_text = f" + {i} "
+    if result["additional"]['plus']:
+        for i in result["additional"]['plus']:
+            extra_text += f" + {i}"
 
-    if result[3]['minus']:
-        for i in result[3]['minus']:
-            extra_text += f" - {i} "
-    only_dices = result[2]
+    if result["additional"]['minus']:
+        for i in result["additional"]['minus']:
+            extra_text += f" - {i}"
+    only_dices = result["only_dices"]
     if not extra_text:
-        await context.send(f"{text} \n **{result[1]}**")
+        await context.send(f"{text} \n **{result['result_final']}**")
     else:
-        await context.send(f"{text} \n {only_dices}{extra_text}= **{result[1]}**")
+        await context.send(f"{text} \n {only_dices}{extra_text}= **{result['result_final']}**")
 
 # COMMANDS ================
 @bot.command(
@@ -201,8 +231,9 @@ async def command_roll_dices(context, data):
             process("1d10+1d4-1")
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
-        result = await process(data) #  Parse and roll dices
-        await send_text(context, result)
+
+        for index, dice in enumerate(await process(data)):   # Parse and roll dices
+            await send_text(context, dice, True if index == 0 else False)
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
