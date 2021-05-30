@@ -56,7 +56,12 @@ bot = commands.Bot(
 
 async def parse_dices(data):
     import re
-    return re.findall('(\d+)?d(\d+)?', data)
+    parsed_negative = re.findall('-(\d+)?d(\d+)?', data)
+    parsed_positive = re.findall('(\d+)?d(\d+)?', data)
+    for pn in parsed_negative:
+        if pn in parsed_positive:
+            parsed_positive.remove(pn)
+    return  parsed_positive, parsed_negative
 
 
 async def parse_repeat(data):
@@ -64,30 +69,26 @@ async def parse_repeat(data):
     return re.findall('(\d+)?x', data)
 
 
-async def parse_additional(data):
-    parsed_minus = data.split('-')
-    minus = []
-    for i in parsed_minus:
-        try:
-            if int(i) and i.find("+") == -1:
-                minus.append(int(i))
-        except:
-            pass
+async def parse_additional(data, positive_dies, negative_dies):
+    for item in positive_dies:
+        dice = f"{item[0]}d{item[1]}"
+        data = data.replace(f"+{dice}", "")
+        if dice in data:
+            data = data.replace(dice, "")
 
-    parsed_plus = data.split('+')
-    plus = []
-    for i in parsed_plus:
-        try:
-            if int(i) and i.find("-") == -1:
-                plus.append(int(i))
-        except:
-            pass
-    return {"minus": minus, "plus": plus}
+    for item in negative_dies:
+        dice = f"{item[0]}d{item[1]}"
+        data = data.replace(f"-{dice}", "")
+        if dice in data:
+            data = data.replace(dice, "")
+
+    return data
+
 
 
 async def roll_dice(times, dice):
-    if int(times) > 10:
-        times = 10
+    if int(times) > 20:
+        times = 20
 
     return [random.randint(1, int(dice)) for _ in range(int(times))]
 
@@ -100,86 +101,95 @@ async def process(dices_data):
     else:
         repeat = 1
 
-    dices = await parse_dices(dices_data)
-    additional = await parse_additional(dices_data)
+    dices_positive, dices_negative = await parse_dices(dices_data)
+    additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
     for _ in range(0, repeat):
-        d = await calculate_dices(dices, additional)
-        dices_list.append(d)
+        dices_list.append(await calculate_dices(dices_positive, dices_negative, additional))
     return dices_list
 
 
-async def calculate_dices(dices, additional):
-    result_dices_verbose = []
+async def calculate_dices(dices_positive, dices_negative, additional):
+    result_sum_dies = []
+    result_minus_dies = []
     only_dices = 0
-    for number, dice in dices:
+
+    for number, dice in dices_positive:
         number = number if number else 1
         results = await roll_dice(number, dice)
         only_dices += sum(results)
-        result_dices_verbose.append({"verbose": f"{number}d{dice}",
-                                     "list_of_result": results,
-                                     "dice_base": dice,
-                                     "result": sum(results),
-                                     })
+        result_sum_dies.append({"verbose": f"{number}d{dice}",
+                                "list_of_result": results,
+                                "dice_base": dice,
+                                "result": sum(results),
+                               })
 
-    result_final = only_dices
-    for i in additional['plus']:
-        result_final += i
-    for i in additional['minus']:
-        result_final -= i
+    for number, dice in dices_negative:
+        number = number if number else 1
+        results = await roll_dice(number, dice)
+        only_dices -= sum(results)
+        result_minus_dies.append({"verbose": f"{number}d{dice}",
+                                  "list_of_result": results,
+                                  "dice_base": dice,
+                                  "result": sum(results),
+                                  })
 
-    return {"result_dices_verbose": result_dices_verbose,
-            "result_final": result_final,
+    additional_eval = 0
+    if additional:
+        additional_eval = eval(additional)
+
+    dies_verbose = "".join([f"+{die['verbose']}" for die in result_sum_dies])
+    dies_verbose += "".join([f"-{die['verbose']}" for die in result_minus_dies])
+
+    return {"result_sum_dies": result_sum_dies,
+            "result_minus_dies": result_minus_dies,
+            "result_final": only_dices+additional_eval,
             "only_dices": only_dices,
-            "additional": additional}
+            "additional": additional,
+            "additional_eval": additional_eval,
+            "dies_verbose": dies_verbose}
 
 
 async def reroll_and_send_text(context, dices_data=None, adv=True):
-    result = await roll_dice(2, 20)
-    additional = {'plus': [], 'minus': []}
-    if dices_data:
-        # Force to accept single numbers without signal, adding a + signal to it
-        try:
-            int(dices_data)
-            dices_data = "+" + str(dices_data)
-        except Exception as e:
-            pass
-        additional = await parse_additional(dices_data)
-    text = f"{context.message.author.display_name}: 1d20 => "
+    dice_result = await roll_dice(2, 20)
+
+    try:
+        text = f"{context.message.author.display_name}: 1d20 => "
+    except:
+        text = f" 1d20 => "
+
     dice_1 = dice_2 = ""
-    if result[0] == 20 or result[0] == 1:
+    if dice_result[0] == 20 or dice_result[0] == 1:
         dice_1 = "!"
-    if result[1] == 20 or result[1] == 1:
+    if dice_result[1] == 20 or dice_result[1] == 1:
         dice_2 = "!"
 
+    dice_result[0] = dice_result[1] = 1
+
     if adv:
-        if result[0] >= result[1]:
-            text += f"[ {result[0]}{dice_1},  ~~{result[1]}{dice_2}~~ ]"
-            result_final = result[0]
+        if dice_result[0] >= dice_result[1]:
+            text += f"[ {dice_result[0]}{dice_1},  ~~{dice_result[1]}{dice_2}~~ ]"
+            result = dice_result[0]
         else:
-            text += f"[ ~~{result[0]}{dice_1}~~, {result[1]}{dice_2} ]"
-            result_final = result[1]
+            text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2} ]"
+            result = dice_result[1]
     else:
-        if result[0] <= result[1]:
-            text += f"[ {result[0]}{dice_1}, ~~{result[1]}{dice_2}~~ ]"
-            result_final = result[0]
+        if dice_result[0] <= dice_result[1]:
+            text += f"[ {dice_result[0]}{dice_1}, ~~{dice_result[1]}{dice_2}~~ ]"
+            result = dice_result[0]
         else:
-            text += f"[ ~~{result[0]}{dice_1}~~, {result[1]}{dice_2} ]"
-            result_final = result[1]
+            text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2} ]"
+            result = dice_result[1]
 
-    final_text = f"{result_final} "
-    for i in additional['plus']:
-        result_final += i
-        final_text += f"+ {i}"
-    for i in additional['minus']:
-        result_final -= i
-        final_text += f"- {i}"
+    if dice_result[0] == 1 and dice_result[1] == 1 or dice_result[0] == 20 and dice_result[1] == 20:
+        text += f" ¯\_(ツ)_/¯ \n"
 
-    if not additional['minus'] and not additional['plus']:
-        final_text = ""
-    else:
-        final_text += " = "
+    # print(f"additional: {dices_data}")/
+    extra_signal = "+" if dices_data and not "+" in dices_data and not "-" in dices_data else ""
+    final_text = f"{result} {extra_signal} {dices_data}"
+    result_final = result+eval(dices_data) if dices_data else result
 
+    print(f"{text} \n{final_text} = **{result_final}**")
     await context.send(f"{text} \n{final_text} **{result_final}**")
 
 
@@ -188,11 +198,7 @@ async def send_text(context, result, first=True):
     if first:
         text = f"{context.message.author.display_name}: "
 
-    # {"result_dices_verbose": result_dices_verbose,
-    #  "result_final": result_final,
-    #  "only_dices": only_dices,
-    #  "additional": additional}
-    for dices in result['result_dices_verbose']:
+    for dices in result['result_minus_dies'] + result['result_sum_dies']:
 
         text += f"``` {dices['verbose']}  => ["
         for index, dice in enumerate(dices['list_of_result']):
@@ -204,21 +210,9 @@ async def send_text(context, result, first=True):
                 bold = "!"
             text += f" {dice}{bold}{comma}"
         text += " ]```"
-        # {bold_conditional}{dices['result']}{bold_conditional}```"
 
-    extra_text = ""
-    if result["additional"]['plus']:
-        for i in result["additional"]['plus']:
-            extra_text += f" + {i}"
-
-    if result["additional"]['minus']:
-        for i in result["additional"]['minus']:
-            extra_text += f" - {i}"
-    only_dices = result["only_dices"]
-    if not extra_text:
-        await context.send(f"{text} \n **{result['result_final']}**")
-    else:
-        await context.send(f"{text} \n {only_dices}{extra_text}= **{result['result_final']}**")
+    print(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
+    await context.send(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
 
 # COMMANDS ================
 @bot.command(
