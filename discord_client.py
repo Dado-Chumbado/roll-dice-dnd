@@ -182,12 +182,11 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
     if dice_result[0] == 1 and dice_result[1] == 1 or dice_result[0] == 20 and dice_result[1] == 20:
         text += f" ¯\_(ツ)_/¯ \n"
 
-    # print(f"additional: {dices_data}")/
     extra_signal = "+" if dices_data and not "+" in dices_data and not "-" in dices_data else ""
-    final_text = f"{result}{extra_signal}{dices_data}"
+    final_text = f"{result}{extra_signal}{dices_data}="
     result_final = result+eval(dices_data) if dices_data else result
 
-    print(f"{text} \n{final_text} = **{result_final}**")
+    print(f"{text} \n{final_text} **{result_final}**")
     await context.send(f"{text} \n{final_text} **{result_final}**")
 
 
