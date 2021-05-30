@@ -164,8 +164,6 @@ async def reroll_and_send_text(context, dices_data=None, adv=True):
     if dice_result[1] == 20 or dice_result[1] == 1:
         dice_2 = "!"
 
-    dice_result[0] = dice_result[1] = 1
-
     if adv:
         if dice_result[0] >= dice_result[1]:
             text += f"[ {dice_result[0]}{dice_1},  ~~{dice_result[1]}{dice_2}~~ ]"
