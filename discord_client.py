@@ -208,6 +208,9 @@ async def send_text(context, result, first=True):
             text += f" {dice}{bold}{comma}"
         text += " ]```"
 
+    if result['only_dices'] == 0:
+        result['only_dices'] = ""
+
     print(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
     await context.send(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
 
