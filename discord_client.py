@@ -208,7 +208,7 @@ async def send_text(context, result, first=True):
             text += f" {dice}{bold}{comma}"
         text += " ]```"
 
-    if result['only_dices'] == 0:
+    if len(result['result_minus_dies']) + len(result['result_sum_dies']) == 0:
         result['only_dices'] = ""
 
     print(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
