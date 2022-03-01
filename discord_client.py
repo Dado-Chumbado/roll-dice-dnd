@@ -21,6 +21,7 @@ COMMAND_ROLL = ENV['command_roll']
 COMMAND_ROLL_DOUBLE_ADVANTAGE = ENV["command_roll_double_advantage"]
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
+COMMAND_DM_ROLL = ENV['command_dm_roll']
 
 
 COLORS = {
@@ -223,10 +224,11 @@ async def reroll_and_send_text(context, dices_data=None, adv=True, number_of_dic
     await context.send(f"{text} \n{final_text} **{result_final}**")
 
 
-async def send_text(context, result, first=True):
+async def send_text(context, result, first=True, dm=False):
     text = ""
+    user = context.message.author
     if first:
-        text = f"{context.message.author.display_name}: "
+        text = f"{user.display_name}: "
 
     for dices in result['result_minus_dies'] + result['result_sum_dies']:
 
@@ -244,10 +246,34 @@ async def send_text(context, result, first=True):
     if len(result['result_minus_dies']) + len(result['result_sum_dies']) == 0:
         result['only_dices'] = ""
 
-    print(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
-    await context.send(f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**")
+    msg = f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**"
+    print(f"{msg} - DM?: {dm}")
+    if not dm:
+        await context.send(msg)
+    else:
+        await user.send(msg)
 
 # COMMANDS ================
+@bot.command(
+    name=COMMAND_DM_ROLL,
+    description="Roll private dices?"
+)
+async def command_roll_dm_dices(context, data):
+    try:
+        '''
+            process("1d10+1d4-1")
+            (['1d10 = [3]', '1d4 = [2]'], 4)
+        '''
+
+        for index, dice in enumerate(await process(data)):   # Parse and roll dices
+            await send_text(context, dice, True if index == 0 else False, True)
+
+
+    except Exception as e:
+        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
+        await context.send(f"Exception {e}")
+
+
 @bot.command(
     name=COMMAND_ROLL,
     description="Roll dices?"
