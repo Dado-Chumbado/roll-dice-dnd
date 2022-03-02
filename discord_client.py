@@ -63,12 +63,12 @@ async def parse_dices(data):
     for pn in parsed_negative:
         if pn in parsed_positive:
             parsed_positive.remove(pn)
-    return  parsed_positive, parsed_negative
+    return parsed_positive, parsed_negative
 
 
 async def parse_repeat(data):
     import re
-    return re.findall('(\d+)?x', data)
+    return re.findall('(\d)(?=\*)', data)
 
 
 async def parse_additional(data, positive_dies, negative_dies):
@@ -87,7 +87,6 @@ async def parse_additional(data, positive_dies, negative_dies):
     return data
 
 
-
 async def roll_dice(times, dice):
     if int(times) > 20:
         times = 20
@@ -99,7 +98,7 @@ async def process(dices_data):
     repeat = await parse_repeat(dices_data)
     if repeat:
         repeat = int(repeat[0])
-        dices_data = dices_data.split("x(")[1].replace(")", "")
+        dices_data = dices_data.split("*")[1]
     else:
         repeat = 1
 
