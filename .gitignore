@@ -29,3 +29,5 @@ images_fail/*
 images_fail_helper/*
 !images_fail_helper/.gitkeep
 
+.idea
+.idea/*

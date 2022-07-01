@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
 import json
+import random
+
 from discord.ext import commands
 import os
-import random
+from dices import roll_dice, process
+from initiative import InitTable, get_best_result, clean_dex, adv_text
+from roll import send_text, reroll_and_send_text
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 # read our environment variables
-with open("./env.json", "r") as env:
+with open("./config.json", "r") as env:
     ENV = json.load(env)
 
 COMMAND_CHAR = ENV['command_char']
@@ -22,235 +26,26 @@ COMMAND_ROLL_DOUBLE_ADVANTAGE = ENV["command_roll_double_advantage"]
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
 COMMAND_DM_ROLL = ENV['command_dm_roll']
-
-
-COLORS = {
-    "BLACK": "\033[30m",
-    "RED": "\033[31m",
-    "GREEN": "\033[32m",
-    "YELLOW": "\033[33m",
-    "BLUE": "\033[34m",
-    "PURPLE": "\033[35m",
-    "CYAN": "\033[36m",
-    "GREY": "\033[37m",
-    "WHITE": "\033[38m",
-    "NEUTRAL": "\033[00m"
-}
-
-SIGN = (
-    COLORS["RED"] + "/" +
-    COLORS["YELLOW"] + "!" +
-    COLORS["RED"] + "\\" +
-    COLORS["NEUTRAL"] +
-    " "
-)
+#  =======================================
+COMMAND_RESET = ENV["command_reset"]
+COMMAND_ROLL_INITIATIVE = ENV["command_initiative"]
+COMMAND_ROLL_INITIATIVE_ADV = ENV["command_initiative_adv"]
+COMMAND_FORCE_INITIATIVE= ENV["command_force_initiative"]
+COMMAND_REMOVE_INITIATIVE = ENV["command_remove_initiative"]
+COMMAND_ADD_CONDITION_INITIATIVE = ENV["command_add_condition"]
+COMMAND_REMOVE_CONDITION_INITIATIVE = ENV["command_remove_condition"]
 
 
 # read our discord access token
 with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
+init_items = InitTable()
 
 bot = commands.Bot(
     command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
-    description="Roll a random dices, normal or with advantages/disadvantages"
+    description="Roll a random dices, normal or with advantages/disadvantages and control initiative table"
 )
 
-
-async def parse_dices(data):
-    import re
-    parsed_negative = re.findall('-(\d+)?d(\d+)?', data)
-    parsed_positive = re.findall('(\d+)?d(\d+)?', data)
-    for pn in parsed_negative:
-        if pn in parsed_positive:
-            parsed_positive.remove(pn)
-    return parsed_positive, parsed_negative
-
-
-async def parse_repeat(data):
-    import re
-    return re.findall('(\d)(?=\*)', data)
-
-
-async def parse_additional(data, positive_dies, negative_dies):
-    for item in positive_dies:
-        dice = f"{item[0]}d{item[1]}"
-        data = data.replace(f"+{dice}", "")
-        if dice in data:
-            data = data.replace(dice, "")
-
-    for item in negative_dies:
-        dice = f"{item[0]}d{item[1]}"
-        data = data.replace(f"-{dice}", "")
-        if dice in data:
-            data = data.replace(dice, "")
-
-    return data
-
-
-async def roll_dice(times, dice):
-    if int(times) > 20:
-        times = 20
-
-    return [random.randint(1, int(dice)) for _ in range(int(times))]
-
-
-async def process(dices_data):
-    repeat = await parse_repeat(dices_data)
-    if repeat:
-        repeat = int(repeat[0])
-        dices_data = dices_data.split("*")[1]
-    else:
-        repeat = 1
-
-    dices_positive, dices_negative = await parse_dices(dices_data)
-    additional = await parse_additional(dices_data, dices_positive, dices_negative)
-    dices_list = []
-    for _ in range(0, repeat):
-        dices_list.append(await calculate_dices(dices_positive, dices_negative, additional))
-    return dices_list
-
-
-async def calculate_dices(dices_positive, dices_negative, additional):
-    result_sum_dies = []
-    result_minus_dies = []
-    only_dices = 0
-
-    for number, dice in dices_positive:
-        number = number if number else 1
-        results = await roll_dice(number, dice)
-        only_dices += sum(results)
-        result_sum_dies.append({"verbose": f"{number}d{dice}",
-                                "list_of_result": results,
-                                "dice_base": dice,
-                                "result": sum(results),
-                               })
-
-    for number, dice in dices_negative:
-        number = number if number else 1
-        results = await roll_dice(number, dice)
-        only_dices -= sum(results)
-        result_minus_dies.append({"verbose": f"{number}d{dice}",
-                                  "list_of_result": results,
-                                  "dice_base": dice,
-                                  "result": sum(results),
-                                  })
-
-    additional_eval = 0
-    if additional:
-        additional_eval = eval(additional)
-
-    dies_verbose = "".join([f"+{die['verbose']}" for die in result_sum_dies])
-    dies_verbose += "".join([f"-{die['verbose']}" for die in result_minus_dies])
-
-    return {"result_sum_dies": result_sum_dies,
-            "result_minus_dies": result_minus_dies,
-            "result_final": only_dices+additional_eval,
-            "only_dices": only_dices,
-            "additional": additional,
-            "additional_eval": additional_eval,
-            "dies_verbose": dies_verbose}
-
-
-async def reroll_and_send_text(context, dices_data=None, adv=True, number_of_dices=2):
-    if number_of_dices > 3:
-        number_of_dices = 3
-    dice_result = await roll_dice(number_of_dices, 20)
-
-    try:
-        text = f"{context.message.author.display_name}: 1d20 => "
-    except:
-        text = f" 1d20 => "
-
-    dice_1 = dice_2 = dice_3 = ""
-    if dice_result[0] == 20 or dice_result[0] == 1:
-        dice_1 = "!"
-    if dice_result[1] == 20 or dice_result[1] == 1:
-        dice_2 = "!"
-    if number_of_dices == 3:
-        if dice_result[2] == 20 or dice_result[2] == 1:
-            dice_3 = "!"
-
-    if adv:
-        if number_of_dices == 2:
-            if dice_result[0] >= dice_result[1]:
-                text += f"[ {dice_result[0]}{dice_1},  ~~{dice_result[1]}{dice_2}~~ ]"
-                result = dice_result[0]
-            else:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2} ]"
-                result = dice_result[1]
-        else:
-            if dice_result[0] >= dice_result[1] and dice_result[0] >= dice_result[2]:
-                text += f"[ {dice_result[0]}{dice_1},  ~~{dice_result[1]}{dice_2}~~,  ~~{dice_result[2]}{dice_3}~~ ]"
-                result = dice_result[0]
-            elif dice_result[1] >= dice_result[0] and dice_result[1] >= dice_result[2]:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2}, ~~{dice_result[2]}{dice_3}~~, ]"
-                result = dice_result[1]
-            else:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, ~~{dice_result[1]}{dice_2}~~, {dice_result[2]}{dice_3} ]"
-                result = dice_result[2]
-
-    else:
-        if number_of_dices == 2:
-            if dice_result[0] <= dice_result[1]:
-                text += f"[ {dice_result[0]}{dice_1}, ~~{dice_result[1]}{dice_2}~~ ]"
-                result = dice_result[0]
-            else:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2} ]"
-                result = dice_result[1]
-        else:
-            if dice_result[0] <= dice_result[1] and dice_result[0] <= dice_result[2]:
-                text += f"[ {dice_result[0]}{dice_1}, ~~{dice_result[1]}{dice_2}~~, ~~{dice_result[2]}{dice_3}~~ ]"
-                result = dice_result[0]
-            elif dice_result[1] <= dice_result[0] and dice_result[1] <= dice_result[3]:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2}, ~~{dice_result[2]}{dice_3}~~ ]"
-                result = dice_result[1]
-            else:
-                text += f"[ ~~{dice_result[0]}{dice_1}~~, ~~{dice_result[1]}{dice_2}~~, {dice_result[2]}{dice_3} ]"
-                result = dice_result[2]
-
-    if number_of_dices == 2:
-        if dice_result[0] == 1 and dice_result[1] == 1 or dice_result[0] == 20 and dice_result[1] == 20:
-            text += f" ¯\_(ツ)_/¯ \n"
-    else:
-        if dice_result[0] == 1 and dice_result[1] == 1 and dice_result[2] == 1 or dice_result[0] == 20 and dice_result[1] == 20 and dice_result[2] == 20:
-            text += f" ¯\_(ツ)_/¯ HOLY FUCKING! Pode subir um nivel, isso é impossivel, sério mesmo, fala com o mestre e sobe um nivel, vc é o Deus dos dados.\n"
-
-    extra_signal = "+" if dices_data and not "+" in dices_data and not "-" in dices_data else ""
-    final_text = f"{result}{extra_signal}{dices_data}=" if dices_data else ""
-    result_final = result+eval(dices_data) if dices_data else result
-
-    print(f"{text} \n{final_text} **{result_final}**")
-    await context.send(f"{text} \n{final_text} **{result_final}**")
-
-
-async def send_text(context, result, first=True, dm=False):
-    text = ""
-    user = context.message.author
-    if first:
-        text = f"{user.display_name}: "
-
-    for dices in result['result_minus_dies'] + result['result_sum_dies']:
-
-        text += f"``` {dices['verbose']}  => ["
-        for index, dice in enumerate(dices['list_of_result']):
-            comma = ""
-            if index != len(dices['list_of_result']) -1:
-                comma = ","
-            bold = ""
-            if dice == dices['dice_base'] or dice == 1:
-                bold = "!"
-            text += f" {dice}{bold}{comma}"
-        text += " ]```"
-
-    if len(result['result_minus_dies']) + len(result['result_sum_dies']) == 0:
-        result['only_dices'] = ""
-
-    msg = f"{text} \n {result['only_dices']}{result['additional']}= **{result['result_final']}**"
-    print(f"{msg} - DM?: {dm}")
-    if not dm:
-        await context.send(msg)
-    else:
-        await user.send(msg)
 
 # COMMANDS ================
 @bot.command(
@@ -266,7 +61,6 @@ async def command_roll_dm_dices(context, data):
 
         for index, dice in enumerate(await process(data)):   # Parse and roll dices
             await send_text(context, dice, True if index == 0 else False, True)
-
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
@@ -284,8 +78,8 @@ async def command_roll_dices(context, data):
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
 
-        for index, dice in enumerate(await process(data)):   # Parse and roll dices
-            await send_text(context, dice, True if index == 0 else False)
+        for index, dice_list in enumerate(await process(data)):   # Parse and roll dices
+            await send_text(context, dice_list, True if index == 0 else False)
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
@@ -330,6 +124,115 @@ async def command_roll_disadvantage_dices(context, data=None):
         await context.send(f"Exception {e}")
 
 
+#============================================================================
+
+@bot.command(
+    name=COMMAND_RESET,
+    description="Reset the initiative table"
+)
+async def roll_reset_initiative(context):
+    await init_items.reset(context.channel.name)
+    await context.send("OK, limpei a tabela. Bons dados :)")
+
+
+@bot.command(
+    name=COMMAND_REMOVE_INITIATIVE,
+    description="Remove item from table"
+)
+async def remove_initiative(context, index=0):
+    await init_items.remove_index(context.channel.name, index)
+    await init_items.show(context.channel.name, context)
+
+
+@bot.command(
+    name=COMMAND_ADD_CONDITION_INITIATIVE,
+    description="Add item from table"
+)
+async def add_condition_initiative(context, index, condition):
+    await init_items.add_condition(context.channel.name, index, condition)
+    await init_items.show(context.channel.name, context)
+
+
+@bot.command(
+    name=COMMAND_REMOVE_CONDITION_INITIATIVE,
+    description="Remove item from table"
+)
+async def remove_initiative(context, index):
+    await init_items.remove_condition(context.channel.name, index)
+    await init_items.show(context.channel.name, context)
+
+
+@bot.command(
+    name=COMMAND_ROLL_INITIATIVE,
+    description=""
+)
+async def roll_initiative(context, dex="", name_arg="", repeat=1):
+    try:
+        channel = context.channel.name
+        if not dex:
+            await init_items.show(context.channel.name, context)
+            return
+
+        dex, neg = await clean_dex(dex)
+        for i in range(0, repeat):
+            name = f"{name_arg}" if name_arg else context.message.author.display_name
+            if repeat > 1:
+                name += f"_{i+1}"
+
+            await init_items.add(channel, name, random.randint(1, 20), dex if not neg else dex*-1)
+        await init_items.show(channel, context)
+
+    except Exception as e:
+        await context.send(f"Digite um numero (normalmente sua destreza). {dex} não é válido... ")
+        await context.send(f"Exception {e}")
+
+
+@bot.command(
+    name=COMMAND_ROLL_INITIATIVE_ADV,
+    description=""
+)
+async def roll_initiative_advantage(context, dex="", name_arg=""):
+    try:
+        if not dex:
+            await init_items.show(context.channel.name, context)
+            return
+
+        dex, neg = await clean_dex(dex)
+        name = f"{name_arg}" if name_arg else context.message.author.display_name
+
+        results = await roll_dice(2, 20)
+        best_dice, _ = await get_best_result(results)
+        print(f"best_dice: {best_dice}")
+        await adv_text(context, results)
+        await init_items.add(context.channel.name, name, best_dice, dex if not neg else dex*-1)
+        await init_items.show(context.channel.name, context)
+
+    except Exception as e:
+        await context.send(f"Digite um numero (normalmente sua destreza). {dex} não é válido... ")
+        await context.send(f"Exception {e}")
+        raise
+
+@bot.command(
+    name=COMMAND_FORCE_INITIATIVE,
+    description=""
+)
+async def force_initiative(context, number, dex="", name_arg=""):
+    try:
+
+        number, _ = await clean_dex(number)
+        dex, neg = await clean_dex(dex)
+        name = f"{name_arg}" if name_arg else context.message.author.display_name
+
+        await init_items.add(context.channel.name, name, number, dex if not neg else dex*-1)
+        await init_items.show(context.channel.name, context)
+
+    except Exception as e:
+        await context.send(f"Manda o comando direito mestre... ")
+        await context.send(f"Exception {e}")
+
+
+
+
 @bot.command(
     name=COMMAND_HELPER,
     description="Show helpers menu"
@@ -346,11 +249,7 @@ async def command_helper(context):
 
 @bot.event
 async def on_ready():
-    print(
-        COLORS["YELLOW"] +
-        "I'm logged in as {name} !\n".format(name=bot.user.name) +
-        COLORS["NEUTRAL"]
-    )
+    print("I'm logged in as {name} !\n".format(name=bot.user.name))
 
 
 bot.run(DISCORD_TOKEN)
