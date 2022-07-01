@@ -98,6 +98,7 @@ async def command_roll_advantage_dices(context, data=None):
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
         await context.send(f"Exception {e}")
 
+
 @bot.command(
     name=COMMAND_ROLL_DOUBLE_ADVANTAGE,
     description="Roll dices with double advantage?"
@@ -212,6 +213,7 @@ async def roll_initiative_advantage(context, dex="", name_arg=""):
         await context.send(f"Exception {e}")
         raise
 
+
 @bot.command(
     name=COMMAND_FORCE_INITIATIVE,
     description=""
@@ -231,8 +233,6 @@ async def force_initiative(context, number, dex="", name_arg=""):
         await context.send(f"Exception {e}")
 
 
-
-
 @bot.command(
     name=COMMAND_HELPER,
     description="Show helpers menu"
@@ -246,6 +246,7 @@ async def command_helper(context):
     text += f" {COMMAND_HELPER}) {COMMAND_CHAR}{COMMAND_HELPER} mostra essa ajuda ```"
 
     await context.send(f"{text}")
+
 
 @bot.event
 async def on_ready():
