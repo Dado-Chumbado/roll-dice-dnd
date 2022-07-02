@@ -71,7 +71,7 @@ async def command_roll_dm_dices(context, data):
     name=COMMAND_ROLL,
     description="Roll dices?"
 )
-async def command_roll_dices(context, data):
+async def command_roll_dices(context, data="d20"):
     try:
         '''
             process("1d10+1d4-1")

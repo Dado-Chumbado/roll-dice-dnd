@@ -26,6 +26,8 @@ async def roll_dice(times, dice):
 
 
 async def process(dices_data):
+    print(f"dices_data: {dices_data}")
+
     repeat = await parse_repeat(dices_data)
     if repeat:
         repeat = int(repeat[0])
