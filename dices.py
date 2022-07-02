@@ -33,6 +33,26 @@ async def process(dices_data):
     else:
         repeat = 1
 
+    import re
+    if re.findall('^(20)(?=[\+\-])', dices_data):
+        # Missing a `d`
+        print(f"Missing a `d` in command: {dices_data}")
+        dices_data = 'd'+dices_data
+        print(f"Fixed to: {dices_data}")
+
+    try:
+        if int(dices_data):
+            # Only modifier
+            if re.findall('-(\d+)?', dices_data):
+                dices_data = f'd20-{dices_data}'
+            else:
+                dices_data = f'd20+{dices_data}'
+
+            dices_data = dices_data.replace("++", "+").replace("--", "-")
+            print(f"Fixed to: {dices_data}")
+    except:
+        pass
+
     dices_positive, dices_negative = await parse_dices(dices_data)
     additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
@@ -43,6 +63,7 @@ async def process(dices_data):
 
 async def parse_dices(data):
     import re
+
     parsed_negative = re.findall('-(\d+)?d(\d+)?', data)
     parsed_positive = re.findall('(\d+)?d(\d+)?', data)
     for pn in parsed_negative:
