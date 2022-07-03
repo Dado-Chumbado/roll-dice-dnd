@@ -17,5 +17,7 @@
     "command_remove_initiative": "i-remover",
 
     "command_add_condition": "i-condicao",
-    "command_remove_condition": "i-condicao-remover"
+    "command_remove_condition": "i-condicao-remover",
+
+    "stats": "1"
 }

@@ -1,7 +1,6 @@
 import json
 import re
 from slugify import slugify
-from dices import get_best_result
 
 
 class InitItem:
@@ -101,15 +100,3 @@ class InitTable:
 async def clean_dex(value):
     negative = True if "-" in value else False
     return int(re.sub('[^0-9]', '', value)), negative
-
-
-async def adv_text(context, dice_result):
-    try:
-        text = f"{context.message.author.display_name}: 1d20 => "
-    except:
-        text = f" 1d20 => "
-
-    _, text_dice = await get_best_result(dice_result)
-
-    print(f"{text_dice}")
-    await context.send(f"{text} **{text_dice}**")

@@ -1,4 +1,6 @@
 discord.py==1.4.0
 bottle==0.12.17
 ipython
-slugify
+python-slugify==6.1.1
+psycopg2
+peewee

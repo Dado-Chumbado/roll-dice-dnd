@@ -1,10 +1,17 @@
 import random
+import json
+from stats_db import *
+with open("./config.json", "r") as env:
+    ENV = json.load(env)
+
+STATS_ENABLE = True if ENV["stats"] == "1" else False
 
 
 class Die:
     def __init__(self, number, dice, results):
         self.verbose = f"{number}d{dice}"
         self.list_of_result = results
+        self.debug = [{'value': d, 'critical': d == int(dice), 'fail': d == 1} for d in results]
         self.dice_base = dice
         self.result = sum(results)
 
@@ -17,21 +24,32 @@ class Die:
     def get_json(self):
         return self.__dict__
 
+    def larger(self):
+        return max(self.list_of_result)
 
-async def roll_dice(times, dice):
+    def smaller(self):
+        return min(self.list_of_result)
+
+
+async def _roll_dice(times, dice):
     if int(times) > 20:
         times = 20
 
     return [random.randint(1, int(dice)) for _ in range(int(times))]
 
 
-async def process(dices_data):
+async def process(context, dices_data):
     print(f"dices_data: {dices_data}")
 
     repeat = await parse_repeat(dices_data)
     if repeat:
         repeat = int(repeat[0])
-        dices_data = dices_data.split("*")[1]
+        if repeat > 10:
+            repeat = 9
+        if "x" in dices_data:
+            dices_data = dices_data.split("x")[1]
+        else:
+            dices_data = dices_data.split("*")[1]
     else:
         repeat = 1
 
@@ -59,7 +77,7 @@ async def process(dices_data):
     additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
     for _ in range(0, repeat):
-        dices_list.append(await calculate_dices(dices_positive, dices_negative, additional))
+        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional))
     return dices_list
 
 
@@ -76,7 +94,7 @@ async def parse_dices(data):
 
 async def parse_repeat(data):
     import re
-    return re.findall('(\d)(?=\*)', data)
+    return re.findall('(\d)(?=\*)', data) + re.findall('(\d)(?=x)', data)
 
 
 async def parse_additional(data, positive_dies, negative_dies):
@@ -95,20 +113,20 @@ async def parse_additional(data, positive_dies, negative_dies):
     return data
 
 
-async def calculate_dices(dices_positive, dices_negative, additional):
-    result_sum_dies = []
+async def calculate_dices(context, dices_positive, dices_negative, additional):
+    result_dies = []
     result_minus_dies = []
     only_dices = 0
     try:
         for number, dice in dices_positive:
             number = number if number else 1
-            results = await roll_dice(number, dice)
+            results = await _roll_dice(number, dice)
             only_dices += sum(results)
-            result_sum_dies.append(Die(number, dice, results))
+            result_dies.append(Die(number, dice, results))
 
         for number, dice in dices_negative:
             number = number if number else 1
-            results = await roll_dice(number, dice)
+            results = await _roll_dice(number, dice)
             only_dices -= sum(results)
             result_minus_dies.append(Die(number, dice, results))
 
@@ -116,36 +134,22 @@ async def calculate_dices(dices_positive, dices_negative, additional):
         if additional:
             additional_eval = eval(additional)
 
-        dies_verbose = "".join([f"+{die.verbose}" for die in result_sum_dies])
-        dies_verbose += "".join([f"-{die.verbose}" for die in result_minus_dies])
+        result = {"result_dies": result_dies,
+                  "larger": result_dies[0].larger(),
+                  "smaller": result_dies[0].smaller(),
+                  "result_minus_dies": result_minus_dies,
+                  "result_final": only_dices+additional_eval,
+                  "only_dices": only_dices,
+                  "additional": additional,
+                  "additional_eval": additional_eval}
 
-        return {"result_sum_dies": result_sum_dies,
-                "result_minus_dies": result_minus_dies,
-                "result_final": only_dices+additional_eval,
-                "only_dices": only_dices,
-                "additional": additional,
-                "additional_eval": additional_eval,
-                "dies_verbose": dies_verbose}
+        # Register the dice history
+        if STATS_ENABLE:
+            for die_result in result['result_dies']:
+                for die in die_result.debug:
+                    insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+
+        return result
     except Exception as e:
+        raise
         print(f"Exp: {e}")
-
-
-async def get_best_result(dice_result):
-    text = ""
-    dice_1 = dice_2 = ""
-    if dice_result[0] == 20 or dice_result[0] == 1:
-        dice_1 = "!"
-    if dice_result[1] == 20 or dice_result[1] == 1:
-        dice_2 = "!"
-
-    if dice_result[0] >= dice_result[1]:
-        text += f"[ {dice_result[0]}{dice_1},  ~~{dice_result[1]}{dice_2}~~ ]"
-        result = dice_result[0]
-    else:
-        text += f"[ ~~{dice_result[0]}{dice_1}~~, {dice_result[1]}{dice_2} ]"
-        result = dice_result[1]
-
-    if dice_result[0] == 1 and dice_result[1] == 1 or dice_result[0] == 20 and dice_result[1] == 20:
-        text += f" ¯\_(ツ)_/¯ \n"
-
-    return int(result), text

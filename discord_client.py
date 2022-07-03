@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import json
-import random
 
 from discord.ext import commands
 import os
-from dices import roll_dice, process
-from initiative import InitTable, get_best_result, clean_dex, adv_text
-from roll import send_text, reroll_and_send_text
+from dices import process, calculate_dices
+from initiative import InitTable, clean_dex
+from roll import send_roll_text, multiple_d20_text
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -35,6 +34,7 @@ COMMAND_REMOVE_INITIATIVE = ENV["command_remove_initiative"]
 COMMAND_ADD_CONDITION_INITIATIVE = ENV["command_add_condition"]
 COMMAND_REMOVE_CONDITION_INITIATIVE = ENV["command_remove_condition"]
 
+STATS_ENABLE = True if ENV["stats"] == "1" else False
 
 # read our discord access token
 with open("secrets.json", "r") as secrets:
@@ -59,8 +59,8 @@ async def command_roll_dm_dices(context, data):
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
 
-        for index, dice in enumerate(await process(data)):   # Parse and roll dices
-            await send_text(context, dice, True if index == 0 else False, True)
+        for index, dice in enumerate(await process(context, data)):   # Parse and roll dices
+            await send_roll_text(context, dice, True if index == 0 else False, True)
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
@@ -78,8 +78,8 @@ async def command_roll_dices(context, data="d20"):
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
 
-        for index, dice_list in enumerate(await process(data)):   # Parse and roll dices
-            await send_text(context, dice_list, True if index == 0 else False)
+        for index, dice_list in enumerate(await process(context, data)):   # Parse and roll dices
+            await send_roll_text(context, dice_list, True if index == 0 else False)
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
@@ -92,7 +92,9 @@ async def command_roll_dices(context, data="d20"):
 )
 async def command_roll_advantage_dices(context, data=None):
     try:
-        await reroll_and_send_text(context, data, True)
+        dices = await calculate_dices(context, [[2, 20]], [], data)
+        print(dices)
+        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
@@ -105,7 +107,8 @@ async def command_roll_advantage_dices(context, data=None):
 )
 async def command_roll_double_advantage_dices(context, data=None):
     try:
-        await reroll_and_send_text(context, data, True, 3)
+        dices = await calculate_dices(context, [[3, 20]], [], data)
+        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
@@ -118,7 +121,8 @@ async def command_roll_double_advantage_dices(context, data=None):
 )
 async def command_roll_disadvantage_dices(context, data=None):
     try:
-        await reroll_and_send_text(context, data, False)
+        dices = await calculate_dices(context, [[2, 20]], [], data)
+        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, False)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +2 por exemplo")
@@ -174,13 +178,13 @@ async def roll_initiative(context, dex="", name_arg="", repeat=1):
             await init_items.show(context.channel.name, context)
             return
 
-        dex, neg = await clean_dex(dex)
         for i in range(0, repeat):
             name = f"{name_arg}" if name_arg else context.message.author.display_name
             if repeat > 1:
                 name += f"_{i+1}"
 
-            await init_items.add(channel, name, random.randint(1, 20), dex if not neg else dex*-1)
+            dices = await calculate_dices(context, [[1, 20]], [], dex)
+            await init_items.add(channel, name, dices['only_dices'], dex)
         await init_items.show(channel, context)
 
     except Exception as e:
@@ -198,14 +202,12 @@ async def roll_initiative_advantage(context, dex="", name_arg=""):
             await init_items.show(context.channel.name, context)
             return
 
-        dex, neg = await clean_dex(dex)
         name = f"{name_arg}" if name_arg else context.message.author.display_name
 
-        results = await roll_dice(2, 20)
-        best_dice, _ = await get_best_result(results)
-        print(f"best_dice: {best_dice}")
-        await adv_text(context, results)
-        await init_items.add(context.channel.name, name, best_dice, dex if not neg else dex*-1)
+        dices = await calculate_dices(context, [[2, 20]], [], dex)
+
+        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, dex, True)
+        await init_items.add(context.channel.name, name, dices['result_dies'][0].larger(), dex)
         await init_items.show(context.channel.name, context)
 
     except Exception as e:
@@ -250,7 +252,7 @@ async def command_helper(context):
 
 @bot.event
 async def on_ready():
-    print("I'm logged in as {name} !\n".format(name=bot.user.name))
+    print(f"I'm logged in as {bot.user.name} !\n Statistics enable: {STATS_ENABLE}")
 
 
 bot.run(DISCORD_TOKEN)
