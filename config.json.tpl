@@ -19,5 +19,11 @@
     "command_add_condition": "i-condicao",
     "command_remove_condition": "i-condicao-remover",
 
+    "command_show_stats_player": "s",
+    "command_show_stats_session": "stats",
+
     "stats": "1"
 }
+
+COMMAND_SHOW_STATS_PLAYER = ENV["command_show_stats_player"]
+COMMAND_SHOW_STATS_SESSION = ENV["command_show_stats_session"]

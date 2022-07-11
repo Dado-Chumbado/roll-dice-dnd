@@ -7,6 +7,7 @@ import os
 from dices import process, calculate_dices
 from initiative import InitTable, clean_dex
 from roll import send_roll_text, multiple_d20_text
+from stats_db import show_general_info, show_session_stats
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -33,6 +34,9 @@ COMMAND_FORCE_INITIATIVE= ENV["command_force_initiative"]
 COMMAND_REMOVE_INITIATIVE = ENV["command_remove_initiative"]
 COMMAND_ADD_CONDITION_INITIATIVE = ENV["command_add_condition"]
 COMMAND_REMOVE_CONDITION_INITIATIVE = ENV["command_remove_condition"]
+
+COMMAND_SHOW_STATS_PLAYER = ENV["command_show_stats_player"]
+COMMAND_SHOW_STATS_SESSION = ENV["command_show_stats_session"]
 
 STATS_ENABLE = True if ENV["stats"] == "1" else False
 
@@ -233,6 +237,31 @@ async def force_initiative(context, number, dex="", name_arg=""):
     except Exception as e:
         await context.send(f"Manda o comando direito mestre... ")
         await context.send(f"Exception {e}")
+
+
+#  STATS  =========================================================================
+
+@bot.command(
+    name=COMMAND_SHOW_STATS_PLAYER,
+    description="Show stats per player in the channel"
+)
+async def command_show_stats_player(context):
+    try:
+        await show_general_info(bot, context, context.author.id, context.channel.name)
+    except Exception as e:
+        await context.send(f"Exception {e}")
+
+
+@bot.command(
+    name=COMMAND_SHOW_STATS_SESSION,
+    description="Show stats per channel (session)"
+)
+async def command_show_stats_session(context, date=None):
+    try:
+        await show_session_stats(bot, context, context.channel.name, date)
+    except Exception as e:
+        await context.send(f"Exception {e}")
+        raise
 
 
 @bot.command(
