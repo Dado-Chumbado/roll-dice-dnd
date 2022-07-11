@@ -24,6 +24,3 @@
 
     "stats": "1"
 }
-
-COMMAND_SHOW_STATS_PLAYER = ENV["command_show_stats_player"]
-COMMAND_SHOW_STATS_SESSION = ENV["command_show_stats_session"]
