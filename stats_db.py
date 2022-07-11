@@ -153,26 +153,32 @@ async def show_general_info(bot, context, player_id, channel):
 
 def get_session_stats(channel, date=None):
     if not date:
-        date = datetime.datetime.now() - datetime.timedelta(days=2)
-    rs = Roll.select().where(Roll.created > date, Roll.channel == channel)
+        start_range = datetime.datetime.now().date() - datetime.timedelta(days=1)
+        end_range = datetime.datetime.now()
+    else:
+        start_range = datetime.datetime.strptime(date, '%Y-%m-%d')
+        end_range = start_range + datetime.timedelta(days=1)
+
+    print(f"Filtering per date: {start_range} until {end_range}")
+    rs = Roll.select().where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel)
     d20s = rs.where(Roll.dice == "d20")
 
     d20s_critical = d20s.where(Roll.critical == True).count()
     d20s_fail = d20s.where(Roll.fail == True).count()
 
     rolled_d20_by_player = Roll.select(Roll.player_id, fn.COUNT(Roll.player_id)) \
-        .where(Roll.created > date, Roll.channel == channel, Roll.dice == "d20") \
+        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20") \
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.player_id).desc())
 
     critics = Roll.select(Roll.player_id, fn.COUNT(Roll.critical)) \
-        .where(Roll.created > date, Roll.channel == channel, Roll.dice == "d20", Roll.critical == True) \
+        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20", Roll.critical == True) \
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.critical).desc())
 
     fails = Roll.select(Roll.player_id, fn.COUNT(Roll.critical)) \
-        .where(Roll.created > date, Roll.channel == channel, Roll.dice == "d20", Roll.fail == True) \
+        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20", Roll.fail == True) \
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.critical).desc())
 
-    total_rolled = Roll.select(fn.SUM(Roll.value)).where(Roll.created > date, Roll.channel == channel)[0].sum
+    total_rolled = Roll.select(fn.SUM(Roll.value)).where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel)[0].sum
 
     return [d20s_critical, d20s_fail, critics, fails, total_rolled, rolled_d20_by_player]
 
@@ -189,21 +195,16 @@ def get_display_name(bot, ctx, player_id):
 async def show_session_stats(bot, ctx, channel, date=None):
     data = get_session_stats(channel, date)
 
-    print(f"Total criticos: {data[0]}")
-    print(f"Total falhas: {data[1]}")
-
-    text = f"Total criticos: {data[0]}\n"
-    text += f"Total falhas: {data[1]}\n"
-
-    if data[2]:
-        print(f"Jogador com mais criticos: {get_display_name(bot, ctx, data[2][0].player_id)} com {data[2][0].count} criticos!")
-        text += f"Jogador com mais criticos: {get_display_name(bot, ctx, data[2][0].player_id)} com {data[2][0].count} criticos!\n"
-    if data[3]:
-        print(f"Jogador com mais falhas: {get_display_name(bot, ctx, data[3][0].player_id)} com {data[3][0].count} falhas!")
-        text += f"Jogador com mais falhas: {get_display_name(bot, ctx, data[3][0].player_id)} com {data[3][0].count} falhas!\n"
+    text = f"```"
+    text += f"ESTATISTICAS {channel}\n"
 
     text += f"Total criticos: {data[0]}\n"
     text += f"Total falhas: {data[1]}\n"
+
+    if data[2]:
+        text += f"Jogador com mais criticos: {get_display_name(bot, ctx, data[2][0].player_id)} com {data[2][0].count} criticos!\n"
+    if data[3]:
+        text += f"Jogador com mais falhas: {get_display_name(bot, ctx, data[3][0].player_id)} com {data[3][0].count} falhas!\n"
 
     luck_table = []
     for r in data[5]:
@@ -234,12 +235,14 @@ async def show_session_stats(bot, ctx, channel, date=None):
             unluck_player = cpp
             break
 
-    print(f"Mais sortudo: {get_display_name(bot, ctx, luck_player['player_id'])} com {luck_player['count_critical']} criticos! (1/{luck_player['average_critical']}) [{luck_player['d20_rolled']}]\n")
-    print(f"Mais azarado: {get_display_name(bot, ctx, unluck_player['player_id'])} com {luck_player['count_fail']} falhas! (1/{luck_player['average_fail']}) [{luck_player['d20_rolled']}]\n")
-    print(f"Total rolado: {data[4]} ")
-
-    text += f"Mais sortudo: {get_display_name(bot, ctx, luck_player['player_id'])} com {luck_player['count_critical']} criticos! (1/{luck_player['average_critical']}) [{luck_player['d20_rolled']}]\n"
-    text += f"Mais azarado: {get_display_name(bot, ctx, unluck_player['player_id'])} com {luck_player['count_fail']} falhas! (1/{luck_player['average_fail']}) [{luck_player['d20_rolled']}]\n"
+    try:
+        text += f"Mais sortudo: {get_display_name(bot, ctx, luck_player['player_id'])} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
+    except:
+        pass
+    try:
+        text += f"Mais azarado: {get_display_name(bot, ctx, unluck_player['player_id'])} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
+    except:
+        pass
     text += f"Soma de todos os dados rolados: {data[4]} "
 
     print("Criticos por jogador")
@@ -250,4 +253,6 @@ async def show_session_stats(bot, ctx, channel, date=None):
     for r in data[3]:
         print(r.player_id, r.count)
 
+    text += "```"
+    print(text)
     await ctx.send(text)
