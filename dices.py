@@ -32,8 +32,8 @@ class Die:
 
 
 async def _roll_dice(times, dice):
-    if int(times) > 20:
-        times = 20
+    if int(times) > 40:
+        times = 40
 
     return [random.randint(1, int(dice)) for _ in range(int(times))]
 
