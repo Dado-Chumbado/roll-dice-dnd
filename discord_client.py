@@ -86,6 +86,7 @@ async def command_roll_dices(context, data="d20"):
             await send_roll_text(context, dice_list, True if index == 0 else False)
 
     except Exception as e:
+        raise
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
 

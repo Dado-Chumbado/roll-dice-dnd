@@ -45,7 +45,7 @@ async def process(context, dices_data):
     if repeat:
         repeat = int(repeat[0])
         if repeat > 10:
-            repeat = 9
+            repeat = 10
         if "x" in dices_data:
             dices_data = dices_data.split("x")[1]
         else:
@@ -73,6 +73,7 @@ async def process(context, dices_data):
     except:
         pass
 
+    print("Rolling")
     dices_positive, dices_negative = await parse_dices(dices_data)
     additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
@@ -94,7 +95,7 @@ async def parse_dices(data):
 
 async def parse_repeat(data):
     import re
-    return re.findall('(\d)(?=\*)', data) + re.findall('(\d)(?=x)', data)
+    return re.findall('(\d+)(?=\*)', data) + re.findall('(\d+)(?=x)', data)
 
 
 async def parse_additional(data, positive_dies, negative_dies):
@@ -147,7 +148,7 @@ async def calculate_dices(context, dices_positive, dices_negative, additional):
         if STATS_ENABLE:
             for die_result in result['result_dies']:
                 for die in die_result.debug:
-                    insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+                    insert_roll(context.author.id, context.author.display_name, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:

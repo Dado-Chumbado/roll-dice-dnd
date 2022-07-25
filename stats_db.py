@@ -12,6 +12,7 @@ pg_db = PostgresqlDatabase(ENV['db'], user=ENV['user'], password=ENV['pass'],
 class PlayerStats(Model):
     id = AutoField()
     player_id = BigIntegerField()
+    display_name = CharField()
     channel = CharField()
 
     total_dices_rolled = IntegerField(default=0)
@@ -65,13 +66,14 @@ except:
     pass
 
 
-def update_player_stats(player_id, channel, dice, value, critical, fail):
+def update_player_stats(player_id, display_name, channel, dice, value, critical, fail):
     try:
         player, created = PlayerStats.get_or_create(player_id=player_id, channel=channel)
     except:
         raise
 
     try:
+        player.display_name = display_name
         player.total_dices_rolled += 1
         player.sum_dices_number_rolled += value
         if dice == "d20":
@@ -112,10 +114,10 @@ def update_player_stats(player_id, channel, dice, value, critical, fail):
         raise
 
 
-def insert_roll(player_id, channel, dice_str, value, critical=False, fail=False):
+def insert_roll(player_id, display_name, channel, dice_str, value, critical=False, fail=False):
     try:
         Roll.create(player_id=player_id, channel=channel, dice=dice_str, value=value, critical=critical, fail=fail)
-        update_player_stats(player_id, channel, dice_str, value, critical, fail)
+        update_player_stats(player_id, display_name, channel, dice_str, value, critical, fail)
     except Exception as e:
         pg_db.rollback()
         raise
@@ -131,20 +133,20 @@ async def show_general_info(bot, context, player_id, channel):
     text = f"```Voce rolou um total de {ps.total_dices_rolled} dados! \n"
     text += f"D20 rolado {ps.total_d20_rolled} vezes! " \
             f"com {ps.total_d20_critical_rolled} criticos e {ps.total_d20_fails_rolled} falhas.\n"
-    text += f"A soma total dos seus d20's é {ps.total_d20_values_rolled}.\n"
+    text += f"A soma dos seus d20's é {ps.total_d20_values_rolled}.\n"
     text += f"Total de outros dados\n"
     if ps.total_d4_rolled:
-        text += f" D4 rolado {ps.total_d4_rolled} vezes. A soma total é {ps.total_d4_values_rolled} \n"
+        text += f" D4 rolado {ps.total_d4_rolled} vezes. A soma é {ps.total_d4_values_rolled} \n"
     if ps.total_d6_rolled:
-        text += f" D6 rolado {ps.total_d6_rolled} vezes. A soma total é {ps.total_d6_values_rolled} \n"
+        text += f" D6 rolado {ps.total_d6_rolled} vezes. A soma é {ps.total_d6_values_rolled} \n"
     if ps.total_d8_rolled:
-        text += f" D8 rolado {ps.total_d8_rolled} vezes. A soma total é {ps.total_d8_values_rolled} \n"
+        text += f" D8 rolado {ps.total_d8_rolled} vezes. A soma é {ps.total_d8_values_rolled} \n"
     if ps.total_d10_rolled:
-        text += f" D10 rolado {ps.total_d10_rolled} vezes. A soma total é {ps.total_d10_values_rolled} \n"
+        text += f" D10 rolado {ps.total_d10_rolled} vezes. A soma é {ps.total_d10_values_rolled} \n"
     if ps.total_d12_rolled:
-        text += f" D12 rolado {ps.total_d12_rolled} vezes. A soma total é {ps.total_d12_values_rolled} \n"
+        text += f" D12 rolado {ps.total_d12_rolled} vezes. A soma é {ps.total_d12_values_rolled} \n"
     if ps.total_d100_rolled:
-        text += f" D100 rolado {ps.total_d100_rolled} vezes. A soma total é {ps.total_d100_values_rolled} \n"
+        text += f" D100 rolado {ps.total_d100_rolled} vezes. A soma é {ps.total_d100_values_rolled} \n"
 
     text += f"O total de todos os dados rolados é: {ps.sum_dices_number_rolled}```"
     print(text)
@@ -183,28 +185,28 @@ def get_session_stats(channel, date=None):
     return [d20s_critical, d20s_fail, critics, fails, total_rolled, rolled_d20_by_player]
 
 
-def get_display_name(bot, ctx, player_id):
-    # user = bot.get_user(player_id)
-    # import discord
-    # member = discord.Server.get_member(ctx.message.server, user_id=player_id)
-    # print(user)
-    # return user.display_name
-    return player_id
+def get_display_name(player_id, channel):
+    player = get_general_status_per_channel(player_id, channel)
+    return player.display_name
 
 
 async def show_session_stats(bot, ctx, channel, date=None):
     data = get_session_stats(channel, date)
 
+    date_str = date
+    if not date:
+        date_str = "Ultima sessao"
+    
     text = f"```"
-    text += f"ESTATISTICAS {channel}\n"
+    text += f"ESTATISTICAS {channel} de {date_str}\n"
 
     text += f"Total criticos: {data[0]}\n"
     text += f"Total falhas: {data[1]}\n"
 
     if data[2]:
-        text += f"Jogador com mais criticos: {get_display_name(bot, ctx, data[2][0].player_id)} com {data[2][0].count} criticos!\n"
+        text += f"Jogador com mais criticos: {get_display_name(data[2][0].player_id, channel)} com {data[2][0].count} criticos!\n"
     if data[3]:
-        text += f"Jogador com mais falhas: {get_display_name(bot, ctx, data[3][0].player_id)} com {data[3][0].count} falhas!\n"
+        text += f"Jogador com mais falhas: {get_display_name(data[3][0].player_id, channel)} com {data[3][0].count} falhas!\n"
 
     luck_table = []
     for r in data[5]:
@@ -231,18 +233,20 @@ async def show_session_stats(bot, ctx, channel, date=None):
             break
 
     for cpp in fail_percent_per_player:
-        if cpp['average_critical'] > 0:
+        if cpp['average_fail'] > 0:
             unluck_player = cpp
             break
 
-    try:
-        text += f"Mais sortudo: {get_display_name(bot, ctx, luck_player['player_id'])} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
-    except:
-        pass
-    try:
-        text += f"Mais azarado: {get_display_name(bot, ctx, unluck_player['player_id'])} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
-    except:
-        pass
+    if luck_player:
+        try:
+            text += f"Mais sortudo: {get_display_name(luck_player['player_id'], channel)} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
+        except:
+            pass
+    if unluck_player:
+        try:
+            text += f"Mais azarado: {get_display_name(unluck_player['player_id'], channel)} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
+        except:
+            pass
     text += f"Soma de todos os dados rolados: {data[4]} "
 
     print("Criticos por jogador")
