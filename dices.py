@@ -122,13 +122,13 @@ async def calculate_dices(context, dices_positive, dices_negative, additional):
             number = number if number else 1
             results = await _roll_dice(number, dice)
             only_dices += sum(results)
-            result_dies.append(Die(number, dice, results))
+            result_dies.append(Die(len(results), dice, results))
 
         for number, dice in dices_negative:
             number = number if number else 1
             results = await _roll_dice(number, dice)
             only_dices -= sum(results)
-            result_minus_dies.append(Die(number, dice, results))
+            result_minus_dies.append(Die(len(results), dice, results))
 
         additional_eval = 0
         if additional:
