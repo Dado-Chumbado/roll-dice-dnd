@@ -4,7 +4,7 @@ import json
 
 from discord.ext import commands
 import os
-from dices import process, calculate_dices
+from dices import process, calculate_dices, process_luck_dice
 from initiative import InitTable, clean_dex
 from roll import send_roll_text, multiple_d20_text
 from stats_db import show_general_info, show_session_stats
@@ -25,6 +25,7 @@ COMMAND_ROLL = ENV['command_roll']
 COMMAND_ROLL_DOUBLE_ADVANTAGE = ENV["command_roll_double_advantage"]
 COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
+COMMAND_ROLL_LUCK_DICE = ENV["command_roll_luck"]
 COMMAND_DM_ROLL = ENV['command_dm_roll']
 #  =======================================
 COMMAND_RESET = ENV["command_reset"]
@@ -131,6 +132,21 @@ async def command_roll_disadvantage_dices(context, data=None):
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +2 por exemplo")
+        await context.send(f"Exception {e}")
+
+
+@bot.command(
+    name=COMMAND_ROLL_LUCK_DICE,
+    description="Roll dices with LUCK?"
+)
+async def command_roll_luck_dices(context, data=None):
+    try:
+        for index, dice in enumerate(await process_luck_dice(context, data)):  # Parse and roll dices
+            await send_roll_text(context, dice, True if index == 0 else False, False)
+
+    except Exception as e:
+        await context.send(
+            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_LUCK_DICE} +2 por exemplo")
         await context.send(f"Exception {e}")
 
 

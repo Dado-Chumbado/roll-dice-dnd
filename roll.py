@@ -92,7 +92,11 @@ async def send_roll_text(context, dice_list, first=True, dm=False):
     if len(dice_list['result_minus_dies']) + len(dice_list['result_dies']) == 0:
         dice_list['only_dices'] = ""
 
+    if not dice_list['additional']:
+        dice_list['additional'] = ""
+
     msg = f"{text} \n {dice_list['only_dices']}{dice_list['additional']}= **{dice_list['result_final']}**"
+
     print(f"{msg} - DM?: {dm}")
     if not dm:
         await context.send(msg)

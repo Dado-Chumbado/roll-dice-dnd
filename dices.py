@@ -38,6 +38,11 @@ async def _roll_dice(times, dice):
     return [random.randint(1, int(dice)) for _ in range(int(times))]
 
 
+async def _roll_luck_dice():
+    luck_faces = [1, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20]
+    return [random.choice(luck_faces)]
+
+
 async def process(context, dices_data):
     print(f"dices_data: {dices_data}")
 
@@ -73,12 +78,38 @@ async def process(context, dices_data):
     except:
         pass
 
-    print("Rolling")
     dices_positive, dices_negative = await parse_dices(dices_data)
     additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
     for _ in range(0, repeat):
         dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional))
+    return dices_list
+
+
+async def process_luck_dice(context, dices_data):
+    print(f"dices_data: {dices_data}")
+
+    import re
+    try:
+        if int(dices_data):
+            # Only modifier
+            if re.findall('-(\d+)?', dices_data):
+                dices_data = f'-{dices_data}'
+            else:
+                dices_data = f'+{dices_data}'
+
+            dices_data = dices_data.replace("++", "+").replace("--", "-")
+            print(f"Fixed to: {dices_data}")
+    except:
+        pass
+
+    try:
+        dices_positive, dices_negative = [], []
+        additional = await parse_additional(dices_data, dices_positive, dices_negative)
+        dices_list = [await calculate_luck_dice(context, dices_positive, dices_negative, additional)]
+    except:
+        raise
+
     return dices_list
 
 
@@ -99,19 +130,22 @@ async def parse_repeat(data):
 
 
 async def parse_additional(data, positive_dies, negative_dies):
-    for item in positive_dies:
-        dice = f"{item[0]}d{item[1]}"
-        data = data.replace(f"+{dice}", "")
-        if dice in data:
-            data = data.replace(dice, "")
+    try:
+        for item in positive_dies:
+            dice = f"{item[0]}d{item[1]}"
+            data = data.replace(f"+{dice}", "")
+            if dice in data:
+                data = data.replace(dice, "")
 
-    for item in negative_dies:
-        dice = f"{item[0]}d{item[1]}"
-        data = data.replace(f"-{dice}", "")
-        if dice in data:
-            data = data.replace(dice, "")
+        for item in negative_dies:
+            dice = f"{item[0]}d{item[1]}"
+            data = data.replace(f"-{dice}", "")
+            if dice in data:
+                data = data.replace(dice, "")
 
-    return data
+        return data
+    except:
+        raise
 
 
 async def calculate_dices(context, dices_positive, dices_negative, additional):
@@ -144,6 +178,42 @@ async def calculate_dices(context, dices_positive, dices_negative, additional):
                   "additional": additional,
                   "additional_eval": additional_eval}
 
+        # Register the dice history
+        if STATS_ENABLE:
+            for die_result in result['result_dies']:
+                for die in die_result.debug:
+                    insert_roll(context.author.id, context.author.display_name, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+
+        return result
+    except Exception as e:
+        raise
+        print(f"Exp: {e}")
+
+
+async def calculate_luck_dice(context, dices_positive, dices_negative, additional):
+    result_dies = []
+    result_minus_dies = []
+    only_dices = 0
+    try:
+        results = await _roll_luck_dice()
+        print("results", results)
+        only_dices += sum(results)
+        result_dies.append(Die(len(results), "20", results))
+
+        additional_eval = 0
+        if additional:
+            additional_eval = eval(additional)
+
+        result = {"result_dies": result_dies,
+                  "larger": result_dies[0].larger(),
+                  "smaller": result_dies[0].smaller(),
+                  "result_minus_dies": result_minus_dies,
+                  "result_final": only_dices+additional_eval,
+                  "only_dices": only_dices,
+                  "additional": additional,
+                  "additional_eval": additional_eval}
+
+        print(result)
         # Register the dice history
         if STATS_ENABLE:
             for die_result in result['result_dies']:

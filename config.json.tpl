@@ -7,6 +7,7 @@
     "command_roll_double_advantage": "vv",
     "command_roll_disadvantage": "d",
     "command_dm_roll": "dm",
+    "command_roll_luck": "sorte",
 
     "command_initiative": "i",
 
