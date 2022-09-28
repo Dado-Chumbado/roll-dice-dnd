@@ -1,5 +1,7 @@
 import random
 import json
+
+from back.tasks import save_roll
 from stats_db import *
 with open("./config.json", "r") as env:
     ENV = json.load(env)
@@ -39,7 +41,7 @@ async def _roll_dice(times, dice):
 
 
 async def _roll_luck_dice():
-    luck_faces = [1, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20]
+    luck_faces = [1, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 18, 19, 20, 1]
     return [random.choice(luck_faces)]
 
 
@@ -106,7 +108,7 @@ async def process_luck_dice(context, dices_data):
     try:
         dices_positive, dices_negative = [], []
         additional = await parse_additional(dices_data, dices_positive, dices_negative)
-        dices_list = [await calculate_luck_dice(context, dices_positive, dices_negative, additional)]
+        dices_list = [await calculate_luck_dice(context, additional)]
     except:
         raise
 
@@ -182,15 +184,15 @@ async def calculate_dices(context, dices_positive, dices_negative, additional):
         if STATS_ENABLE:
             for die_result in result['result_dies']:
                 for die in die_result.debug:
-                    insert_roll(context.author.id, context.author.display_name, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+
+                    save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:
-        raise
         print(f"Exp: {e}")
 
 
-async def calculate_luck_dice(context, dices_positive, dices_negative, additional):
+async def calculate_luck_dice(context, additional):
     result_dies = []
     result_minus_dies = []
     only_dices = 0
@@ -218,7 +220,7 @@ async def calculate_luck_dice(context, dices_positive, dices_negative, additiona
         if STATS_ENABLE:
             for die_result in result['result_dies']:
                 for die in die_result.debug:
-                    insert_roll(context.author.id, context.author.display_name, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+                    save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:

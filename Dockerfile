@@ -10,4 +10,4 @@ COPY . /app
 
 RUN pip3 install -r requirements.txt
 
-CMD [ "python", "./discord_client.py" ]
+# CMD [ "python", "./discord_client.py" ]

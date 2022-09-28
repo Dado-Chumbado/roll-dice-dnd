@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.10-management
+    ports:
+      - "5672:5672"
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=admin
+#      - RABBITMQ_DEFAULT_PASS=mypass
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: [ 'celery', '-A', 'back', 'worker', '-l', 'INFO', '-Q', 'dices' ]
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    environment:
+#      - BROKER_URL=amqp://admin:mypass@rabbitmq:5672//
+      - BROKER_URL=amqp://rabbitmq:5672//
+      - C_FORCE_ROOT=true
+    depends_on:
+      - rabbitmq
+
+  discord:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    environment:
+      - BROKER_URL=amqp://rabbitmq:5672//
+    command: [ "python", "./discord_client.py" ]
+    depends_on:
+      - celery

@@ -264,7 +264,7 @@ async def force_initiative(context, number, dex="", name_arg=""):
 )
 async def command_show_stats_player(context):
     try:
-        await show_general_info(bot, context, context.author.id, context.channel.name)
+        await show_general_info(context)
     except Exception as e:
         await context.send(f"Exception {e}")
 

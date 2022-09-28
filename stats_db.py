@@ -1,5 +1,6 @@
 import datetime
 import json
+import peewee
 from peewee import *
 
 with open("./secrets.json", "r") as env:
@@ -57,103 +58,116 @@ class Roll(Model):
 
 def setup_db():
     pg_db.connect()
-    pg_db.create_tables([PlayerStats, Roll])
-
+    try:
+        pg_db.create_tables([PlayerStats, Roll])
+    except peewee.OperationalError:
+        pass
 
 try:
     setup_db()
 except:
     pass
+finally:
+    pg_db.close()
 
 
-def update_player_stats(player_id, display_name, channel, dice, value, critical, fail):
+def update_player_stats(player_id, display_name, channel):
     try:
+        pg_db.connect()
+        query = PlayerStats.delete().where(player_id==player_id, channel==channel)
+        query.execute()
+
         player, created = PlayerStats.get_or_create(player_id=player_id, channel=channel)
-    except:
+    except Exception as e:
+        pg_db.close()
+        print(f"update_player_stats: {e}")
         raise
 
     try:
+        # for dice in Dice
         player.display_name = display_name
-        player.total_dices_rolled += 1
-        player.sum_dices_number_rolled += value
-        if dice == "d20":
-            player.total_d20_values_rolled += value
-            player.total_d20_rolled += 1
-            if critical:
-                player.total_d20_critical_rolled += 1
-            if fail:
-                player.total_d20_fails_rolled += 1
+        for r in Roll.select().where(Roll.player_id == player_id, Roll.channel == channel):
+            player.total_dices_rolled += 1
+            player.sum_dices_number_rolled += r.value
 
-        if dice == "d4":
-            player.total_d4_values_rolled += value
-            player.total_d4_rolled += 1
+            if r.dice == "d20":
+                player.total_d20_values_rolled += r.value
+                player.total_d20_rolled += 1
+                if r.critical:
+                    player.total_d20_critical_rolled += 1
+                if r.fail:
+                    player.total_d20_fails_rolled += 1
 
-        if dice == "d6":
-            player.total_d6_values_rolled += value
-            player.total_d6_rolled += 1
+            if r.dice == "d4":
+                player.total_d4_values_rolled += r.value
+                player.total_d4_rolled += 1
 
-        if dice == "d8":
-            player.total_d8_values_rolled += value
-            player.total_d8_rolled += 1
+            if r.dice == "d6":
+                player.total_d6_values_rolled += r.value
+                player.total_d6_rolled += 1
 
-        if dice == "d10":
-            player.total_d10_values_rolled += value
-            player.total_d10_rolled += 1
+            if r.dice == "d8":
+                player.total_d8_values_rolled += r.value
+                player.total_d8_rolled += 1
 
-        if dice == "d12":
-            player.total_d12_values_rolled += value
-            player.total_d12_rolled += 1
+            if r.dice == "d10":
+                player.total_d10_values_rolled += r.value
+                player.total_d10_rolled += 1
 
-        if dice == "d100":
-            player.total_d100_values_rolled += value
-            player.total_d100_rolled += 1
+            if r.dice == "d12":
+                player.total_d12_values_rolled += r.value
+                player.total_d12_rolled += 1
+
+            if r.dice == "d100":
+                player.total_d100_values_rolled += r.value
+                player.total_d100_rolled += 1
 
         player.save()
     except Exception as e:
-        pg_db.rollback()
+        pg_db.close()
         raise
+    pg_db.close()
+    return player
 
 
-def insert_roll(player_id, display_name, channel, dice_str, value, critical=False, fail=False):
+def insert_roll(player_id, channel, dice_str, value, critical=False, fail=False):
+    pg_db.connect()
+    Roll.create(player_id=player_id, channel=channel, dice=dice_str, value=value, critical=critical, fail=fail)
+    pg_db.close()
+
+
+async def show_general_info(context):
     try:
-        Roll.create(player_id=player_id, channel=channel, dice=dice_str, value=value, critical=critical, fail=fail)
-        update_player_stats(player_id, display_name, channel, dice_str, value, critical, fail)
+        ps = update_player_stats(context.author.id, context.author.display_name, context.channel.name)
+
+        text = f"```Voce rolou um total de {ps.total_dices_rolled} dados! \n"
+        text += f"D20 rolado {ps.total_d20_rolled} vezes! " \
+                f"com {ps.total_d20_critical_rolled} criticos e {ps.total_d20_fails_rolled} falhas.\n"
+        text += f"A soma dos seus d20's é {ps.total_d20_values_rolled}.\n"
+        text += f"Total de outros dados\n"
+        if ps.total_d4_rolled:
+            text += f" D4 rolado {ps.total_d4_rolled} vezes. A soma é {ps.total_d4_values_rolled} \n"
+        if ps.total_d6_rolled:
+            text += f" D6 rolado {ps.total_d6_rolled} vezes. A soma é {ps.total_d6_values_rolled} \n"
+        if ps.total_d8_rolled:
+            text += f" D8 rolado {ps.total_d8_rolled} vezes. A soma é {ps.total_d8_values_rolled} \n"
+        if ps.total_d10_rolled:
+            text += f" D10 rolado {ps.total_d10_rolled} vezes. A soma é {ps.total_d10_values_rolled} \n"
+        if ps.total_d12_rolled:
+            text += f" D12 rolado {ps.total_d12_rolled} vezes. A soma é {ps.total_d12_values_rolled} \n"
+        if ps.total_d100_rolled:
+            text += f" D100 rolado {ps.total_d100_rolled} vezes. A soma é {ps.total_d100_values_rolled} \n"
+
+        text += f"O total de todos os dados rolados é: {ps.sum_dices_number_rolled}```"
+        print(text)
+        await context.send(text)
     except Exception as e:
-        pg_db.rollback()
-        raise
-
-
-def get_general_status_per_channel(player_id, channel):
-    p = PlayerStats.get(PlayerStats.player_id == player_id, channel=channel)
-    return p
-
-
-async def show_general_info(bot, context, player_id, channel):
-    ps = get_general_status_per_channel(player_id, channel)
-    text = f"```Voce rolou um total de {ps.total_dices_rolled} dados! \n"
-    text += f"D20 rolado {ps.total_d20_rolled} vezes! " \
-            f"com {ps.total_d20_critical_rolled} criticos e {ps.total_d20_fails_rolled} falhas.\n"
-    text += f"A soma dos seus d20's é {ps.total_d20_values_rolled}.\n"
-    text += f"Total de outros dados\n"
-    if ps.total_d4_rolled:
-        text += f" D4 rolado {ps.total_d4_rolled} vezes. A soma é {ps.total_d4_values_rolled} \n"
-    if ps.total_d6_rolled:
-        text += f" D6 rolado {ps.total_d6_rolled} vezes. A soma é {ps.total_d6_values_rolled} \n"
-    if ps.total_d8_rolled:
-        text += f" D8 rolado {ps.total_d8_rolled} vezes. A soma é {ps.total_d8_values_rolled} \n"
-    if ps.total_d10_rolled:
-        text += f" D10 rolado {ps.total_d10_rolled} vezes. A soma é {ps.total_d10_values_rolled} \n"
-    if ps.total_d12_rolled:
-        text += f" D12 rolado {ps.total_d12_rolled} vezes. A soma é {ps.total_d12_values_rolled} \n"
-    if ps.total_d100_rolled:
-        text += f" D100 rolado {ps.total_d100_rolled} vezes. A soma é {ps.total_d100_values_rolled} \n"
-
-    text += f"O total de todos os dados rolados é: {ps.sum_dices_number_rolled}```"
-    print(text)
-    await context.send(text)
+        pg_db.close()
+        await context.send(e)
 
 
 def get_session_stats(channel, date=None):
+    pg_db.connect()
     if not date:
         start_range = datetime.datetime.now().date() - datetime.timedelta(days=1)
         end_range = datetime.datetime.now()
@@ -181,82 +195,95 @@ def get_session_stats(channel, date=None):
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.critical).desc())
 
     total_rolled = Roll.select(fn.SUM(Roll.value)).where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel)[0].sum
-
+    pg_db.close()
     return [d20s_critical, d20s_fail, critics, fails, total_rolled, rolled_d20_by_player]
 
 
 def get_display_name(player_id, channel):
-    player = get_general_status_per_channel(player_id, channel)
-    return player.display_name
+    return PlayerStats.get(PlayerStats.player_id == player_id, channel=channel).display_name
 
 
 async def show_session_stats(bot, ctx, channel, date=None):
-    data = get_session_stats(channel, date)
+    await ctx.send("Estatisticas da sessao nao estao prontas ainda, falta o rafa implementar isso aqui")
 
-    date_str = date
-    if not date:
-        date_str = "Ultima sessao"
-    
-    text = f"```"
-    text += f"ESTATISTICAS {channel} de {date_str}\n"
+    try:
+        data = get_session_stats(channel, date)
 
-    text += f"Total criticos: {data[0]}\n"
-    text += f"Total falhas: {data[1]}\n"
+        date_str = date
+        if not date:
+            date_str = "Ultima sessao"
 
-    if data[2]:
-        text += f"Jogador com mais criticos: {get_display_name(data[2][0].player_id, channel)} com {data[2][0].count} criticos!\n"
-    if data[3]:
-        text += f"Jogador com mais falhas: {get_display_name(data[3][0].player_id, channel)} com {data[3][0].count} falhas!\n"
+        text = f"```"
+        text += f"ESTATISTICAS {channel} de {date_str}\n"
 
-    luck_table = []
-    for r in data[5]:
-        player = {"player_id": r.player_id, "count_critical": 0, "count_fail": 0, "average_critical": 0,
-                  "average_fail": 0, "d20_rolled": r.count}
-        for critical_per_player in data[2]:
-            if r.player_id == critical_per_player.player_id:
-                player["average_critical"] = r.count / critical_per_player.count
-                player["count_critical"] = critical_per_player.count
+        text += f"Total criticos: {data[0]}\n"
+        text += f"Total falhas: {data[1]}\n"
 
-        for fails_per_player in data[3]:
-            if r.player_id == fails_per_player.player_id:
-                player["average_fail"] = r.count / fails_per_player.count
-                player["count_fail"] = fails_per_player.count
-        luck_table.append(player)
+        if data[2]:
+            text += f"Jogador com mais criticos: {get_display_name(data[2][0].player_id, channel)} com {data[2][0].count} criticos!\n"
+        if data[3]:
+            text += f"Jogador com mais falhas: {get_display_name(data[3][0].player_id, channel)} com {data[3][0].count} falhas!\n"
 
-    critical_percent_per_player = sorted(luck_table, key=lambda d: d['average_critical'])
-    fail_percent_per_player = sorted(luck_table, key=lambda d: d['average_fail'])
-    luck_player = unluck_player = None
+        luck_table = []
+        for r in data[5]:
+            player = {"player_id": r.player_id, "count_critical": 0, "count_fail": 0, "average_critical": 0,
+                      "average_fail": 0, "d20_rolled": r.count}
+            for critical_per_player in data[2]:
+                if r.player_id == critical_per_player.player_id:
+                    player["average_critical"] = r.count / critical_per_player.count
+                    player["count_critical"] = critical_per_player.count
 
-    for cpp in critical_percent_per_player:
-        if cpp['average_critical'] > 0:
-            luck_player = cpp
-            break
+            for fails_per_player in data[3]:
+                if r.player_id == fails_per_player.player_id:
+                    player["average_fail"] = r.count / fails_per_player.count
+                    player["count_fail"] = fails_per_player.count
+            luck_table.append(player)
 
-    for cpp in fail_percent_per_player:
-        if cpp['average_fail'] > 0:
-            unluck_player = cpp
-            break
+        critical_percent_per_player = sorted(luck_table, key=lambda d: d['average_critical'])
+        fail_percent_per_player = sorted(luck_table, key=lambda d: d['average_fail'])
+        luck_player = unluck_player = None
 
-    if luck_player:
-        try:
-            text += f"Mais sortudo: {get_display_name(luck_player['player_id'], channel)} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
-        except:
-            pass
-    if unluck_player:
-        try:
-            text += f"Mais azarado: {get_display_name(unluck_player['player_id'], channel)} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
-        except:
-            pass
-    text += f"Soma de todos os dados rolados: {data[4]} "
+        for cpp in critical_percent_per_player:
+            if cpp['average_critical'] > 0:
+                luck_player = cpp
+                break
 
-    print("Criticos por jogador")
-    for r in data[2]:
-        print(r.player_id, r.count)
+        for cpp in fail_percent_per_player:
+            if cpp['average_fail'] > 0:
+                unluck_player = cpp
+                break
 
-    print("Falhas por jogador")
-    for r in data[3]:
-        print(r.player_id, r.count)
+        if luck_player:
+            try:
+                text += f"Mais sortudo: {get_display_name(luck_player['player_id'], channel)} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
+            except:
+                pass
+        if unluck_player:
+            try:
+                text += f"Mais azarado: {get_display_name(unluck_player['player_id'], channel)} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
+            except:
+                pass
+        text += f"Soma de todos os dados rolados: {data[4]} "
 
-    text += "```"
-    print(text)
-    await ctx.send(text)
+        print("Criticos por jogador")
+        for r in data[2]:
+            print(r.player_id, r.count)
+
+        print("Falhas por jogador")
+        for r in data[3]:
+            print(r.player_id, r.count)
+
+        text += "```"
+        print(text)
+        pg_db.close()
+        await ctx.send(text)
+    except Exception as e:
+        pg_db.close()
+        print(e)
+        await ctx.send(e)
+
+
+def force_recalculate_channel(channel):
+    # for player in Roll.
+    # update_player_stats
+    pass
