@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.9-slim
 
 LABEL author="Rafael Sandrini" maintainer="rafael@sandrini.com.br"
 
@@ -8,6 +8,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip3 install -r requirements.txt
+RUN apt-get update && apt-get install -y libpq-dev python-dev gcc python3-psycopg2
 
-CMD [ "python", "./discord_client.py" ]
+RUN pip3 install -r requirements.txt

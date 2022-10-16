@@ -19,4 +19,4 @@ To get your own bot, follow these steps:
 - save the file and quit
 - start the bot with the command `python3 discord_client.py`
 
-docker build . -t roll-dices && docker run roll-dices
+docker build . -t roll-dices && docker run -d roll-dices

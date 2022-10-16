@@ -10,6 +10,7 @@ secrets.json
 # don't commit our env variables
 env.json
 venv
+config.json
 # dotenv
 .env
 
@@ -29,3 +30,8 @@ images_fail/*
 images_fail_helper/*
 !images_fail_helper/.gitkeep
 
+.idea
+.idea/*
+
+database.ini
+*.db
