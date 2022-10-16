@@ -1,5 +1,14 @@
-from back.celery import app
+import os
+from celery import Celery
 from stats_db import insert_roll
+
+app = Celery('.',
+             broker=os.getenv('BROKER_URL'),
+             include=['tasks'])
+app.conf.task_default_queue = 'dices'
+
+if __name__ == '__main__':
+    app.start()
 
 
 @app.task(bind=True)

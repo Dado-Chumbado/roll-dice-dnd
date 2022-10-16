@@ -1,7 +1,7 @@
 import random
 import json
 
-from back.tasks import save_roll
+from tasks import save_roll
 from stats_db import *
 with open("./config.json", "r") as env:
     ENV = json.load(env)

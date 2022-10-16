@@ -1,20 +1,19 @@
-version: '3.8'
+version: '3.3'
 
 services:
   rabbitmq:
     image: rabbitmq:3.10-management
     ports:
       - "5672:5672"
-    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    restart: unless-stopped
 
   celery:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [ 'celery', '-A', 'back', 'worker', '-l', 'INFO', '-Q', 'dices' ]
-    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    command: [ 'celery', '-A', 'tasks', 'worker', '-l', 'INFO', '-Q', 'dices' ]
+    restart: unless-stopped
     environment:
-#      - BROKER_URL=amqp://admin:mypass@rabbitmq:5672//
       - BROKER_URL=amqp://rabbitmq:5672//
       - C_FORCE_ROOT=true
     depends_on:
@@ -24,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    restart: unless-stopped
     environment:
       - BROKER_URL=amqp://rabbitmq:5672//
     command: [ "python", "./discord_client.py" ]
