@@ -214,8 +214,9 @@ async def remove_initiative(context, index=0):
     name=COMMAND_ADD_CONDITION_INITIATIVE,
     description="Add item from table"
 )
-async def add_condition_initiative(context, index, condition):
-    await init_items.add_condition(context.channel.name, index, condition)
+async def add_condition_initiative(context, index, *args):
+    data = ' '.join(args)
+    await init_items.add_condition(context.channel.name, index, data)
     await init_items.show(context.channel.name, context)
 
 
@@ -232,17 +233,18 @@ async def remove_initiative(context, index):
     name=COMMAND_ROLL_INITIATIVE,
     description=""
 )
-async def roll_initiative(context, dex="", name_arg="", repeat=1):
+async def roll_initiative(context, dex="", repeat=1, *args):
     try:
+        data = ' '.join(args)
         channel = context.channel.name
         if not dex:
             await init_items.show(context.channel.name, context)
             return
 
         for i in range(0, repeat):
-            name = f"{name_arg}" if name_arg else context.message.author.display_name
+            name = f"{data}" if data else context.message.author.display_name
             if repeat > 1:
-                name += f"_{i+1}"
+                name += f" {i+1}"
 
             dices = await calculate_dices(context, [[1, 20]], [], dex)
             await init_items.add(channel, name, dices['only_dices'], dex)
@@ -257,13 +259,14 @@ async def roll_initiative(context, dex="", name_arg="", repeat=1):
     name=COMMAND_ROLL_INITIATIVE_ADV,
     description=""
 )
-async def roll_initiative_advantage(context, dex="", name_arg=""):
+async def roll_initiative_advantage(context, dex="", *args):
     try:
+        data = ' '.join(args)
         if not dex:
             await init_items.show(context.channel.name, context)
             return
 
-        name = f"{name_arg}" if name_arg else context.message.author.display_name
+        name = f"{data}" if data else context.message.author.display_name
 
         dices = await calculate_dices(context, [[2, 20]], [], dex)
 
@@ -281,14 +284,14 @@ async def roll_initiative_advantage(context, dex="", name_arg=""):
     name=COMMAND_FORCE_INITIATIVE,
     description=""
 )
-async def force_initiative(context, number, dex="", name_arg=""):
+async def force_initiative(context, dice, dex="", *args):
     try:
-
-        number, _ = await clean_dex(number)
+        data = ' '.join(args)
+        dice, _ = await clean_dex(dice)
         dex, neg = await clean_dex(dex)
-        name = f"{name_arg}" if name_arg else context.message.author.display_name
+        name = f"{data}" if data else context.message.author.display_name
 
-        await init_items.add(context.channel.name, name, number, dex if not neg else dex*-1)
+        await init_items.add(context.channel.name, name, dice, dex if not neg else dex*-1)
         await init_items.show(context.channel.name, context)
 
     except Exception as e:
