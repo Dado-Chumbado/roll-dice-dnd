@@ -45,9 +45,7 @@ async def _roll_luck_dice():
     return [random.choice(luck_faces)]
 
 
-async def process(context, dices_data):
-    print(f"dices_data: {dices_data}")
-
+async def process(context, dices_data, ignore_d20=False):
     repeat = await parse_repeat(dices_data)
     if repeat:
         repeat = int(repeat[0])
@@ -84,7 +82,7 @@ async def process(context, dices_data):
     additional = await parse_additional(dices_data, dices_positive, dices_negative)
     dices_list = []
     for _ in range(0, repeat):
-        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional))
+        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20))
     return dices_list
 
 
@@ -150,18 +148,26 @@ async def parse_additional(data, positive_dies, negative_dies):
         raise
 
 
-async def calculate_dices(context, dices_positive, dices_negative, additional):
+async def calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20=False):
+    # ignore_d20 Used to roll without d20 for adv
     result_dies = []
     result_minus_dies = []
     only_dices = 0
     try:
         for number, dice in dices_positive:
+
+            if ignore_d20 and dice == "20":
+                continue
+
             number = number if number else 1
             results = await _roll_dice(number, dice)
             only_dices += sum(results)
             result_dies.append(Die(len(results), dice, results))
 
         for number, dice in dices_negative:
+            if ignore_d20 and dice == "20":
+                continue
+
             number = number if number else 1
             results = await _roll_dice(number, dice)
             only_dices -= sum(results)
@@ -190,6 +196,7 @@ async def calculate_dices(context, dices_positive, dices_negative, additional):
         return result
     except Exception as e:
         print(f"Exp: {e}")
+        raise
 
 
 async def calculate_luck_dice(context, additional):

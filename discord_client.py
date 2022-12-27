@@ -57,12 +57,15 @@ bot = commands.Bot(
     name=COMMAND_DM_ROLL,
     description="Roll private dices?"
 )
-async def command_roll_dm_dices(context, data):
+async def command_roll_dm_dices(context, *args):
     try:
         '''
             process("1d10+1d4-1")
             (['1d10 = [3]', '1d4 = [2]'], 4)
         '''
+        data = ''.join(args)
+        if not data:
+            data = "d20"
 
         for index, dice in enumerate(await process(context, data)):   # Parse and roll dices
             await send_roll_text(context, dice, True if index == 0 else False, True)
@@ -76,18 +79,16 @@ async def command_roll_dm_dices(context, data):
     name=COMMAND_ROLL,
     description="Roll dices?"
 )
-async def command_roll_dices(context, data="d20"):
+async def command_roll_dices(context, *args):
     try:
-        '''
-            process("1d10+1d4-1")
-            (['1d10 = [3]', '1d4 = [2]'], 4)
-        '''
+        data = ''.join(args)
+        if not data:
+            data = "d20"
 
         for index, dice_list in enumerate(await process(context, data)):   # Parse and roll dices
             await send_roll_text(context, dice_list, True if index == 0 else False)
 
     except Exception as e:
-        raise
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
 
@@ -96,11 +97,24 @@ async def command_roll_dices(context, data="d20"):
     name=COMMAND_ROLL_ADVANTAGE,
     description="Roll dices with advantage?"
 )
-async def command_roll_advantage_dices(context, data=None):
+async def command_roll_advantage_dices(context, *args):
     try:
-        dices = await calculate_dices(context, [[2, 20]], [], data)
-        print(dices)
-        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
+        data = ''.join(args)
+
+        # Clean up
+        if data == "d20":
+            data = None
+        else:
+            data = data.replace("d20", "")
+
+        dices = await calculate_dices(context, [[2, 20]], [], None)
+        try:
+            # Try to evaluate extra data
+            additional_dices = await process(context, data, ignore_d20=True)
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, additional_dices, True)
+        except:
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
+
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
@@ -111,13 +125,26 @@ async def command_roll_advantage_dices(context, data=None):
     name=COMMAND_ROLL_DOUBLE_ADVANTAGE,
     description="Roll dices with double advantage?"
 )
-async def command_roll_double_advantage_dices(context, data=None):
+async def command_roll_double_advantage_dices(context, *args):
     try:
-        dices = await calculate_dices(context, [[3, 20]], [], data)
-        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
+        data = ''.join(args)
+        # Clean up
+        if data == "d20":
+            data = None
+        else:
+            data = data.replace("d20", "")
+
+        dices = await calculate_dices(context, [[3, 20]], [], None)
+        try:
+            # Try to evaluate extra data
+            additional_dices = await process(context, data, ignore_d20=True)
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, additional_dices, True)
+        except:
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
     except Exception as e:
         await context.send(
-            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo")
+            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo \n"
+            f"Voce tbm pode rolar com {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +d6+1")
         await context.send(f"Exception {e}")
 
 
@@ -125,13 +152,26 @@ async def command_roll_double_advantage_dices(context, data=None):
     name=COMMAND_ROLL_DISADVANTAGE,
     description="Roll dices with disadvantage?"
 )
-async def command_roll_disadvantage_dices(context, data=None):
+async def command_roll_disadvantage_dices(context, *args):
     try:
-        dices = await calculate_dices(context, [[2, 20]], [], data)
-        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, False)
+        data = ''.join(args)
+        # Clean up
+        if data == "d20":
+            data = None
+        else:
+            data = data.replace("d20", "")
+
+        dices = await calculate_dices(context, [[2, 20]], [], None)
+        try:
+            # Try to evaluate extra data
+            additional_dices = await process(context, data, ignore_d20=True)
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, additional_dices, False)
+        except:
+            await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, False)
     except Exception as e:
         await context.send(
-            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +2 por exemplo")
+            f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo \n"
+            f"Voce tbm pode rolar com {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +d6+1")
         await context.send(f"Exception {e}")
 
 
