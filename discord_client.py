@@ -2,8 +2,12 @@
 
 import json
 
-from discord.ext import commands
 import os
+
+import discord
+from discord import *
+from discord.ext import commands
+
 from dices import process, calculate_dices, process_luck_dice
 from initiative import InitTable, clean_dex
 from roll import send_roll_text, multiple_d20_text
@@ -46,11 +50,17 @@ with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 init_items = InitTable()
 
-bot = commands.Bot(
-    command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
-    description="Roll a random dices, normal or with advantages/disadvantages and control initiative table"
-)
+# bot = commands.Bot(
+#     command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
+#     description="Roll a random dices, normal or with advantages/disadvantages and control initiative table"
+# )
 
+intents = discord.Intents.default()
+intents.message_content = True
+intents.message_content = True
+bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
+                   description="Roll a random dices, normal or with advantages/disadvantages and control initiative table",
+                   intents=intents)
 
 # COMMANDS ================
 @bot.command(
@@ -343,6 +353,5 @@ async def command_helper(context):
 @bot.event
 async def on_ready():
     print(f"I'm logged in as {bot.user.name} !\n Statistics enable: {STATS_ENABLE}")
-
 
 bot.run(DISCORD_TOKEN)
