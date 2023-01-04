@@ -23,6 +23,6 @@
     "command_show_stats_player": "s",
     "command_show_stats_session": "stats",
 
-    "stats": "1"
+    "stats": "0"
 
 }
