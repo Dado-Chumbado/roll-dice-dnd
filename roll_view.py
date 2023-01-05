@@ -2,7 +2,7 @@ async def get_roll_text(context, dice_result_dict, first=True):
     text = ""
     user = context.message.author
     if first:
-        text = f"{user.display_name}: "
+        text = f"{user.display_name}: \n"
 
     try:
         list_of_dices = []
@@ -14,7 +14,7 @@ async def get_roll_text(context, dice_result_dict, first=True):
                 list_of_dices.append(dice)
 
         for die in list_of_dices:
-            text += f"\n{die.verbose} => ["
+            text += f"\n> *{die.verbose}* => ["
             for index, dice_rolled in enumerate(die.list_of_result):
                 dice, confirmed = dice_rolled
                 comma = bold = ""
