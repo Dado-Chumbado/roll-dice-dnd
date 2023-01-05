@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
 import json
-
 import os
-
 import discord
-from discord import *
 from discord.ext import commands
-
-from dices import process, calculate_dices, process_luck_dice
+from dices import process, calculate_dices
 from initiative import InitTable, clean_dex
 from roll_view import multiple_d20_text, get_roll_text
 from stats_db import show_general_info, show_session_stats
@@ -159,7 +155,6 @@ async def command_roll_double_advantage_dices(context, *args):
             additional_dices = await process(context, data, ignore_d20=True)
             text = await multiple_d20_text(context, dices, additional_dices, True)
         except:
-            # await multiple_d20_text(context, dices['result_dies'][0].list_of_result, data, True)
             raise
 
         if text:
@@ -169,15 +164,6 @@ async def command_roll_double_advantage_dices(context, *args):
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +2 por exemplo \n"
             f"Voce tbm pode rolar com {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +d6+1")
         await context.send(f"Exception {e}")
-
-
-async def sanitize_input(data):
-    if data == "+" or data == "-":
-        data = ""
-    data = data.replace("++", "+")
-    data = data.replace("--", "-")
-    return data
-
 
 @bot.command(
     name=COMMAND_ROLL_DISADVANTAGE,
@@ -213,17 +199,34 @@ async def command_roll_disadvantage_dices(context, *args):
     name=COMMAND_ROLL_LUCK_DICE,
     description="Roll dices with LUCK?"
 )
-async def command_roll_luck_dices(context, data=None):
-    try:
-        for index, dice in enumerate(await process_luck_dice(context, data)):  # Parse and roll dices
-            text, result_text, msg_result = await get_roll_text(context, dice, True if index == 0 else False)
-            await context.send(f"{text}\n\n{result_text}{msg_result}")
+async def command_roll_luck_dices(context, *args):
+    data = ''.join(args)
+    # SANITIZE STRING -> MOVE THIS
+    if data == "d20":
+        data = ""
+    data = data.replace("d20", "")
+    data = await sanitize_input(data)
 
+    dices = await calculate_dices(context, [[1, 20]], [], None, luck=True)
+    try:
+        # Try to evaluate extra data
+        additional_dices = await process(context, data, ignore_d20=True)
+        text = await multiple_d20_text(context, dices, additional_dices, True)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_LUCK_DICE} +2 por exemplo")
         await context.send(f"Exception {e}")
 
+    if text:
+        await context.send(text)
+
+
+async def sanitize_input(data):
+    if data == "+" or data == "-":
+        data = ""
+    data = data.replace("++", "+")
+    data = data.replace("--", "-")
+    return data
 
 #============================================================================
 

@@ -73,7 +73,7 @@ async def _roll_luck_dice():
     return [random.choice(luck_faces)]
 
 
-async def process(context, dices_data, ignore_d20=False, reroll=None):
+async def process(context, dices_data, ignore_d20=False, reroll=None, luck=None):
     repeat = await parse_repeat(dices_data)
     if repeat:
         repeat = int(repeat[0])
@@ -111,34 +111,7 @@ async def process(context, dices_data, ignore_d20=False, reroll=None):
     dices_list = []
 
     for _ in range(0, repeat):
-        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20, reroll))
-    return dices_list
-
-
-async def process_luck_dice(context, dices_data):
-    print(f"dices_data: {dices_data}")
-
-    import re
-    try:
-        if int(dices_data):
-            # Only modifier
-            if re.findall('-(\d+)?', dices_data):
-                dices_data = f'-{dices_data}'
-            else:
-                dices_data = f'+{dices_data}'
-
-            dices_data = dices_data.replace("++", "+").replace("--", "-")
-            print(f"Fixed to: {dices_data}")
-    except:
-        pass
-
-    try:
-        dices_positive, dices_negative = [], []
-        additional = await parse_additional(dices_data, dices_positive, dices_negative)
-        dices_list = [await calculate_luck_dice(context, additional)]
-    except:
-        raise
-
+        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20, reroll, luck))
     return dices_list
 
 
@@ -177,9 +150,12 @@ async def parse_additional(data, positive_dies, negative_dies):
         raise
 
 
-async def roll_and_reroll(number, dice, reroll):
+async def roll_and_reroll(number, dice, reroll, luck=False):
     number = number if number else 1
-    results = first_results = [[dice, True] for dice in await _roll_dice(number, dice)]
+    if luck:
+        results = first_results = [[dice, True] for dice in await _roll_luck_dice()]
+    else:
+        results = first_results = [[dice, True] for dice in await _roll_dice(number, dice)]
     roll_again = 0
     for index, dice_rolled in enumerate(first_results):
         if reroll and dice_rolled[0] <= int(reroll.split("r")[1]):
@@ -196,7 +172,7 @@ async def roll_and_reroll(number, dice, reroll):
     return Die(number, dice, results)
 
 
-async def calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20=False, reroll=None, adv=None):
+async def calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20=False, reroll=None, adv=None, luck=False):
     '''
         Context => Discord context to capture player name and channel name
         dices_positive => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
@@ -215,7 +191,7 @@ async def calculate_dices(context, dices_positive, dices_negative, additional, i
             if ignore_d20 and dice == "20":
                 continue
 
-            rolled = await roll_and_reroll(number, dice, reroll if i == 0 else None)
+            rolled = await roll_and_reroll(number, dice, reroll if i == 0 else None, luck)
             if adv is not None:
                 rolled.set_validation_adv(adv)
 
@@ -250,39 +226,3 @@ async def calculate_dices(context, dices_positive, dices_negative, additional, i
     except Exception as e:
         print(f"Exp: {e}")
         raise
-
-
-async def calculate_luck_dice(context, additional):
-    result_dies = []
-    result_minus_dies = []
-    only_dices = 0
-    try:
-        results = await _roll_luck_dice()
-        print("results", results)
-        only_dices += sum(results)
-        result_dies.append(Die(len(results), "20", results))
-
-        additional_eval = 0
-        if additional:
-            additional_eval = eval(additional)
-
-        result = {"result_dies": result_dies,
-                  "larger": result_dies[0].larger(),
-                  "smaller": result_dies[0].smaller(),
-                  "result_minus_dies": result_minus_dies,
-                  "result_final": only_dices+additional_eval,
-                  "only_dices": only_dices,
-                  "additional": additional,
-                  "additional_eval": additional_eval}
-
-        print(result)
-        # Register the dice history
-        if STATS_ENABLE:
-            for die_result in result['result_dies']:
-                for die in die_result.debug:
-                    save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
-
-        return result
-    except Exception as e:
-        raise
-        print(f"Exp: {e}")
