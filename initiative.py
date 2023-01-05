@@ -51,6 +51,7 @@ def save_initiative_table(channel, data):
 class InitTable:
 
     initiative_table = []
+    initiative_last_msg = None
 
     async def add(self, channel, name, value, dex=0):
         self.initiative_table = load_initiative_table(channel)
@@ -92,9 +93,9 @@ class InitTable:
         #     pass
 
         if len(self.initiative_table) == 0:
-            await context.send("Nenhuma iniciativa registrada")
+            return await context.send("Nenhuma iniciativa registrada")
         else:
-            await context.send(text)
+            return await context.send(text)
 
 
 async def clean_dex(value):

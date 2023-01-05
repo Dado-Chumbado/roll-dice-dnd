@@ -46,12 +46,14 @@ with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 init_items = InitTable()
 
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.message_content = True
 bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
                    description="Roll a random dices, normal or with advantages/disadvantages and control initiative table",
                    intents=intents)
+
 
 # COMMANDS ================
 @bot.command(
@@ -236,7 +238,11 @@ async def sanitize_input(data):
 )
 async def roll_reset_initiative(context):
     await init_items.reset(context.channel.name)
-    await context.send("OK, limpei a tabela. Bons dados :)")
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await context.send("OK, limpei a tabela. Bons dados :)")
 
 
 @bot.command(
@@ -245,7 +251,11 @@ async def roll_reset_initiative(context):
 )
 async def remove_initiative(context, index=0):
     await init_items.remove_index(context.channel.name, index)
-    await init_items.show(context.channel.name, context)
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
 
 @bot.command(
@@ -255,7 +265,11 @@ async def remove_initiative(context, index=0):
 async def add_condition_initiative(context, index, *args):
     data = ' '.join(args)
     await init_items.add_condition(context.channel.name, index, data)
-    await init_items.show(context.channel.name, context)
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
 
 @bot.command(
@@ -264,7 +278,11 @@ async def add_condition_initiative(context, index, *args):
 )
 async def remove_initiative(context, index):
     await init_items.remove_condition(context.channel.name, index)
-    await init_items.show(context.channel.name, context)
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
 
 @bot.command(
@@ -286,10 +304,16 @@ async def roll_initiative(context, dex="", repeat=1, *args):
 
             dices = await calculate_dices(context, [[1, 20]], [], dex)
             await init_items.add(channel, name, dices['only_dices'], dex)
-        await init_items.show(channel, context)
+
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
+
+        init_items.initiative_last_msg = await init_items.show(channel, context)
 
     except Exception as e:
-        await context.send(f"Digite um numero (normalmente sua destreza). {dex} não é válido... ")
+        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 por exemplo")
+        await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 3 Nome do bicho ( Iniciativa | Quantidade | Nome )")
         await context.send(f"Exception {e}")
 
 
@@ -310,10 +334,15 @@ async def roll_initiative_advantage(context, dex="", *args):
 
         await multiple_d20_text(context, dices['result_dies'][0].list_of_result, dex, True)
         await init_items.add(context.channel.name, name, dices['result_dies'][0].larger(), dex)
-        await init_items.show(context.channel.name, context)
+
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
+
+        init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
     except Exception as e:
-        await context.send(f"Digite um numero (normalmente sua destreza). {dex} não é válido... ")
+        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE_ADV} +2 por exemplo")
         await context.send(f"Exception {e}")
         raise
 
@@ -330,10 +359,14 @@ async def force_initiative(context, dice, dex="", *args):
         name = f"{data}" if data else context.message.author.display_name
 
         await init_items.add(context.channel.name, name, dice, dex if not neg else dex*-1)
-        await init_items.show(context.channel.name, context)
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
+
+        init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
     except Exception as e:
-        await context.send(f"Manda o comando direito mestre... ")
+        await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_FORCE_INITIATIVE} 2 3 Nome ( Valor do dado | Iniciativa | Nome )")
         await context.send(f"Exception {e}")
 
 
