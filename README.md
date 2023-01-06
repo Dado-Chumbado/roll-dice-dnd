@@ -6,8 +6,8 @@ Roll n dies
 
 To get your own bot, follow these steps:
 - download or clone this repository.
-- copy the `env.json.tpl` file to `env.json`
-- edit the `env.json` file
+- copy the `config.json.tpl` file to `config.json`
+- edit the `config.json` file
 
 - follow steps for the service you want (see below)
 
@@ -19,4 +19,7 @@ To get your own bot, follow these steps:
 - save the file and quit
 - start the bot with the command `python3 discord_client.py`
 
-docker build . -t roll-dices && docker run -d roll-dices
+[comment]: <> (docker build . -t roll-dices && docker run -d roll-dices)
+
+New version: 
+docker-compose up -d
