@@ -289,11 +289,20 @@ async def remove_initiative(context, index):
     name=COMMAND_ROLL_INITIATIVE,
     description=""
 )
-async def roll_initiative(context, dex="", repeat=1, *args):
+async def roll_initiative(context, dex="", repeat="1", *args):
     try:
-        data = ' '.join(args)
+        try:
+            repeat = int(repeat)
+            data = ' '.join(args)
+        except Exception as e:
+            data = repeat
+            repeat = 1
+
         channel = context.channel.name
-        if not dex:
+
+        print("dex", dex, "repeat", repeat, "args", *args, "data", data)
+        if dex == "":
+            print("Show init table")
             await init_items.show(context.channel.name, context)
             return
 
@@ -314,7 +323,7 @@ async def roll_initiative(context, dex="", repeat=1, *args):
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 por exemplo")
         await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 3 Nome do bicho ( Iniciativa | Quantidade | Nome )")
-        await context.send(f"Exception {e}")
+        # await context.send(f"Exception {e}")
 
 
 @bot.command(

@@ -28,11 +28,10 @@ async def get_roll_text(context, dice_result_dict, first=True):
                     text += f" {dice}{bold}{comma}"
             text += " ]"
 
-        # if len(dice_list['result_minus_dies']) + len([dice for dice in dice_list['result_dies'] if not dice[1]]) == 0:
-        #     dice_list['only_dices'] = ""
-
         if not dice_result_dict['additional']:
             dice_result_dict['additional'] = ""
+        if not "+" in dice_result_dict['additional']:
+            dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
         print(dice_result_dict)
         msg, msg_operation, msg_result = f"{text}", \
                           f"{dice_result_dict['only_dices']}{dice_result_dict['additional']}", \
@@ -45,40 +44,6 @@ async def get_roll_text(context, dice_result_dict, first=True):
 
 
 async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv=True):
-    # dice_result = dices['result_dies'].get_list_of_result()
-    # try:
-    #     text_d20 = f"> {context.message.author.display_name}: 1d20 => ["
-    # except:
-    #     text_d20 = f"> 1d20 => ["
-    #
-    # result = 0
-    # completed = False
-    # for index, dice in enumerate(dice_result):
-    #     max_dice = max(dice_result)
-    #     min_dice = min(dice_result)
-    #     if 0 < index < len(dice_result):
-    #         text_d20 += ","
-    #     if adv:
-    #         if dice == max_dice and not completed:
-    #             text_d20 += f" {dice}{'!' if dice == 20 or dice == 1 else ''}"
-    #             completed = True
-    #             result = dice
-    #             continue
-    #         text_d20 += f" ~~{dice}~~"
-    #     else:
-    #         if dice == min_dice and not completed:
-    #             text_d20 += f" {dice}{'!' if dice == 20 or dice == 1 else ''}"
-    #             completed = True
-    #             result = dice
-    #             continue
-    #         text_d20 += f" ~~{dice}~~ "
-    #
-    # text_d20 += f" ]"
-
-    print("dice_result_dict", dice_result_dict)
-    print()
-    print("additional_data", additional_data)
-
     dice_obj = dice_result_dict['result_dies'][0]
     dice_obj.set_validation_adv()
 
@@ -107,46 +72,3 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv
     additional_text = await get_roll_text(context, additional_data, False)
     result_final = result + additional_data['result_final']
     return f"{text} \n{additional_text[0]}\n\n {result}+{additional_text[1]}= **{result_final}**"
-
-# async def send_roll_text(context, dice_list, first=True, dm=False):
-#     text = ""
-#     user = context.message.author
-#     if first:
-#         text = f"{user.display_name}: "
-#
-#     try:
-#         list_of_dices = []
-#         list_of_dices.append(dice_list['result_dies'])
-#         if dice_list['result_minus_dies']:
-#             list_of_dices.append(dice_list['result_minus_dies'])
-#         for die in list_of_dices:
-#             print(die.list_of_result)
-#             text += f"{die.verbose}  => ["
-#             for index, dice in enumerate(die.list_of_result):
-#                 comma = bold = ""
-#                 if index != len(die.list_of_result) - 1:
-#                     comma = ","
-#                 if dice[0] == die.dice_base or dice[0] == 1:
-#                     bold = "!"
-#                 if not dice[1]:
-#                     text += f" ~~{dice[0]}{bold}~~{comma}"
-#                 else:
-#                     text += f" {dice[0]}{bold}{comma}"
-#             text += " ]"
-#
-#         # if len(dice_list['result_minus_dies']) + len([dice for dice in dice_list['result_dies'] if not dice[1]]) == 0:
-#         #     dice_list['only_dices'] = ""
-#
-#         if not dice_list['additional']:
-#             dice_list['additional'] = ""
-#
-#         msg = f"{text} \n {dice_list['only_dices']}{dice_list['additional']}= **{dice_list['result_final']}**"
-#
-#         print(f"{msg} - DM?: {dm}")
-#         if not dm:
-#             await context.send(msg)
-#         else:
-#             await user.send(msg)
-#     except Exception as e:
-#         print(e)
-#         raise
