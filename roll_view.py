@@ -30,8 +30,9 @@ async def get_roll_text(context, dice_result_dict, first=True):
 
         if not dice_result_dict['additional']:
             dice_result_dict['additional'] = ""
-        if not "+" in dice_result_dict['additional'][0] and not "-" in dice_result_dict['additional'][0]:
-            dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
+        if len(dice_result_dict['additional']) > 0:
+            if not "+" in dice_result_dict['additional'][0] and not "-" in dice_result_dict['additional'][0]:
+                dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
         print(dice_result_dict)
         msg, msg_operation, msg_result = f"{text}", \
                           f"{dice_result_dict['only_dices']}{dice_result_dict['additional']}", \

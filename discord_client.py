@@ -49,7 +49,6 @@ init_items = InitTable()
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.message_content = True
 bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
                    description="Roll a random dices, normal or with advantages/disadvantages and control initiative table",
                    intents=intents)
@@ -58,7 +57,7 @@ bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
 # COMMANDS ================
 @bot.command(
     name=COMMAND_DM_ROLL,
-    description="Roll private dices?"
+    description="Roll private dices"
 )
 async def command_roll_dm_dices(context, *args):
     try:
@@ -85,7 +84,7 @@ async def command_roll_dm_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL,
-    description="Roll dices?"
+    description="Roll dices"
 )
 async def command_roll_dices(context, *args):
     try:
@@ -108,7 +107,7 @@ async def command_roll_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_ADVANTAGE,
-    description="Roll dices with advantage?"
+    description="Roll dices with advantage"
 )
 async def command_roll_advantage_dices(context, *args):
     try:
@@ -140,7 +139,7 @@ async def command_roll_advantage_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_DOUBLE_ADVANTAGE,
-    description="Roll dices with double advantage?"
+    description="Roll dices with double advantage"
 )
 async def command_roll_double_advantage_dices(context, *args):
     try:
@@ -169,7 +168,7 @@ async def command_roll_double_advantage_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_DISADVANTAGE,
-    description="Roll dices with disadvantage?"
+    description="Roll dices with disadvantage"
 )
 async def command_roll_disadvantage_dices(context, *args):
     try:
