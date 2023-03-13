@@ -1,7 +1,6 @@
 import random
 import json
 
-from tasks import save_roll
 from stats_db import *
 with open("./config.json", "r") as env:
     ENV = json.load(env)
@@ -220,7 +219,8 @@ async def calculate_dices(context, dices_positive, dices_negative, additional, i
         if STATS_ENABLE:
             for die_result in result['result_dies']:
                 for die in die_result.debug:
-                    save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+                    insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+                    # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:
