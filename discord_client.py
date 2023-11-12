@@ -340,7 +340,8 @@ async def roll_initiative_advantage(context, dex="", *args):
 
         dices = await calculate_dices(context, [[2, 20]], [], dex)
 
-        await multiple_d20_text(context, dices['result_dies'][0].list_of_result, dex, True)
+        text = await multiple_d20_text(context, dices, None, True)
+        await context.send(text)
         await init_items.add(context.channel.name, name, dices['result_dies'][0].larger(), dex)
 
         # Delete last msg and send the new one
