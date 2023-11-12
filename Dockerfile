@@ -8,6 +8,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN apt-get update && apt-get install -y libpq-dev python-dev gcc python3-psycopg2
+RUN apt-get update && apt-get install -y libpq-dev gcc python3-psycopg2
 
 RUN pip3 install -r requirements.txt

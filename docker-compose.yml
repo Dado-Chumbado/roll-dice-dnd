@@ -6,5 +6,5 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: [ "python", "./discord_client.py" ]
+    command: [ "python3", "./discord_client.py" ]
 
