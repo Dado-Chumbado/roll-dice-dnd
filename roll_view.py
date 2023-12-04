@@ -76,7 +76,10 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None):
         # msg, msg_operation, msg_result
         additional_text = "", f"{additional_data['result_final']}", ""
         result_final = result + additional_data['result_final']
-        return f"{text} \n{additional_text[0]}\n {result}+{additional_text[1]}= **{result_final}**"
+
+        signal = "+" if additional_data['result_final'] > 0 else ""
+
+        return f"{text} \n{additional_text[0]}\n {result}{signal}{additional_text[1]}= **{result_final}**"
 
     # Continue with a adv + dice + additional
     additional_text = await get_roll_text(context, additional_data, False)

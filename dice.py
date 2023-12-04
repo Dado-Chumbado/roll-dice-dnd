@@ -78,6 +78,10 @@ async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
     if dice_data == "0":
         dice_data = "d20"
 
+    #remove empty spaces in dice_data
+    dice_data = dice_data.replace(" ", "")
+    print(f"dice_data: {dice_data} with reroll: {reroll}")
+
     repeat = await parse_repeat(dice_data)
     if repeat:
         repeat = int(repeat[0])
@@ -161,12 +165,17 @@ async def roll_and_reroll(number, dice, reroll, luck=False):
     else:
         results = first_results = [[dice, True] for dice in await _roll_dice(number, dice)]
     roll_again = 0
-    for index, dice_rolled in enumerate(first_results):
-        if reroll and dice_rolled[0] <= int(reroll.split("r")[1]):
-            # Set the first roll as not active
-            results[index][1] = False
-            # Reroll the new dice
-            roll_again += 1
+
+    try:
+        for index, dice_rolled in enumerate(first_results):
+            a = int(reroll.split('r')[1])
+            if reroll and dice_rolled[0] <= int(reroll.split("r")[1]):
+                # Set the first roll as not active
+                results[index][1] = False
+                # Reroll the new dice
+                roll_again += 1
+    except Exception as e:
+        pass
 
     # for some reason I need to run this in another loop to avoid a infinity looping running
     for _ in range(roll_again):
@@ -189,13 +198,14 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
     result_die = []
     result_minus_die = []
     only_dice = 0
+
     try:
         for i, d in enumerate(dice_positive):
             number, dice = d
             if ignore_d20 and dice == "20":
                 continue
 
-            rolled = await roll_and_reroll(number, dice, reroll if i == 0 else None, luck)
+            rolled = await roll_and_reroll(number, dice, reroll if i != 0 else None, luck)
             if adv is not None:
                 rolled.set_validation_adv(adv)
 
