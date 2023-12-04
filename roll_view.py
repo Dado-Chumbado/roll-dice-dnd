@@ -1,19 +1,22 @@
 async def get_roll_text(context, dice_result_dict, first=True):
     text = ""
-    user = context.message.author
-    if first:
-        text = f"{user.display_name}: \n"
+    try:
+        user = context.message.author
+        if first:
+            text = f"{user.display_name}: \n"
+    except:
+        text = f"Test: \n"
 
     try:
-        list_of_dices = []
-        for dice in dice_result_dict['result_dies']:
-            list_of_dices.append(dice)
+        list_of_dice = []
+        for dice in dice_result_dict['result_die']:
+            list_of_dice.append(dice)
 
-        if dice_result_dict['result_minus_dies']:
-            for dice in dice_result_dict['result_minus_dies']:
-                list_of_dices.append(dice)
+        if dice_result_dict['result_minus_die']:
+            for dice in dice_result_dict['result_minus_die']:
+                list_of_dice.append(dice)
 
-        for die in list_of_dices:
+        for die in list_of_dice:
             text += f"\n> *{die.verbose}* => ["
             for index, dice_rolled in enumerate(die.list_of_result):
                 dice, confirmed = dice_rolled
@@ -35,7 +38,7 @@ async def get_roll_text(context, dice_result_dict, first=True):
                 dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
         print(dice_result_dict)
         msg, msg_operation, msg_result = f"{text}", \
-                          f"{dice_result_dict['only_dices']}{dice_result_dict['additional']}", \
+                          f"{dice_result_dict['only_dice']}{dice_result_dict['additional']}", \
                           f"= **{dice_result_dict['result_final']}**"
 
         return msg, msg_operation, msg_result
@@ -45,17 +48,21 @@ async def get_roll_text(context, dice_result_dict, first=True):
 
 
 async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv=True):
-    dice_obj = dice_result_dict['result_dies'][0]
+    dice_obj = dice_result_dict['result_die'][0]
     dice_obj.set_validation_adv()
 
     text, text_result, msg_result = await get_roll_text(context, dice_result_dict, first=True)
     result = dice_result_dict['result_final']
 
-    if len(dice_obj.list_of_result) == 2 and dice_obj.list_of_result.count(1) == len(dice_obj.list_of_result) \
-            or dice_obj.list_of_result.count(20) == len(dice_obj.list_of_result):
+    only_d20 = [sublist[0] for sublist in dice_obj.list_of_result]
+    total_die_roll = len(dice_obj.list_of_result)
+
+    if len(dice_obj.list_of_result) == 2 and only_d20.count(1) == total_die_roll \
+            or only_d20.count(20) == total_die_roll:
         text += f"\n ¯\_(ツ)_/¯ uma chance em 400!\n"
-    elif dice_obj.list_of_result.count(1) == len(dice_obj.list_of_result) \
-            or dice_obj.list_of_result.count(20) == len(dice_obj.list_of_result):
+
+    elif only_d20.count(1) == total_die_roll \
+            or only_d20.count(20) == total_die_roll:
         text += f"\n ¯\_(ツ)_/¯ HOLY FUCKING! uma chance em 8.000!!\n"
 
     if not additional_data:
@@ -63,13 +70,13 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv
 
     additional_data = additional_data[0]
 
-    if not additional_data['result_dies'] and not additional_data['result_minus_dies']:
+    if not additional_data['result_die'] and not additional_data['result_minus_die']:
         # msg, msg_operation, msg_result
         additional_text = "", f"{additional_data['result_final']}", ""
         result_final = result + additional_data['result_final']
         return f"{text} \n{additional_text[0]}\n {result}+{additional_text[1]}= **{result_final}**"
 
-    # Continue with a adv + dices + additional
+    # Continue with a adv + dice + additional
     additional_text = await get_roll_text(context, additional_data, False)
     result_final = result + additional_data['result_final']
     return f"{text} \n{additional_text[0]}\n\n {result}+{additional_text[1]}= **{result_final}**"

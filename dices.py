@@ -43,15 +43,15 @@ class Die:
         if self.ready:
             return
         try:
-            dices = self.get_list_of_result()
+            dice = self.get_list_of_result()
             if adv:
-                value = max(dices)
+                value = max(dice)
             else:
-                value = min(dices)
+                value = min(dice)
 
-            for index, dice in enumerate(dices):
+            for index, dice in enumerate(dice):
                 # Check if dice is the target OR if we have the same value in more dice, so ignore the first!
-                if dice != value or dices.count(value) > 1 and index > 0:
+                if dice != value or dice.count(value) > 1 and index > 0:
                     self.list_of_result[index][1] = False
                     if len(self.list_of_result) == 2:
                         break
@@ -72,49 +72,49 @@ async def _roll_luck_dice():
     return [random.choice(luck_faces)]
 
 
-async def process(context, dices_data, ignore_d20=False, reroll=None, luck=None):
-    repeat = await parse_repeat(dices_data)
+async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
+    repeat = await parse_repeat(dice_data)
     if repeat:
         repeat = int(repeat[0])
         if repeat > 10:
             repeat = 10
-        if "x" in dices_data:
-            dices_data = dices_data.split("x")[1]
+        if "x" in dice_data:
+            dice_data = dice_data.split("x")[1]
         else:
-            dices_data = dices_data.split("*")[1]
+            dice_data = dice_data.split("*")[1]
     else:
         repeat = 1
 
     import re
-    if re.findall('^(20)(?=[\+\-])', dices_data) and not ignore_d20:
+    if re.findall('^(20)(?=[\+\-])', dice_data) and not ignore_d20:
         # Missing a `d`
-        print(f"Missing a `d` in command: {dices_data}")
-        dices_data = 'd'+dices_data
-        print(f"Fixed to: {dices_data}")
+        print(f"Missing a `d` in command: {dice_data}")
+        dice_data = 'd'+dice_data
+        print(f"Fixed to: {dice_data}")
 
     try:
-        if int(dices_data):
+        if int(dice_data):
             # Only modifier
-            if re.findall('-(\d+)?', dices_data):
-                dices_data = f'd20-{dices_data}'
+            if re.findall('-(\d+)?', dice_data):
+                dice_data = f'd20-{dice_data}'
             else:
-                dices_data = f'd20+{dices_data}'
+                dice_data = f'd20+{dice_data}'
 
-            dices_data = dices_data.replace("++", "+").replace("--", "-")
-            print(f"Fixed to: {dices_data}")
+            dice_data = dice_data.replace("++", "+").replace("--", "-")
+            print(f"Fixed to: {dice_data}")
     except:
         pass
 
-    dices_positive, dices_negative = await parse_dices(dices_data)
-    additional = await parse_additional(dices_data, dices_positive, dices_negative)
-    dices_list = []
+    dice_positive, dice_negative = await parse_dice(dice_data)
+    additional = await parse_additional(dice_data, dice_positive, dice_negative)
+    dice_list = []
 
     for _ in range(0, repeat):
-        dices_list.append(await calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20, reroll, luck))
-    return dices_list
+        dice_list.append(await calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20, reroll, luck))
+    return dice_list
 
 
-async def parse_dices(data):
+async def parse_dice(data):
     import re
 
     parsed_negative = re.findall('-(\d+)?d(\d+)?', data)
@@ -130,15 +130,15 @@ async def parse_repeat(data):
     return re.findall('(\d+)(?=\*)', data) + re.findall('(\d+)(?=x)', data)
 
 
-async def parse_additional(data, positive_dies, negative_dies):
+async def parse_additional(data, positive_die, negative_die):
     try:
-        for item in positive_dies:
+        for item in positive_die:
             dice = f"{item[0]}d{item[1]}"
             data = data.replace(f"+{dice}", "")
             if dice in data:
                 data = data.replace(dice, "")
 
-        for item in negative_dies:
+        for item in negative_die:
             dice = f"{item[0]}d{item[1]}"
             data = data.replace(f"-{dice}", "")
             if dice in data:
@@ -171,21 +171,21 @@ async def roll_and_reroll(number, dice, reroll, luck=False):
     return Die(number, dice, results)
 
 
-async def calculate_dices(context, dices_positive, dices_negative, additional, ignore_d20=False, reroll=None, adv=None, luck=False):
+async def calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20=False, reroll=None, adv=None, luck=False):
     '''
         Context => Discord context to capture player name and channel name
-        dices_positive => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
-        dices_negative => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
+        dice_positive => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
+        dice_negative => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
         additional => Additional math for the roll to be evalueted with the result (+2-1)
         ignore_d20 => Bool, ignore any d20 rolls in the list
-        reroll => String with minimal number to reroll once (r2) -> Will re-roll once results for FIRST dices <= 2.
+        reroll => String with minimal number to reroll once (r2) -> Will re-roll once results for FIRST dice <= 2.
     '''
     # ignore_d20 Used to roll without d20 for adv
-    result_dies = []
-    result_minus_dies = []
-    only_dices = 0
+    result_die = []
+    result_minus_die = []
+    only_dice = 0
     try:
-        for i, d in enumerate(dices_positive):
+        for i, d in enumerate(dice_positive):
             number, dice = d
             if ignore_d20 and dice == "20":
                 continue
@@ -194,33 +194,33 @@ async def calculate_dices(context, dices_positive, dices_negative, additional, i
             if adv is not None:
                 rolled.set_validation_adv(adv)
 
-            result_dies.append(rolled)
-            only_dices += rolled.result
+            result_die.append(rolled)
+            only_dice += rolled.result
 
-        for number, dice in dices_negative:
+        for number, dice in dice_negative:
             if ignore_d20 and dice == "20":
                 continue
             rolled = await roll_and_reroll(number, dice, None)
-            result_minus_dies.append(rolled)
-            only_dices -= rolled.result
+            result_minus_die.append(rolled)
+            only_dice -= rolled.result
 
         additional_eval = 0
         if additional:
             additional_eval = eval(additional)
 
-        result = {"result_dies": result_dies,
-                  "result_minus_dies": result_minus_dies,
-                  "result_final": only_dices+additional_eval,
-                  "only_dices": only_dices,
+        result = {"result_die": result_die,
+                  "result_minus_die": result_minus_die,
+                  "result_final": only_dice+additional_eval,
+                  "only_dice": only_dice,
                   "additional": additional,
                   "additional_eval": additional_eval}
 
         # Register the dice history (Maybe move this to another place?)
-        if STATS_ENABLE:
-            for die_result in result['result_dies']:
-                for die in die_result.debug:
-                    insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
-                    # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+        # if STATS_ENABLE:
+        #     for die_result in result['result_die']:
+        #         for die in die_result.debug:
+        #             insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+        #             # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:

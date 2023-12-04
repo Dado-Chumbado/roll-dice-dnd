@@ -4,7 +4,7 @@ import json
 import os
 import discord
 from discord.ext import commands
-from dices import process, calculate_dices
+from dice import process, calculate_dice
 from initiative import InitTable, clean_dex
 from roll_view import multiple_d20_text, get_roll_text
 from stats_db import show_general_info, show_session_stats
@@ -50,16 +50,16 @@ init_items = InitTable()
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
-                   description="Roll a random dices, normal or with advantages/disadvantages and control initiative table",
+                   description="Roll a random dice, normal or with advantages/disadvantages and control initiative table",
                    intents=intents)
 
 
 # COMMANDS ================
 @bot.command(
     name=COMMAND_DM_ROLL,
-    description="Roll private dices"
+    description="Roll private dice"
 )
-async def command_roll_dm_dices(context, *args):
+async def command_roll_dm_dice(context, *args):
     try:
         '''
             process("1d10+1d4-1")
@@ -73,7 +73,7 @@ async def command_roll_dm_dices(context, *args):
             rr = data[-2:]
             data = data.split(data[-2:])[0]
 
-        for index, dice in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dices
+        for index, dice in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dice
             text, result_text, msg_result = await get_roll_text(context, dice, True if index == 0 else False)
             await context.message.author.send(f"{text}\n\n{result_text}{msg_result}")
 
@@ -84,9 +84,9 @@ async def command_roll_dm_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL,
-    description="Roll dices"
+    description="Roll dice"
 )
-async def command_roll_dices(context, *args):
+async def command_roll_dice(context, *args):
     try:
         rr = None
         data = ''.join(args)
@@ -96,7 +96,7 @@ async def command_roll_dices(context, *args):
             rr = data[-2:]
             data = data.split(data[-2:])[0]
 
-        for index, dice_list in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dices
+        for index, dice_list in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dice
             text, result_text, msg_result = await get_roll_text(context, dice_list, True if index == 0 else False)
             await context.send(f"{text}\n\n{result_text}{msg_result}")
 
@@ -107,9 +107,9 @@ async def command_roll_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_ADVANTAGE,
-    description="Roll dices with advantage"
+    description="Roll dice with advantage"
 )
-async def command_roll_advantage_dices(context, *args):
+async def command_roll_advantage_dice(context, *args):
     try:
         data = ''.join(args)
         # Clean up
@@ -118,12 +118,12 @@ async def command_roll_advantage_dices(context, *args):
         data = data.replace("d20", "")
         data = await sanitize_input(data)
 
-        dices = await calculate_dices(context, [[2, 20]], [], None, adv=True)
+        dice = await calculate_dice(context, [[2, 20]], [], None, adv=True)
         text = ""
         try:
             # Try to evaluate extra data
-            additional_dices = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dices, additional_dices, True)
+            additional_dice = await process(context, data, ignore_d20=True)
+            text = await multiple_d20_text(context, dice, additional_dice, True)
         except Exception as e:
             print(e)
             raise
@@ -139,9 +139,9 @@ async def command_roll_advantage_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_DOUBLE_ADVANTAGE,
-    description="Roll dices with double advantage"
+    description="Roll dice with double advantage"
 )
-async def command_roll_double_advantage_dices(context, *args):
+async def command_roll_double_advantage_dice(context, *args):
     try:
         data = ''.join(args)
         # Clean up
@@ -150,11 +150,11 @@ async def command_roll_double_advantage_dices(context, *args):
         data = data.replace("d20", "")
         data = await sanitize_input(data)
 
-        dices = await calculate_dices(context, [[3, 20]], [], None, adv=True)
+        dice = await calculate_dice(context, [[3, 20]], [], None, adv=True)
         try:
             # Try to evaluate extra data
-            additional_dices = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dices, additional_dices, True)
+            additional_dice = await process(context, data, ignore_d20=True)
+            text = await multiple_d20_text(context, dice, additional_dice, True)
         except:
             raise
 
@@ -168,9 +168,9 @@ async def command_roll_double_advantage_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_DISADVANTAGE,
-    description="Roll dices with disadvantage"
+    description="Roll dice with disadvantage"
 )
-async def command_roll_disadvantage_dices(context, *args):
+async def command_roll_disadvantage_dice(context, *args):
     try:
         data = ''.join(args)
         # SANITIZE STRING -> MOVE THIS
@@ -179,11 +179,11 @@ async def command_roll_disadvantage_dices(context, *args):
         data = data.replace("d20", "")
         data = await sanitize_input(data)
 
-        dices = await calculate_dices(context, [[2, 20]], [], None, adv=False)
+        dice = await calculate_dice(context, [[2, 20]], [], None, adv=False)
         try:
             # Try to evaluate extra data
-            additional_dices = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dices, additional_dices, False)
+            additional_dice = await process(context, data, ignore_d20=True)
+            text = await multiple_d20_text(context, dice, additional_dice, False)
         except:
             raise
 
@@ -198,9 +198,9 @@ async def command_roll_disadvantage_dices(context, *args):
 
 @bot.command(
     name=COMMAND_ROLL_LUCK_DICE,
-    description="Roll dices with LUCK?"
+    description="Roll dice with LUCK?"
 )
-async def command_roll_luck_dices(context, *args):
+async def command_roll_luck_dice(context, *args):
     data = ''.join(args)
     # SANITIZE STRING -> MOVE THIS
     if data == "d20":
@@ -208,11 +208,11 @@ async def command_roll_luck_dices(context, *args):
     data = data.replace("d20", "")
     data = await sanitize_input(data)
 
-    dices = await calculate_dices(context, [[1, 20]], [], None, luck=True)
+    dice = await calculate_dice(context, [[1, 20]], [], None, luck=True)
     try:
         # Try to evaluate extra data
-        additional_dices = await process(context, data, ignore_d20=True)
-        text = await multiple_d20_text(context, dices, additional_dices, True)
+        additional_dice = await process(context, data, ignore_d20=True)
+        text = await multiple_d20_text(context, dice, additional_dice, True)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_LUCK_DICE} +2 por exemplo")
@@ -310,8 +310,8 @@ async def roll_initiative(context, dex="", repeat="1", *args):
             if repeat > 1:
                 name += f" {i+1}"
 
-            dices = await calculate_dices(context, [[1, 20]], [], dex)
-            await init_items.add(channel, name, dices['only_dices'], dex)
+            dice = await calculate_dice(context, [[1, 20]], [], dex)
+            await init_items.add(channel, name, dice['only_dice'], dex)
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
@@ -338,11 +338,11 @@ async def roll_initiative_advantage(context, dex="", *args):
 
         name = f"{data}" if data else context.message.author.display_name
 
-        dices = await calculate_dices(context, [[2, 20]], [], dex)
+        dice = await calculate_dice(context, [[2, 20]], [], dex)
 
-        text = await multiple_d20_text(context, dices, None, True)
+        text = await multiple_d20_text(context, dice, None, True)
         await context.send(text)
-        await init_items.add(context.channel.name, name, dices['result_dies'][0].larger(), dex)
+        await init_items.add(context.channel.name, name, dice['result_die'][0].larger(), dex)
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:

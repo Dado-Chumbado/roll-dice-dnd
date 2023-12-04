@@ -1,6 +1,6 @@
 # Simple roll dice with Advantage and Disadvantage options for discord
 
-Roll n dies 
+Roll n die 
 
 ## Get our own bot
 
@@ -19,7 +19,7 @@ To get your own bot, follow these steps:
 - save the file and quit
 - start the bot with the command `python3 discord_client.py`
 
-[comment]: <> (docker build . -t roll-dices && docker run -d roll-dices)
+[comment]: <> (docker build . -t roll-dice && docker run -d roll-dice)
 
 New version: 
 docker-compose up -d

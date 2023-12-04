@@ -16,7 +16,7 @@ class PlayerStats(Model):
     display_name = CharField()
     channel = CharField()
 
-    total_dices_rolled = IntegerField(default=0)
+    total_dice_rolled = IntegerField(default=0)
 
     total_d20_rolled = IntegerField(default=0)
     total_d20_values_rolled = BigIntegerField(default=0)
@@ -36,7 +36,7 @@ class PlayerStats(Model):
     total_d100_rolled = IntegerField(default=0)
     total_d100_values_rolled = IntegerField(default=0)
 
-    sum_dices_number_rolled = BigIntegerField(default=0)
+    sum_dice_number_rolled = BigIntegerField(default=0)
 
     class Meta:
         database = pg_db
@@ -87,8 +87,8 @@ def update_player_stats(player_id, display_name, channel):
         # for dice in Dice
         player.display_name = display_name
         for r in Roll.select().where(Roll.player_id == player_id, Roll.channel == channel):
-            player.total_dices_rolled += 1
-            player.sum_dices_number_rolled += r.value
+            player.total_dice_rolled += 1
+            player.sum_dice_number_rolled += r.value
 
             if r.dice == "d20":
                 player.total_d20_values_rolled += r.value
@@ -140,7 +140,7 @@ async def show_general_info(context):
     try:
         ps = update_player_stats(context.author.id, context.author.display_name, context.channel.name)
 
-        text = f"```Voce rolou um total de {ps.total_dices_rolled} dados! \n"
+        text = f"```Voce rolou um total de {ps.total_dice_rolled} dados! \n"
         text += f"D20 rolado {ps.total_d20_rolled} vezes! " \
                 f"com {ps.total_d20_critical_rolled} criticos e {ps.total_d20_fails_rolled} falhas.\n"
         text += f"A soma dos seus d20's é {ps.total_d20_values_rolled}.\n"
@@ -158,7 +158,7 @@ async def show_general_info(context):
         if ps.total_d100_rolled:
             text += f" D100 rolado {ps.total_d100_rolled} vezes. A soma é {ps.total_d100_values_rolled} \n"
 
-        text += f"O total de todos os dados rolados é: {ps.sum_dices_number_rolled}```"
+        text += f"O total de todos os dados rolados é: {ps.sum_dice_number_rolled}```"
         print(text)
         await context.send(text)
     except Exception as e:
