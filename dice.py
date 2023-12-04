@@ -49,15 +49,16 @@ class Die:
             else:
                 value = min(dice)
 
-            for index, dice in enumerate(dice):
+            print(f"dice: {dice}")
+            for index, die in enumerate(dice):
                 # Check if dice is the target OR if we have the same value in more dice, so ignore the first!
-                if dice != value or dice.count(value) > 1 and index > 0:
+                if die != value or dice.count(value) > 1 and index > 0:
                     self.list_of_result[index][1] = False
                     if len(self.list_of_result) == 2:
                         break
             self.process(True)
         except Exception as e:
-            print(e)
+            print(f"set_validation_adv: {str(e)}")
 
 
 async def _roll_dice(times, dice):
@@ -73,6 +74,10 @@ async def _roll_luck_dice():
 
 
 async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
+
+    if dice_data == "0":
+        dice_data = "d20"
+
     repeat = await parse_repeat(dice_data)
     if repeat:
         repeat = int(repeat[0])
@@ -220,7 +225,6 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
             for die_result in result['result_die']:
                 for die in die_result.debug:
                     insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
-                    # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:

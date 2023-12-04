@@ -23,7 +23,7 @@ async def get_roll_text(context, dice_result_dict, first=True):
                 comma = bold = ""
                 if index != len(die.list_of_result) - 1:
                     comma = ","
-                if dice == die.dice_base or dice == 1:
+                if dice == int(die.dice_base) or dice == 1:
                     bold = "!"
                 if not confirmed:
                     text += f" ~~{dice}{bold}~~{comma}"
@@ -33,9 +33,11 @@ async def get_roll_text(context, dice_result_dict, first=True):
 
         if not dice_result_dict['additional']:
             dice_result_dict['additional'] = ""
+
         if len(dice_result_dict['additional']) > 0:
             if not "+" in dice_result_dict['additional'][0] and not "-" in dice_result_dict['additional'][0]:
                 dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
+
         print(dice_result_dict)
         msg, msg_operation, msg_result = f"{text}", \
                           f"{dice_result_dict['only_dice']}{dice_result_dict['additional']}", \
@@ -47,7 +49,7 @@ async def get_roll_text(context, dice_result_dict, first=True):
         raise
 
 
-async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv=True):
+async def multiple_d20_text(context, dice_result_dict, additional_data=None):
     dice_obj = dice_result_dict['result_die'][0]
     dice_obj.set_validation_adv()
 
@@ -63,7 +65,7 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None, adv
 
     elif only_d20.count(1) == total_die_roll \
             or only_d20.count(20) == total_die_roll:
-        text += f"\n ¯\_(ツ)_/¯ HOLY FUCKING! uma chance em 8.000!!\n"
+        text += f"\n ¯\_(ツ)_/¯ DADO CHUMBADO!! uma chance em 8.000!!\n"
 
     if not additional_data:
         return text

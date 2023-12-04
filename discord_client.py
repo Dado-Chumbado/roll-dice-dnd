@@ -123,7 +123,7 @@ async def command_roll_advantage_dice(context, *args):
         try:
             # Try to evaluate extra data
             additional_dice = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dice, additional_dice, True)
+            text = await multiple_d20_text(context, dice, additional_dice)
         except Exception as e:
             print(e)
             raise
@@ -154,7 +154,7 @@ async def command_roll_double_advantage_dice(context, *args):
         try:
             # Try to evaluate extra data
             additional_dice = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dice, additional_dice, True)
+            text = await multiple_d20_text(context, dice, additional_dice)
         except:
             raise
 
@@ -183,7 +183,7 @@ async def command_roll_disadvantage_dice(context, *args):
         try:
             # Try to evaluate extra data
             additional_dice = await process(context, data, ignore_d20=True)
-            text = await multiple_d20_text(context, dice, additional_dice, False)
+            text = await multiple_d20_text(context, dice, additional_dice)
         except:
             raise
 
@@ -212,7 +212,7 @@ async def command_roll_luck_dice(context, *args):
     try:
         # Try to evaluate extra data
         additional_dice = await process(context, data, ignore_d20=True)
-        text = await multiple_d20_text(context, dice, additional_dice, True)
+        text = await multiple_d20_text(context, dice, additional_dice)
     except Exception as e:
         await context.send(
             f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_LUCK_DICE} +2 por exemplo")
@@ -340,7 +340,7 @@ async def roll_initiative_advantage(context, dex="", *args):
 
         dice = await calculate_dice(context, [[2, 20]], [], dex)
 
-        text = await multiple_d20_text(context, dice, None, True)
+        text = await multiple_d20_text(context, dice, None)
         await context.send(text)
         await init_items.add(context.channel.name, name, dice['result_die'][0].larger(), dex)
 
