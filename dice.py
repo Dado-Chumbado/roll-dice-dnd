@@ -216,11 +216,11 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
                   "additional_eval": additional_eval}
 
         # Register the dice history (Maybe move this to another place?)
-        # if STATS_ENABLE:
-        #     for die_result in result['result_die']:
-        #         for die in die_result.debug:
-        #             insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
-        #             # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+        if STATS_ENABLE:
+            for die_result in result['result_die']:
+                for die in die_result.debug:
+                    insert_roll(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
+                    # save_roll.delay(context.author.id, context.channel.name, f"d{die_result.dice_base}", int(die['value']), die['critical'], die['fail'])
 
         return result
     except Exception as e:
