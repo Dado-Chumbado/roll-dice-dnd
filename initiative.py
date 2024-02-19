@@ -50,12 +50,14 @@ def save_initiative_table(channel, data):
 
 class InitTable:
 
+    current = 1
     initiative_table = []
     initiative_last_msg = None
 
     async def add(self, channel, name, value, dex=0):
         self.initiative_table = load_initiative_table(channel)
-
+        # Capitalize the first letter of the name
+        name = name.capitalize()
         self.initiative_table.append(InitItem(name, int(value), int(dex)))
         self.initiative_table = sorted(self.initiative_table, key=lambda x: x.total, reverse=True)
         save_initiative_table(channel, self.initiative_table)
@@ -76,8 +78,26 @@ class InitTable:
         self.initiative_table.remove(self.initiative_table[int(index)-1])
         save_initiative_table(channel, self.initiative_table)
 
+    async def next(self, channel):
+        self.initiative_table = load_initiative_table(channel)
+        self.current += 1
+        if self.current > len(self.initiative_table):
+            self.current = 1
+        return self.initiative_table[self.current - 1]
+
+    async def previous(self, channel):
+        self.initiative_table = load_initiative_table(channel)
+        self.current -= 1
+        if self.current < 1:
+            self.current = len(self.initiative_table)
+        return self.initiative_table[self.current - 1]
+
     async def show(self, channel, context):
         self.initiative_table = load_initiative_table(channel)
+
+        if len(self.initiative_table) == 0:
+            return await context.send("Nenhuma iniciativa registrada")
+
         text = "```ml\n"
         # Determine the maximum length of names for proper alignment
         max_name_length = max(len(item.name) for item in self.initiative_table)
@@ -86,14 +106,12 @@ class InitTable:
             signal = "+" if item.dex > 0 else "-"
             item_dex_str = item.dex if item.dex > 0 else item.dex * -1
             spacer = " " if item.value < 10 else ""
+            is_current = "> " if i == self.current - 1 else ""
             # Adjust the formatting here
-            text += f"{i + 1}: {item.name:<{max_name_length}} [{item.value}]{spacer} {signal} {item_dex_str:<2} = Total: {item.total:<2} {condition}\n"
+            text += f"{is_current}{i + 1}: {item.name:<{max_name_length}} [{item.value}]{spacer} {signal} {item_dex_str:<2} = Total: {item.total:<2} {condition}\n"
         text += "```"
 
-        if len(self.initiative_table) == 0:
-            return await context.send("Nenhuma iniciativa registrada")
-        else:
-            return await context.send(text)
+        return await context.send(text)
 
 
 async def clean_dex(value):

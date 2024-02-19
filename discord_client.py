@@ -35,6 +35,8 @@ COMMAND_FORCE_INITIATIVE= ENV["command_force_initiative"]
 COMMAND_REMOVE_INITIATIVE = ENV["command_remove_initiative"]
 COMMAND_ADD_CONDITION_INITIATIVE = ENV["command_add_condition"]
 COMMAND_REMOVE_CONDITION_INITIATIVE = ENV["command_remove_condition"]
+COMMAND_NEXT_INITIATIVE = ENV["command_next_initiative"]
+COMMAND_PREV_INITIATIVE = ENV["command_previous_initiative"]
 
 COMMAND_SHOW_STATS_PLAYER = ENV["command_show_stats_player"]
 COMMAND_SHOW_STATS_SESSION = ENV["command_show_stats_session"]
@@ -324,6 +326,31 @@ async def roll_initiative(context, dex="", repeat="1", *args):
         await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 3 Nome do bicho ( Iniciativa | Quantidade | Nome )")
         # await context.send(f"Exception {e}")
 
+
+@bot.command(
+    name=COMMAND_NEXT_INITIATIVE,
+    description=""
+)
+async def next_initiative(context):
+    await init_items.next(context.channel.name)
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+
+
+@bot.command(
+    name=COMMAND_PREV_INITIATIVE,
+    description=""
+)
+async def prev_initiative(context):
+    await init_items.previous(context.channel.name)
+    # Delete last msg and send the new one
+    if init_items.initiative_last_msg:
+        await init_items.initiative_last_msg.delete()
+
+    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
 @bot.command(
     name=COMMAND_ROLL_INITIATIVE_ADV,

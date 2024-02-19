@@ -20,6 +20,9 @@
     "command_add_condition": "i-condicao",
     "command_remove_condition": "i-condicao-remover",
 
+    "command_next_initiative": "i-p",
+    "command_previous_initiative": "i-a",
+
     "command_show_stats_player": "s",
     "command_show_stats_session": "stats",
 
