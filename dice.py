@@ -85,8 +85,8 @@ async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
     repeat = await parse_repeat(dice_data)
     if repeat:
         repeat = int(repeat[0])
-        if repeat > 10:
-            repeat = 10
+        if repeat > 20:
+            repeat = 20
         if "x" in dice_data:
             dice_data = dice_data.split("x")[1]
         else:

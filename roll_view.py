@@ -38,7 +38,9 @@ async def get_roll_text(context, dice_result_dict, first=True):
             if not "+" in dice_result_dict['additional'][0] and not "-" in dice_result_dict['additional'][0]:
                 dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
 
-        print(dice_result_dict)
+        if dice_result_dict['additional_eval'] == 0 and len(dice_result_dict['additional']) == 0:
+            dice_result_dict['additional'] = f""
+
         msg, msg_operation, msg_result = f"{text}", \
                           f"{dice_result_dict['only_dice']}{dice_result_dict['additional']}", \
                           f"= **{dice_result_dict['result_final']}**"
@@ -61,7 +63,7 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None):
 
     if len(dice_obj.list_of_result) == 2 and only_d20.count(1) == total_die_roll \
             or only_d20.count(20) == total_die_roll:
-        text += f"\n ¯\_(ツ)_/¯ uma chance em 400!\n"
+        text += f"\n ¯\_(ツ)_/¯ DADO CHUMBADO!!  uma chance em 400!\n"
 
     elif only_d20.count(1) == total_die_roll \
             or only_d20.count(20) == total_die_roll:
@@ -72,16 +74,21 @@ async def multiple_d20_text(context, dice_result_dict, additional_data=None):
 
     additional_data = additional_data[0]
 
+    # If there is no additional dice to calculate, return the result with the value evaluated
     if not additional_data['result_die'] and not additional_data['result_minus_die']:
         # msg, msg_operation, msg_result
-        additional_text = "", f"{additional_data['result_final']}", ""
         result_final = result + additional_data['result_final']
+        signal = ""
+        if additional_data['additional_eval'] > 0:
+            signal = "+"
+        elif additional_data['additional_eval'] == 0:
+            signal = ""
+            additional_data['result_final'] = ""
 
-        signal = "+" if additional_data['result_final'] > 0 else ""
-
-        return f"{text} \n{additional_text[0]}\n {result}{signal}{additional_text[1]}= **{result_final}**"
+        return f"{text} \n\n {result}{signal}{additional_data['result_final']}= **{result_final}**"
 
     # Continue with a adv + dice + additional
     additional_text = await get_roll_text(context, additional_data, False)
     result_final = result + additional_data['result_final']
+
     return f"{text} \n{additional_text[0]}\n\n {result}+{additional_text[1]}= **{result_final}**"

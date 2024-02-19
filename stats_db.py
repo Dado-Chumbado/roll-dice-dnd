@@ -63,6 +63,7 @@ def setup_db():
     except peewee.OperationalError:
         pass
 
+
 try:
     setup_db()
 except:
@@ -71,12 +72,9 @@ finally:
     pg_db.close()
 
 
-def update_player_stats(player_id, display_name, channel):
+def update_player_stats(player_id, display_name, channel, start_date=None, end_data=None):
     try:
         pg_db.connect()
-        query = PlayerStats.delete().where(player_id==player_id, channel==channel)
-        query.execute()
-
         player, created = PlayerStats.get_or_create(player_id=player_id, channel=channel)
     except Exception as e:
         pg_db.close()
@@ -86,7 +84,24 @@ def update_player_stats(player_id, display_name, channel):
     try:
         # for dice in Dice
         player.display_name = display_name
-        for r in Roll.select().where(Roll.player_id == player_id, Roll.channel == channel):
+        player.total_d20_values_rolled = player.total_d20_rolled = player.total_d20_critical_rolled = \
+            player.total_d20_fails_rolled = player.total_dice_rolled = player.sum_dice_number_rolled = \
+            player.total_d4_values_rolled = player.total_d4_rolled = \
+            player.total_d6_values_rolled = player.total_d6_rolled = \
+            player.total_d8_values_rolled = player.total_d8_rolled = \
+            player.total_d8_values_rolled = player.total_d8_rolled = \
+            player.total_d10_values_rolled = player.total_d10_rolled = \
+            player.total_d12_values_rolled = player.total_d12_rolled = \
+            player.total_d100_values_rolled = player.total_d100_rolled = 0
+
+        if start_date:
+            start_range = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            end_range = datetime.datetime.strptime(end_data, '%Y-%m-%d')
+            rolls = Roll.select().where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.player_id == player_id, )
+        else:
+            rolls = Roll.select().where(Roll.player_id == player_id, Roll.channel == channel)
+
+        for r in rolls:
             player.total_dice_rolled += 1
             player.sum_dice_number_rolled += r.value
 
@@ -166,14 +181,17 @@ async def show_general_info(context):
         await context.send(e)
 
 
-def get_session_stats(channel, date=None):
+def get_session_stats(channel, date=None, end=None):
     pg_db.connect()
     if not date:
         start_range = datetime.datetime.now().date() - datetime.timedelta(days=1)
         end_range = datetime.datetime.now()
     else:
         start_range = datetime.datetime.strptime(date, '%Y-%m-%d')
-        end_range = start_range + datetime.timedelta(days=1)
+        if end:
+            end_range = datetime.datetime.strptime(end, '%Y-%m-%d')
+        else:
+            end_range = start_range + datetime.timedelta(days=1)
 
     print(f"Filtering per date: {start_range} until {end_range}")
     rs = Roll.select().where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel)
@@ -187,27 +205,31 @@ def get_session_stats(channel, date=None):
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.player_id).desc())
 
     critics = Roll.select(Roll.player_id, fn.COUNT(Roll.critical)) \
-        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20", Roll.critical == True) \
+        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20",
+               Roll.critical == True) \
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.critical).desc())
 
     fails = Roll.select(Roll.player_id, fn.COUNT(Roll.critical)) \
-        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20", Roll.fail == True) \
+        .where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel, Roll.dice == "d20",
+               Roll.fail == True) \
         .group_by(Roll.player_id).order_by(fn.COUNT(Roll.critical).desc())
 
-    total_rolled = Roll.select(fn.SUM(Roll.value)).where(Roll.created > start_range, Roll.created < end_range, Roll.channel == channel)[0].sum
+    total_rolled = Roll.select(fn.SUM(Roll.value)).where(Roll.created > start_range, Roll.created < end_range,
+                                                         Roll.channel == channel)[0].sum
     pg_db.close()
     return [d20s_critical, d20s_fail, critics, fails, total_rolled, rolled_d20_by_player]
 
 
 def get_display_name(player_id, channel):
-    return PlayerStats.get(PlayerStats.player_id == player_id, channel=channel).display_name
-
-
-async def show_session_stats(bot, ctx, channel, date=None):
-    await ctx.send("Estatisticas da sessao nao estao prontas ainda, falta o rafa implementar isso aqui")
-
     try:
-        data = get_session_stats(channel, date)
+        return PlayerStats.get(PlayerStats.player_id == player_id, channel=channel).display_name
+    except:
+        return f"Player name not found: {player_id}"
+
+
+async def show_session_stats(bot, ctx, channel, date=None, end_date=None):
+    try:
+        data = get_session_stats(channel, date, end_date)
 
         date_str = date
         if not date:
@@ -218,6 +240,10 @@ async def show_session_stats(bot, ctx, channel, date=None):
 
         text += f"Total criticos: {data[0]}\n"
         text += f"Total falhas: {data[1]}\n"
+        try:
+            text += f"Proporcao critico/falha: {data[0]/data[1]:.2f}\n"
+        except ZeroDivisionError:
+            text += f"Proporcao critico/falha: 0\n"
 
         if data[2]:
             text += f"Jogador com mais criticos: {get_display_name(data[2][0].player_id, channel)} com {data[2][0].count} criticos!\n"
@@ -230,57 +256,41 @@ async def show_session_stats(bot, ctx, channel, date=None):
                       "average_fail": 0, "d20_rolled": r.count}
             for critical_per_player in data[2]:
                 if r.player_id == critical_per_player.player_id:
-                    player["average_critical"] = r.count / critical_per_player.count
+                    player["average_critical"] = (critical_per_player.count * 100) / r.count
                     player["count_critical"] = critical_per_player.count
 
             for fails_per_player in data[3]:
                 if r.player_id == fails_per_player.player_id:
-                    player["average_fail"] = r.count / fails_per_player.count
+                    player["average_fail"] = (fails_per_player.count * 100) / r.count
                     player["count_fail"] = fails_per_player.count
             luck_table.append(player)
 
-        critical_percent_per_player = sorted(luck_table, key=lambda d: d['average_critical'])
-        fail_percent_per_player = sorted(luck_table, key=lambda d: d['average_fail'])
-        luck_player = unluck_player = None
-
-        for cpp in critical_percent_per_player:
-            if cpp['average_critical'] > 0:
-                luck_player = cpp
-                break
-
-        for cpp in fail_percent_per_player:
-            if cpp['average_fail'] > 0:
-                unluck_player = cpp
-                break
+        luck_player = sorted(luck_table, key=lambda d: d['average_critical'])[-1]
+        unluck_player = sorted(luck_table, key=lambda d: d['average_fail'])[-1]
 
         if luck_player:
             try:
-                text += f"Mais sortudo: {get_display_name(luck_player['player_id'], channel)} com {luck_player['count_critical']} criticos! (1/{int(luck_player['average_critical'])}) [{luck_player['d20_rolled']}]\n"
+                text += f"Mais sortudo: {get_display_name(luck_player['player_id'], channel)} com {luck_player['count_critical']} criticos! [{luck_player['d20_rolled']} d20 rolados]\n"
             except:
                 pass
         if unluck_player:
             try:
-                text += f"Mais azarado: {get_display_name(unluck_player['player_id'], channel)} com {luck_player['count_fail']} falhas! (1/{int(luck_player['average_fail'])}) [{luck_player['d20_rolled']}]\n"
+                text += f"Mais azarado: {get_display_name(unluck_player['player_id'], channel)} com {luck_player['count_fail']} falhas! [{unluck_player['d20_rolled']} d20 rolados]\n"
             except:
                 pass
-        text += f"Soma de todos os dados rolados: {data[4]} "
+        text += f"Soma de todos os dados rolados: {data[4]} \n\n"
 
-        print("Criticos por jogador")
-        for r in data[2]:
-            print(r.player_id, r.count)
-
-        print("Falhas por jogador")
-        for r in data[3]:
-            print(r.player_id, r.count)
+        for player in luck_table:
+            text += f"{get_display_name(player['player_id'], channel)}| d20 rolados => {player['d20_rolled']}. Criticos: {player['average_critical']:.2f}% ({player['count_critical']}) | falha: {player['average_fail']:.2f}% ({player['count_fail']}) \n"
 
         text += "```"
-        print(text)
         pg_db.close()
         await ctx.send(text)
     except Exception as e:
         pg_db.close()
         print(e)
-        await ctx.send(e)
+        raise
+        # await ctx.send(e)
 
 
 def force_recalculate_channel(channel):
