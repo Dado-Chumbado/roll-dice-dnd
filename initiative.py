@@ -78,19 +78,17 @@ class InitTable:
 
     async def show(self, channel, context):
         self.initiative_table = load_initiative_table(channel)
-        text = "```"
+        text = "```ml\n"
+        # Determine the maximum length of names for proper alignment
+        max_name_length = max(len(item.name) for item in self.initiative_table)
         for i, item in enumerate(self.initiative_table):
             condition = f"|{item.condition}|" if item.condition else ""
             signal = "+" if item.dex > 0 else "-"
-            item_dex_str = item.dex if item.dex > 0 else item.dex*-1
-            text += f"{i+1}: {item.name} [{item.value}] {signal} {item_dex_str} = Total: {item.total} {condition}\n"
+            item_dex_str = item.dex if item.dex > 0 else item.dex * -1
+            spacer = " " if item.value < 10 else ""
+            # Adjust the formatting here
+            text += f"{i + 1}: {item.name:<{max_name_length}} [{item.value}]{spacer} {signal} {item_dex_str:<2} = Total: {item.total:<2} {condition}\n"
         text += "```"
-
-        # Check how to delete old own messages
-        # try:
-        #     await context.channel.purge(limit=1)
-        # except:
-        #     pass
 
         if len(self.initiative_table) == 0:
             return await context.send("Nenhuma iniciativa registrada")
