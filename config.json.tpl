@@ -25,5 +25,10 @@
     "command_show_stats_player": "s",
     "command_show_stats_session": "stats",
 
+    "command_save_dice": "dice-save",
+    "command_list_saved_dice": "dice",
+    "command_remove_saved_dice": "dice-remover",
+    "command_reset_saved_dice": "dice-limpar",
+
     "stats": "1"
 }

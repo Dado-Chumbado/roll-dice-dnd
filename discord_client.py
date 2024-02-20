@@ -5,6 +5,7 @@ import os
 from interactions import Client, Intents, listen, slash_command, slash_option, OptionType
 from dice import process, calculate_dice
 from initiative import InitTable, clean_dex
+from save_dice import DiceTable
 from roll_view import multiple_d20_text, get_roll_text
 from stats_db import show_general_info, show_session_stats
 
@@ -37,6 +38,11 @@ COMMAND_PREV_INITIATIVE = ENV["command_previous_initiative"]
 
 COMMAND_SHOW_STATS_PLAYER = ENV["command_show_stats_player"]
 COMMAND_SHOW_STATS_SESSION = ENV["command_show_stats_session"]
+
+COMMAND_SAVE_DICE = ENV["command_save_dice"]
+COMMAND_LIST_SAVED_DICE = ENV["command_list_saved_dice"]
+COMMAND_REMOVE_SAVED_DICE = ENV["command_remove_saved_dice"]
+COMMAND_RESET_SAVED_DICE = ENV["command_reset_saved_dice"]
 
 STATS_ENABLE = True if ENV["stats"] == "1" else False
 
@@ -542,6 +548,83 @@ async def command_show_stats_session(context, date=None, end_date=None):
         await show_session_stats(bot, context, context.channel.name, date, end_date)
     except Exception as e:
         await context.send(f"Exception {e}")
+
+
+#================================================================================================
+
+@slash_command(
+    name=COMMAND_SAVE_DICE,
+    description="Save dice roll. E.g: 1d6+2"
+)
+@slash_option(
+    name="name",
+    description="Dice save name. E.g: Machado",
+    required=True,
+    opt_type=OptionType.STRING
+)
+@slash_option(
+    name="args",
+    description="Dice values to save. E.g: 1d6+2",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def save_dice(context,  name: str, args: str,):
+    try:
+        dice_items = DiceTable(context.author.id)
+        await dice_items.add(name, args)
+        await dice_items.show(context)
+
+    except Exception as e:
+        await context.send(f"Erro: {e}")
+
+
+@slash_command(
+    name=COMMAND_LIST_SAVED_DICE,
+    description="List saved dice."
+)
+async def list_saved_dice(context):
+    try:
+        dice_items = DiceTable(context.author.id)
+        await dice_items.show(context)
+
+    except Exception as e:
+        await context.send(f"Erro: {e}")
+
+
+@slash_command(
+    name=COMMAND_REMOVE_SAVED_DICE,
+    description="Remove saved dice by index."
+)
+@slash_option(
+    name="index",
+    description="Dice index to remove. E.g: 1",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
+async def remove_dice(context, index: int):
+    try:
+        dice_items = DiceTable(context.author.id)
+        await dice_items.remove_index(index)
+        await dice_items.show(context)
+
+    except Exception as e:
+        await context.send(f"Erro: {e}")
+        raise
+
+
+@slash_command(
+    name=COMMAND_RESET_SAVED_DICE,
+    description="Remove all saved dice."
+)
+async def reset_dice(context):
+    try:
+        dice_items = DiceTable(context.author.id)
+        await dice_items.reset()
+        await dice_items.show(context)
+
+    except Exception as e:
+        await context.send(f"Erro: {e}")
+        raise
 
 
 @listen()
