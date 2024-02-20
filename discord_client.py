@@ -412,6 +412,7 @@ async def roll_initiative(context, dex: int = -99, repeat: int = 1, args: str = 
 
     except Exception as e:
         await context.send(f"Erro: {e}")
+        raise
 
 @slash_command(
     name=COMMAND_NEXT_INITIATIVE,

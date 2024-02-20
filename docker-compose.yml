@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - /var/lib/roll-dices-dnd:/data
     restart: unless-stopped
     command: [ "python3", "./discord_client.py" ]
-
