@@ -54,8 +54,6 @@ with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 init_items = InitTable()
 
-# intents = discord.Intents.default()
-# intents.message_content = True
 bot = Client(command_prefix=[COMMAND_CHAR],
              description="Roll dices and control initiative table",
              intents=Intents.DEFAULT)
@@ -163,7 +161,13 @@ async def command_roll_dice(context, args: str = "d20"):
     required=True,
     opt_type=OptionType.STRING
 )
-async def command_roll_critical_damage_dice(context, args: str):
+@slash_option(
+    name="extra",
+    description="Additional damage. Expected dice exp",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_critical_damage_dice(context, args: str, extra: str = ""):
     try:
         rr = None
         data = ''.join(args)
@@ -178,9 +182,14 @@ async def command_roll_critical_damage_dice(context, args: str):
             print(f"Error: {e}")
             pass
 
+        if extra != "":
+            extra = f"+{extra}"
+
         if dice_saved:
-            data = dice_saved
+            data = dice_saved + extra
             extra_text = f"\n## Rolando {args}: {data} \n\n\n"
+        else:
+            data += extra
 
         if data[-2:] in ["r1", "r2", "r3"]:
             rr = data[-2:]
