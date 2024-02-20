@@ -25,6 +25,9 @@ COMMAND_ROLL_ADVANTAGE = ENV["command_roll_advantage"]
 COMMAND_ROLL_DISADVANTAGE = ENV["command_roll_disadvantage"]
 COMMAND_ROLL_LUCK_DICE = ENV["command_roll_luck"]
 COMMAND_DM_ROLL = ENV['command_dm_roll']
+
+COMMAND_CRITICAL_DMG_ROLL = ENV["command_critical_damage"]
+
 #  =======================================
 COMMAND_RESET = ENV["command_reset"]
 COMMAND_ROLL_INITIATIVE = ENV["command_initiative"]
@@ -113,7 +116,7 @@ async def command_roll_dm_dice(context, args: str = "d20"):
 )
 @slash_option(
     name="args",
-    description="Dice expression. E.g: 1d10+1d4-1",
+    description="Dice expression. E.g: 1d10+1d4-1 OR saved dice name",
     required=False,
     opt_type=OptionType.STRING
 )
@@ -121,6 +124,21 @@ async def command_roll_dice(context, args: str = "d20"):
     try:
         rr = None
         data = ''.join(args)
+
+        extra_text = ""
+        # Check if is a dice saved
+        dice_saved = None
+        try:
+            dice = DiceTable(context.author.id)
+            dice_saved = await dice.get(data)
+        except Exception as e:
+            print(f"Error: {e}")
+            pass
+
+        if dice_saved:
+            data = dice_saved
+            extra_text = f"\n## Rolando {args}: {data} \n\n\n"
+
         if data[-2:] in ["r1", "r2", "r3"]:
             rr = data[-2:]
             data = data.split(data[-2:])[0]
@@ -128,7 +146,50 @@ async def command_roll_dice(context, args: str = "d20"):
         for index, dice_list in enumerate(
                 await process(context, data, ignore_d20=False, reroll=rr)):  # Parse and roll dice
             text, result_text, msg_result = await get_roll_text(context, dice_list, True if index == 0 else False)
-            await context.send(f"{text}\n\n{result_text}{msg_result}")
+            await context.send(f"{extra_text}{text}\n\n{result_text}{msg_result}")
+
+    except Exception as e:
+        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
+        await context.send(f"Exception {e}")
+
+
+@slash_command(
+    name=COMMAND_CRITICAL_DMG_ROLL,
+    description="Roll critical damage dice"
+)
+@slash_option(
+    name="args",
+    description="Max the first dice and double others. Expected dice exp OR saved dice name OR exp + extra damage",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def command_roll_critical_damage_dice(context, args: str):
+    try:
+        rr = None
+        data = ''.join(args)
+
+        extra_text = ""
+        # Check if is a dice saved
+        dice_saved = None
+        try:
+            dice = DiceTable(context.author.id)
+            dice_saved = await dice.get(data)
+        except Exception as e:
+            print(f"Error: {e}")
+            pass
+
+        if dice_saved:
+            data = dice_saved
+            extra_text = f"\n## Rolando {args}: {data} \n\n\n"
+
+        if data[-2:] in ["r1", "r2", "r3"]:
+            rr = data[-2:]
+            data = data.split(data[-2:])[0]
+
+        for index, dice_list in enumerate(
+                await process(context, data, ignore_d20=False, reroll=rr, critical=True)):  # Parse and roll dice
+            text, result_text, msg_result = await get_roll_text(context, dice_list, True if index == 0 else False)
+            await context.send(f"{extra_text}{text}\n\n{result_text}{msg_result}")
 
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
@@ -262,7 +323,7 @@ async def command_roll_luck_dice(context, args: str = ""):
     data = data.replace("d20", "")
     data = await sanitize_input(data)
 
-    dice = await calculate_dice(context, [[1, 20]], [], None, luck=True)
+    dice = await calculate_dice(context, [[1, 20]], [], None, adv=None, luck=True)
     text = None
     try:
         # Try to evaluate extra data
@@ -388,12 +449,12 @@ async def remove_condition_initiative(context, index: int):
     opt_type=OptionType.INTEGER
 )
 @slash_option(
-    name="args",
+    name="name",
     description="Character name. Default is the user name.",
     required=False,
     opt_type=OptionType.STRING
 )
-async def roll_initiative(context, dex: int = -99, repeat: int = 1, args: str = ""):
+async def roll_initiative(context, dex: int = -99, repeat: int = 1, name: str = ""):
     try:
         channel = context.channel.name
 
@@ -403,12 +464,12 @@ async def roll_initiative(context, dex: int = -99, repeat: int = 1, args: str = 
             return
 
         for i in range(0, repeat):
-            name = f"{args}" if args else context.author.nick
-            if repeat > 1:
-                name += f" {i + 1}"
+            new_name = f"{name}" if name else context.author.nick
+            if int(repeat) > 1:
+                new_name = f"{new_name} {i+1}"
 
             dice = await calculate_dice(context, [[1, 20]], [], str(dex))
-            await init_items.add(channel, name, dice['only_dice'], str(dex))
+            await init_items.add(channel, new_name, dice['only_dice'], str(dex))
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:

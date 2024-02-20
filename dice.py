@@ -73,14 +73,13 @@ async def _roll_luck_dice():
     return [random.choice(luck_faces)]
 
 
-async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
+async def process(context, dice_data, ignore_d20=False, reroll=None, adv=None, luck=None, critical=False):
 
     if dice_data == "0":
         dice_data = "d20"
 
     #remove empty spaces in dice_data
     dice_data = dice_data.replace(" ", "")
-    print(f"dice_data: {dice_data} with reroll: {reroll}")
 
     repeat = await parse_repeat(dice_data)
     if repeat:
@@ -116,10 +115,17 @@ async def process(context, dice_data, ignore_d20=False, reroll=None, luck=None):
 
     dice_positive, dice_negative = await parse_dice(dice_data)
     additional = await parse_additional(dice_data, dice_positive, dice_negative)
-    dice_list = []
 
+    if critical:
+        # Duplicate all first values in this tuple. [('', '6'), ('2', '4')] => [('2', '6'), ('4', '4')]
+        # Values '' is equal to 1, so should be changed to 2
+        dice_positive = [(int(item[0])*2 if item[0] else '2', item[1]) for item in dice_positive]
+
+    dice_list = []
     for _ in range(0, repeat):
-        dice_list.append(await calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20, reroll, luck))
+        dice_list.append(await calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20, reroll,
+                                              adv=adv, luck=luck, critical=critical))
+
     return dice_list
 
 
@@ -158,34 +164,41 @@ async def parse_additional(data, positive_die, negative_die):
         raise
 
 
-async def roll_and_reroll(number, dice, reroll, luck=False):
+async def roll_and_reroll(number, dice, reroll, luck=False, critical=False):
     number = number if number else 1
     if luck:
         results = first_results = [[dice, True] for dice in await _roll_luck_dice()]
     else:
         results = first_results = [[dice, True] for dice in await _roll_dice(number, dice)]
-    roll_again = 0
 
-    try:
-        for index, dice_rolled in enumerate(first_results):
-            a = int(reroll.split('r')[1])
-            if reroll and dice_rolled[0] <= int(reroll.split("r")[1]):
-                # Set the first roll as not active
-                results[index][1] = False
-                # Reroll the new dice
-                roll_again += 1
-    except Exception as e:
-        pass
+    # Get the first dice and maximize it if critical is True
+    if critical:
+        results[0][0] = int(dice)
 
-    # for some reason I need to run this in another loop to avoid a infinity looping running
-    for _ in range(roll_again):
-        new_dice = await _roll_dice(1, dice)
-        results.append([new_dice[0], True])
+    if reroll:
+        roll_again = 0
+        # Reroll dices if match the 'r' conditions (value less the condition)
+        try:
+            for index, dice_rolled in enumerate(first_results):
+                a = int(reroll.split('r')[1])
+                if reroll and dice_rolled[0] <= int(reroll.split("r")[1]):
+                    # Set the first roll as not active
+                    results[index][1] = False
+                    # Reroll the new dice
+                    roll_again += 1
+        except Exception as e:
+            pass
+
+        # for some reason I need to run this in another loop to avoid a infinity looping running
+        for _ in range(roll_again):
+            new_dice = await _roll_dice(1, dice)
+            results.append([new_dice[0], True])
 
     return Die(number, dice, results)
 
 
-async def calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20=False, reroll=None, adv=None, luck=False):
+async def calculate_dice(context, dice_positive, dice_negative, additional, ignore_d20=False, reroll=None, adv=None,
+                         luck=False, critical=False):
     '''
         Context => Discord context to capture player name and channel name
         dice_positive => List with quantity and dice size to roll [[1, 6], [2, 4]] (1d6 + 2d4)
@@ -193,6 +206,7 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
         additional => Additional math for the roll to be evalueted with the result (+2-1)
         ignore_d20 => Bool, ignore any d20 rolls in the list
         reroll => String with minimal number to reroll once (r2) -> Will re-roll once results for FIRST dice <= 2.
+        critical => Maximize the first positive dice
     '''
     # ignore_d20 Used to roll without d20 for adv
     result_die = []
@@ -205,17 +219,19 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
             if ignore_d20 and dice == "20":
                 continue
 
-            rolled = await roll_and_reroll(number, dice, reroll if i != 0 else None, luck)
+            rolled = await roll_and_reroll(number, dice, reroll if i != 0 else None, luck=luck,
+                                           critical=True if critical and i==0 else False)
             if adv is not None:
                 rolled.set_validation_adv(adv)
 
+            print(f"Rolled: {rolled}")
             result_die.append(rolled)
             only_dice += rolled.result
 
         for number, dice in dice_negative:
             if ignore_d20 and dice == "20":
                 continue
-            rolled = await roll_and_reroll(number, dice, None)
+            rolled = await roll_and_reroll(number, dice, False)
             result_minus_die.append(rolled)
             only_dice -= rolled.result
 
@@ -230,7 +246,7 @@ async def calculate_dice(context, dice_positive, dice_negative, additional, igno
                   "additional": additional,
                   "additional_eval": additional_eval}
 
-        # Register the dice history (Maybe move this to another place?)
+        # Register the dice history
         if STATS_ENABLE:
             for die_result in result['result_die']:
                 for die in die_result.debug:

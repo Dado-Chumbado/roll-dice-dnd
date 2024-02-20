@@ -50,6 +50,13 @@ class DiceTable:
             f.truncate(0)
             json.dump([i.get_json() for i in data], f)
 
+    async def get(self, name):
+        name = name.capitalize()
+        for item in self.dice_table:
+            if item.name.capitalize() == name:
+                return item.value
+        return None
+
     async def add(self, name, value):
         # Capitalize the first letter of the name
         name = name.capitalize()
