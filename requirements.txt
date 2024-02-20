@@ -1,6 +1,7 @@
-discord.py
+#discord.py
+discord-py-interactions
 ipython
 python-slugify
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.9
 peewee
 celery

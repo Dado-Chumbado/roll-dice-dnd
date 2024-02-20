@@ -2,8 +2,7 @@
 
 import json
 import os
-import discord
-from discord.ext import commands
+from interactions import Client, Intents, listen, slash_command, slash_option, OptionType
 from dice import process, calculate_dice
 from initiative import InitTable, clean_dex
 from roll_view import multiple_d20_text, get_roll_text
@@ -18,8 +17,6 @@ with open("./config.json", "r") as env:
     ENV = json.load(env)
 
 COMMAND_CHAR = ENV['command_char']
-ALTERNATIVE_COMMAND_CHAR = ENV['alternative_char']
-COMMAND_HELPER = ENV['command_helper']
 
 COMMAND_ROLL = ENV['command_roll']
 COMMAND_ROLL_DOUBLE_ADVANTAGE = ENV["command_roll_double_advantage"]
@@ -31,7 +28,7 @@ COMMAND_DM_ROLL = ENV['command_dm_roll']
 COMMAND_RESET = ENV["command_reset"]
 COMMAND_ROLL_INITIATIVE = ENV["command_initiative"]
 COMMAND_ROLL_INITIATIVE_ADV = ENV["command_initiative_adv"]
-COMMAND_FORCE_INITIATIVE= ENV["command_force_initiative"]
+COMMAND_FORCE_INITIATIVE = ENV["command_force_initiative"]
 COMMAND_REMOVE_INITIATIVE = ENV["command_remove_initiative"]
 COMMAND_ADD_CONDITION_INITIATIVE = ENV["command_add_condition"]
 COMMAND_REMOVE_CONDITION_INITIATIVE = ENV["command_remove_condition"]
@@ -48,20 +45,39 @@ with open("secrets.json", "r") as secrets:
     DISCORD_TOKEN = json.load(secrets)["discord"]
 init_items = InitTable()
 
-
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix=[COMMAND_CHAR, ALTERNATIVE_COMMAND_CHAR],
-                   description="Roll a random dice, normal or with advantages/disadvantages and control initiative table",
-                   intents=intents)
+# intents = discord.Intents.default()
+# intents.message_content = True
+bot = Client(command_prefix=[COMMAND_CHAR],
+             description="Roll dices and control initiative table",
+             intents=Intents.DEFAULT)
 
 
 # COMMANDS ================
-@bot.command(
+@slash_command(
+    name='test',
+    description="TEST"
+)
+@slash_option(
+    name="dice",
+    description="String Option",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_test_dice(context, dice: str = "d20"):
+    await context.send(f"pong  {context.author.nick} :{dice}")
+
+
+@slash_command(
     name=COMMAND_DM_ROLL,
     description="Roll private dice"
 )
-async def command_roll_dm_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: 1d10+1d4-1",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_dm_dice(context, args: str = "d20"):
     try:
         '''
             process("1d10+1d4-1")
@@ -75,30 +91,36 @@ async def command_roll_dm_dice(context, *args):
             rr = data[-2:]
             data = data.split(data[-2:])[0]
 
-        for index, dice in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dice
+        for index, dice in enumerate(await process(context, data, ignore_d20=False, reroll=rr)):  # Parse and roll dice
             text, result_text, msg_result = await get_roll_text(context, dice, True if index == 0 else False)
-            await context.message.author.send(f"{text}\n\n{result_text}{msg_result}")
+            await context.author.send(f"{text}\n\n{result_text}{msg_result}")
 
+        await context.send(f"Rolagem enviada para {context.author.nick}")
     except Exception as e:
         await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL} 1d20+2 por exemplo")
         await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_ROLL,
     description="Roll dice"
 )
-async def command_roll_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: 1d10+1d4-1",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_dice(context, args: str = "d20"):
     try:
         rr = None
         data = ''.join(args)
-        if not data:
-            data = "d20"
         if data[-2:] in ["r1", "r2", "r3"]:
             rr = data[-2:]
             data = data.split(data[-2:])[0]
 
-        for index, dice_list in enumerate(await process(context, data, ignore_d20=False, reroll=rr)): # Parse and roll dice
+        for index, dice_list in enumerate(
+                await process(context, data, ignore_d20=False, reroll=rr)):  # Parse and roll dice
             text, result_text, msg_result = await get_roll_text(context, dice_list, True if index == 0 else False)
             await context.send(f"{text}\n\n{result_text}{msg_result}")
 
@@ -107,11 +129,17 @@ async def command_roll_dice(context, *args):
         await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_ROLL_ADVANTAGE,
     description="Roll dice with advantage"
 )
-async def command_roll_advantage_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: d20+2d6 | 2d6-1 ",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_advantage_dice(context, args: str = ""):
     try:
         data = ''.join(args)
         # Clean up
@@ -128,7 +156,6 @@ async def command_roll_advantage_dice(context, *args):
             text = await multiple_d20_text(context, dice, additional_dice)
         except Exception as e:
             print(e)
-            raise
 
         if text:
             await context.send(text)
@@ -139,11 +166,17 @@ async def command_roll_advantage_dice(context, *args):
         await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_ROLL_DOUBLE_ADVANTAGE,
     description="Roll dice with double advantage"
 )
-async def command_roll_double_advantage_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: 1d10",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_double_advantage_dice(context, args: str = ""):
     try:
         data = ''.join(args)
         # Clean up
@@ -158,7 +191,7 @@ async def command_roll_double_advantage_dice(context, *args):
             additional_dice = await process(context, data, ignore_d20=True)
             text = await multiple_d20_text(context, dice, additional_dice)
         except:
-            raise
+            pass
 
         if text:
             await context.send(text)
@@ -168,11 +201,18 @@ async def command_roll_double_advantage_dice(context, *args):
             f"Voce tbm pode rolar com {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +d6+1")
         await context.send(f"Exception {e}")
 
-@bot.command(
+
+@slash_command(
     name=COMMAND_ROLL_DISADVANTAGE,
     description="Roll dice with disadvantage"
 )
-async def command_roll_disadvantage_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: d20 | 2d6+1",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_disadvantage_dice(context, args: str = ""):
     try:
         data = ''.join(args)
         # SANITIZE STRING -> MOVE THIS
@@ -198,11 +238,17 @@ async def command_roll_disadvantage_dice(context, *args):
         await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_ROLL_LUCK_DICE,
-    description="Roll dice with LUCK?"
+    description="Roll dice with LUCK!"
 )
-async def command_roll_luck_dice(context, *args):
+@slash_option(
+    name="args",
+    description="Dice expression. E.g: 1d10+1d4-1",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def command_roll_luck_dice(context, args: str = ""):
     data = ''.join(args)
     # SANITIZE STRING -> MOVE THIS
     if data == "d20":
@@ -211,6 +257,7 @@ async def command_roll_luck_dice(context, *args):
     data = await sanitize_input(data)
 
     dice = await calculate_dice(context, [[1, 20]], [], None, luck=True)
+    text = None
     try:
         # Try to evaluate extra data
         additional_dice = await process(context, data, ignore_d20=True)
@@ -231,9 +278,10 @@ async def sanitize_input(data):
     data = data.replace("--", "-")
     return data
 
-#============================================================================
 
-@bot.command(
+# ============================================================================
+
+@slash_command(
     name=COMMAND_RESET,
     description="Reset the initiative table"
 )
@@ -246,74 +294,115 @@ async def roll_reset_initiative(context):
     init_items.initiative_last_msg = await context.send("OK, limpei a tabela. Bons dados :)")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_REMOVE_INITIATIVE,
     description="Remove item from table"
 )
+@slash_option(
+    name="index",
+    description="Initiative position to remove.",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
 async def remove_initiative(context, index=0):
-    await init_items.remove_index(context.channel.name, index)
-    # Delete last msg and send the new one
-    if init_items.initiative_last_msg:
-        await init_items.initiative_last_msg.delete()
+    try:
+        await init_items.remove_index(context.channel.name, index)
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
 
-    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+    except Exception as e:
+        await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_ADD_CONDITION_INITIATIVE,
     description="Add item from table"
 )
-async def add_condition_initiative(context, index, *args):
-    data = ' '.join(args)
-    await init_items.add_condition(context.channel.name, index, data)
-    # Delete last msg and send the new one
-    if init_items.initiative_last_msg:
-        await init_items.initiative_last_msg.delete()
+@slash_option(
+    name="index",
+    description="Initiative position to remove.",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="args",
+    description="Condition to add.",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def add_condition_initiative(context, index: int, args: str = ""):
+    try:
+        await init_items.add_condition(context.channel.name, index, args)
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
 
-    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+    except Exception as e:
+        await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_REMOVE_CONDITION_INITIATIVE,
     description="Remove item from table"
 )
-async def remove_initiative(context, index):
-    await init_items.remove_condition(context.channel.name, index)
-    # Delete last msg and send the new one
-    if init_items.initiative_last_msg:
-        await init_items.initiative_last_msg.delete()
-
-    init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
-
-
-@bot.command(
-    name=COMMAND_ROLL_INITIATIVE,
-    description=""
+@slash_option(
+    name="index",
+    description="Initiative position to remove.",
+    required=True,
+    opt_type=OptionType.INTEGER
 )
-async def roll_initiative(context, dex="", repeat="1", *args):
+async def remove_condition_initiative(context, index: int):
     try:
-        try:
-            repeat = int(repeat)
-            data = ' '.join(args)
-        except Exception as e:
-            data = repeat
-            repeat = 1
+        await init_items.remove_condition(context.channel.name, index)
+        # Delete last msg and send the new one
+        if init_items.initiative_last_msg:
+            await init_items.initiative_last_msg.delete()
 
+        init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+    except Exception as e:
+        await context.send(f"Exception {e}")
+
+@slash_command(
+    name=COMMAND_ROLL_INITIATIVE,
+    description="Roll initiative!"
+)
+@slash_option(
+    name="dex",
+    description="Character dexterity modifier. E.g: 2",
+    required=False,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="repeat",
+    description="Number of times that the roll will be repeated. Default is 1.",
+    required=False,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="args",
+    description="Character name. Default is the user name.",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def roll_initiative(context, dex: int = -99, repeat: int = 1, args: str = ""):
+    try:
         channel = context.channel.name
 
-        print("dex", dex, "repeat", repeat, "args", *args, "data", data)
-        if dex == "":
+        if dex == -99:
             print("Show init table")
             await init_items.show(context.channel.name, context)
             return
 
         for i in range(0, repeat):
-            name = f"{data}" if data else context.message.author.display_name
+            name = f"{args}" if args else context.author.nick
             if repeat > 1:
-                name += f" {i+1}"
+                name += f" {i + 1}"
 
-            dice = await calculate_dice(context, [[1, 20]], [], dex)
-            await init_items.add(channel, name, dice['only_dice'], dex)
+            dice = await calculate_dice(context, [[1, 20]], [], str(dex))
+            await init_items.add(channel, name, dice['only_dice'], str(dex))
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
@@ -322,14 +411,11 @@ async def roll_initiative(context, dex="", repeat="1", *args):
         init_items.initiative_last_msg = await init_items.show(channel, context)
 
     except Exception as e:
-        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 por exemplo")
-        await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE} +2 3 Nome do bicho ( Iniciativa | Quantidade | Nome )")
-        # await context.send(f"Exception {e}")
+        await context.send(f"Erro: {e}")
 
-
-@bot.command(
+@slash_command(
     name=COMMAND_NEXT_INITIATIVE,
-    description=""
+    description="Move the initiative to the next character."
 )
 async def next_initiative(context):
     await init_items.next(context.channel.name)
@@ -340,9 +426,9 @@ async def next_initiative(context):
     init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_PREV_INITIATIVE,
-    description=""
+    description="Move the initiative to the previous character."
 )
 async def prev_initiative(context):
     await init_items.previous(context.channel.name)
@@ -352,24 +438,36 @@ async def prev_initiative(context):
 
     init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
-@bot.command(
+
+@slash_command(
     name=COMMAND_ROLL_INITIATIVE_ADV,
-    description=""
+    description="Roll initiative with advantage!"
 )
-async def roll_initiative_advantage(context, dex="", *args):
+@slash_option(
+    name="dex",
+    description="Character dexterity modifier. E.g: 2",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="args",
+    description="Character name. Default is the user name.",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def roll_initiative_advantage(context, dex: int = 0, args: str = ""):
     try:
-        data = ' '.join(args)
         if not dex:
             await init_items.show(context.channel.name, context)
             return
 
-        name = f"{data}" if data else context.message.author.display_name
+        name = f"{args}" if args else context.author.nick
 
-        dice = await calculate_dice(context, [[2, 20]], [], dex)
+        dice = await calculate_dice(context, [[2, 20]], [], str(dex))
 
         text = await multiple_d20_text(context, dice, None)
         await context.send(text)
-        await init_items.add(context.channel.name, name, dice['result_die'][0].larger(), dex)
+        await init_items.add(context.channel.name, name, dice['result_die'][0].larger(), str(dex))
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
@@ -378,23 +476,38 @@ async def roll_initiative_advantage(context, dex="", *args):
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
     except Exception as e:
-        await context.send(f"Comando nao reconhecido, use: {COMMAND_CHAR}{COMMAND_ROLL_INITIATIVE_ADV} +2 por exemplo")
         await context.send(f"Exception {e}")
-        raise
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_FORCE_INITIATIVE,
-    description=""
+    description="Force initiative. Add a character that already rolled dices into initiative table."
 )
-async def force_initiative(context, dice, dex="", *args):
+@slash_option(
+    name="dice",
+    description="Dice rolled for initiative.",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="dex",
+    description="Character dexterity modifier",
+    required=True,
+    opt_type=OptionType.INTEGER
+)
+@slash_option(
+    name="args",
+    description="Character name.",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def force_initiative(context, dice: int = 0, dex: int = 0, args: str = ""):
     try:
-        data = ' '.join(args)
-        dice, _ = await clean_dex(dice)
-        dex, neg = await clean_dex(dex)
-        name = f"{data}" if data else context.message.author.display_name
+        dice, _ = await clean_dex(str(dice))
+        dex, neg = await clean_dex(str(dex))
+        name = f"{args}" if args else context.author.nick
 
-        await init_items.add(context.channel.name, name, dice, dex if not neg else dex*-1)
+        await init_items.add(context.channel.name, name, dice, str(dex) if not neg else str(dex * -1))
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
             await init_items.initiative_last_msg.delete()
@@ -402,13 +515,12 @@ async def force_initiative(context, dice, dex="", *args):
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
     except Exception as e:
-        await context.send(f"Mestre, use: {COMMAND_CHAR}{COMMAND_FORCE_INITIATIVE} 2 3 Nome ( Valor do dado | Iniciativa | Nome )")
         await context.send(f"Exception {e}")
 
 
 #  STATS  =========================================================================
 
-@bot.command(
+@slash_command(
     name=COMMAND_SHOW_STATS_PLAYER,
     description="Show stats per player in the channel"
 )
@@ -419,7 +531,7 @@ async def command_show_stats_player(context):
         await context.send(f"Exception {e}")
 
 
-@bot.command(
+@slash_command(
     name=COMMAND_SHOW_STATS_SESSION,
     description="Show stats per channel (session)"
 )
@@ -429,26 +541,11 @@ async def command_show_stats_session(context, date=None, end_date=None):
         await show_session_stats(bot, context, context.channel.name, date, end_date)
     except Exception as e:
         await context.send(f"Exception {e}")
-        raise
 
 
-@bot.command(
-    name=COMMAND_HELPER,
-    description="Show helpers menu"
-)
-async def command_helper(context):
-    text = "``` COMO USAR \n"
-    text += f" use {COMMAND_CHAR} ou {ALTERNATIVE_COMMAND_CHAR} para acionar + a tecla de comando por exemplo: \n"
-    text += f" {COMMAND_ROLL}) {COMMAND_CHAR}{COMMAND_ROLL} 2d6+3 para rolar 2d6 e somar +3 ao resultado\n"
-    text += f" {COMMAND_ROLL_ADVANTAGE}) {COMMAND_CHAR}{COMMAND_ROLL_ADVANTAGE} +1 para rolar 2d20, pegar o maior numero e somar +1 ao resultado\n"
-    text += f" {COMMAND_ROLL_DISADVANTAGE}) {COMMAND_CHAR}{COMMAND_ROLL_DISADVANTAGE} +1 para rolar 2d20, pegar o menor resultado somar +1 ao resultado\n"
-    text += f" {COMMAND_HELPER}) {COMMAND_CHAR}{COMMAND_HELPER} mostra essa ajuda ```"
-
-    await context.send(f"{text}")
-
-
-@bot.event
+@listen()
 async def on_ready():
-    print(f"I'm logged in as {bot.user.name} !\n Statistics enable: {STATS_ENABLE}")
+    print(f"I'm logged in as {bot.user.display_name} !\n Statistics enable: {STATS_ENABLE}.")
 
-bot.run(DISCORD_TOKEN)
+
+bot.start(DISCORD_TOKEN)

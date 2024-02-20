@@ -67,15 +67,21 @@ class InitTable:
         save_initiative_table(channel, self.initiative_table)
 
     async def add_condition(self, channel, index, condition):
-        self.initiative_table[int(index)-1].condition = condition
+        if not self.initiative_table:
+            self.initiative_table = load_initiative_table(channel)
+        self.initiative_table[index-1].condition = condition
         save_initiative_table(channel, self.initiative_table)
 
     async def remove_condition(self, channel, index):
-        self.initiative_table[int(index)-1].condition = ""
+        if not self.initiative_table:
+            self.initiative_table = load_initiative_table(channel)
+        self.initiative_table[index-1].condition = ""
         save_initiative_table(channel, self.initiative_table)
 
     async def remove_index(self, channel, index):
-        self.initiative_table.remove(self.initiative_table[int(index)-1])
+        if not self.initiative_table:
+            self.initiative_table = load_initiative_table(channel)
+        self.initiative_table.remove(self.initiative_table[index-1])
         save_initiative_table(channel, self.initiative_table)
 
     async def next(self, channel):

@@ -1,11 +1,11 @@
 async def get_roll_text(context, dice_result_dict, first=True):
     text = ""
     try:
-        user = context.message.author
+        user = context.author
         if first:
-            text = f"{user.display_name}: \n"
+            text = f"{user.nick}: \n"
     except:
-        text = f"Test: \n"
+        text = f"Name not found: \n"
 
     try:
         list_of_dice = []
