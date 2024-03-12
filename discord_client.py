@@ -385,7 +385,10 @@ async def remove_initiative(context, index=0):
         await init_items.remove_index(context.channel.name, index)
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
-            await init_items.initiative_last_msg.delete()
+            try:
+                await init_items.initiative_last_msg.delete()
+            except Exception as e:
+                print(f"Error deleting last initiative msg: {e}")
 
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
     except Exception as e:
@@ -498,7 +501,10 @@ async def next_initiative(context):
     await init_items.next(context.channel.name)
     # Delete last msg and send the new one
     if init_items.initiative_last_msg:
-        await init_items.initiative_last_msg.delete()
+        try:
+            await init_items.initiative_last_msg.delete()
+        except Exception as e:
+            print(f"Error deleting last initiative msg: {e}")
 
     init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
@@ -679,7 +685,6 @@ async def remove_dice(context, index: int):
 
     except Exception as e:
         await context.send(f"Erro: {e}")
-        raise
 
 
 @slash_command(
@@ -694,7 +699,6 @@ async def reset_dice(context):
 
     except Exception as e:
         await context.send(f"Erro: {e}")
-        raise
 
 
 @listen()

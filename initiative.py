@@ -65,6 +65,7 @@ class InitTable:
 
     async def reset(self, channel):
         self.initiative_table = []
+        self.current = 1
         save_initiative_table(channel, self.initiative_table)
 
     async def add_condition(self, channel, index, condition):
@@ -83,6 +84,12 @@ class InitTable:
         if not self.initiative_table:
             self.initiative_table = load_initiative_table(channel)
         self.initiative_table.remove(self.initiative_table[index-1])
+
+        # Adjust the current index if necessary
+        print(index-1, self.current, len(self.initiative_table))
+        if index-1 < self.current:
+            self.current -= 1
+
         save_initiative_table(channel, self.initiative_table)
 
     async def next(self, channel):
