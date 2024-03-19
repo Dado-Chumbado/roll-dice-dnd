@@ -365,7 +365,10 @@ async def roll_reset_initiative(context):
     await init_items.reset(context.channel.name)
     # Delete last msg and send the new one
     if init_items.initiative_last_msg:
-        await init_items.initiative_last_msg.delete()
+        try:
+            await init_items.initiative_last_msg.delete()
+        except Exception as e:
+            print(f"Error deleting last initiative msg: {e}")
 
     init_items.initiative_last_msg = await context.send("OK, limpei a tabela. Bons dados :)")
 
