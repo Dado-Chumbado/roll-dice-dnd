@@ -86,9 +86,12 @@ class InitTable:
         self.initiative_table.remove(self.initiative_table[index-1])
 
         # Adjust the current index if necessary
-        print(index-1, self.current, len(self.initiative_table))
-        if index-1 < self.current:
+        print(index, self.current, len(self.initiative_table))
+        if index < self.current:
             self.current -= 1
+
+        if self.current > len(self.initiative_table) or self.current < 1:
+            self.current = 1
 
         save_initiative_table(channel, self.initiative_table)
 
@@ -115,6 +118,7 @@ class InitTable:
         text = "```ml\n"
         # Determine the maximum length of names for proper alignment
         max_name_length = max(len(item.name) for item in self.initiative_table)
+        print(f"Current position: {self.current}")
         for i, item in enumerate(self.initiative_table):
             condition = f"|{item.condition}|" if item.condition else ""
             signal = "+" if item.dex > 0 else "-"

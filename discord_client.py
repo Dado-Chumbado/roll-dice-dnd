@@ -256,9 +256,9 @@ async def command_roll_double_advantage_dice(context, args: str = ""):
     try:
         data = ''.join(args)
         # Clean up
-        if data == "d20":
+        if data == "d20" or data == "1d20":
             data = ""
-        data = data.replace("d20", "")
+        data = data.replace("1d20", "").replace("d20", "")
         data = await sanitize_input(data)
 
         dice = await calculate_dice(context, [[3, 20]], [], None, adv=True)
@@ -292,9 +292,9 @@ async def command_roll_disadvantage_dice(context, args: str = ""):
     try:
         data = ''.join(args)
         # SANITIZE STRING -> MOVE THIS
-        if data == "d20":
+        if data == "d20" or data == "1d20":
             data = ""
-        data = data.replace("d20", "")
+        data = data.replace("1d20", "").replace("d20", "")
         data = await sanitize_input(data)
 
         dice = await calculate_dice(context, [[2, 20]], [], None, adv=False)
@@ -302,8 +302,8 @@ async def command_roll_disadvantage_dice(context, args: str = ""):
             # Try to evaluate extra data
             additional_dice = await process(context, data, ignore_d20=True)
             text = await multiple_d20_text(context, dice, additional_dice)
-        except:
-            raise
+        except Exception as e:
+            await context.send(f"Exception {e}")
 
         if text:
             await context.send(text)
@@ -452,14 +452,8 @@ async def remove_condition_initiative(context, index: int):
     description="Roll initiative!"
 )
 @slash_option(
-    name="dex",
-    description="Character dexterity modifier. E.g: 2",
-    required=False,
-    opt_type=OptionType.INTEGER
-)
-@slash_option(
-    name="repeat",
-    description="Number of times that the roll will be repeated. Default is 1.",
+    name="initiative",
+    description="Character initiative modifier. E.g: 2",
     required=False,
     opt_type=OptionType.INTEGER
 )
@@ -469,22 +463,32 @@ async def remove_condition_initiative(context, index: int):
     required=False,
     opt_type=OptionType.STRING
 )
-async def roll_initiative(context, dex: int = -99, repeat: int = 1, name: str = ""):
+@slash_option(
+    name="repeat",
+    description="Number of times that the roll will be repeated. Default is 1.",
+    required=False,
+    opt_type=OptionType.INTEGER
+)
+async def roll_initiative(context, initiative: int = -99, name: str = "", repeat: int = 1):
     try:
         channel = context.channel.name
 
-        if dex == -99:
+        if initiative == -99:
             print("Show init table")
             await init_items.show(context.channel.name, context)
             return
 
         for i in range(0, repeat):
-            new_name = f"{name}" if name else context.author.nick
+            try:
+                new_name = f"{name}" if name else context.author.nick
+            except:
+                new_name = f"{name}" if name else context.author.global_name
+
             if int(repeat) > 1:
                 new_name = f"{new_name} {i+1}"
 
-            dice = await calculate_dice(context, [[1, 20]], [], str(dex))
-            await init_items.add(channel, new_name, dice['only_dice'], str(dex))
+            dice = await calculate_dice(context, [[1, 20]], [], str(initiative))
+            await init_items.add(channel, new_name, dice['only_dice'], str(initiative))
 
         # Delete last msg and send the new one
         if init_items.initiative_last_msg:
@@ -493,8 +497,7 @@ async def roll_initiative(context, dex: int = -99, repeat: int = 1, name: str = 
         init_items.initiative_last_msg = await init_items.show(channel, context)
 
     except Exception as e:
-        await context.send(f"Erro: {e}")
-        raise
+        print(context.send(f"Erro: {e}"))
 
 @slash_command(
     name=COMMAND_NEXT_INITIATIVE,
