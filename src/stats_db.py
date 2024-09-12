@@ -1,13 +1,14 @@
+import os
+from dotenv import load_dotenv
 import datetime
-import json
 import peewee
 from peewee import *
 
-with open("./secrets.json", "r") as env:
-    ENV = json.load(env)
 
-pg_db = PostgresqlDatabase(ENV['db'], user=ENV['user'], password=ENV['pass'],
-                           host=ENV['host'], port=ENV['port'])
+load_dotenv()
+
+pg_db = PostgresqlDatabase(os.getenv("db"), user=os.getenv("user"), password=os.getenv("pass"),
+                           host=os.getenv("host"), port=os.getenv("port"))
 
 
 class PlayerStats(Model):
@@ -227,7 +228,7 @@ def get_display_name(player_id, channel):
         return f"Player name not found: {player_id}"
 
 
-async def show_session_stats(bot, ctx, channel, date=None, end_date=None):
+async def show_session_stats(ctx, channel, date=None, end_date=None):
     try:
         data = get_session_stats(channel, date, end_date)
 

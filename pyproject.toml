@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "roll dice discord bot"
+version = "0.1.0"
+description = ""
+authors = ["Rafael Sandrini <rafael@sandrini.com.br>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+discord-py-interactions = "^5.13.2"
+ipython = "^8.27.0"
+python-slugify = "^8.0.4"
+psycopg2-binary = "2.9.9"
+peewee = "^3.17.6"
+celery = "^5.4.0"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

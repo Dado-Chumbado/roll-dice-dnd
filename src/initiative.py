@@ -1,8 +1,10 @@
+import os
 import json
 import re
 from slugify import slugify
 
-ROOT_DATA = '/data/'
+# ROOT_DATA get relative path from here + data/
+ROOT_DATA = os.path.join(os.path.dirname(__file__), 'data/')
 
 
 class InitItem:
@@ -44,6 +46,7 @@ def load_initiative_table(channel):
 
 def save_initiative_table(channel, data):
     file_name = f'{ROOT_DATA}{slugify(channel)}.db'
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'w') as f:
         f.truncate(0)
         json.dump([i.get_json() for i in data], f)

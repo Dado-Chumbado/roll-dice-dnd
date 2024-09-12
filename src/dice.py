@@ -177,7 +177,7 @@ async def roll_and_reroll(number, dice, reroll, luck=False, critical=False):
 
     if reroll:
         roll_again = 0
-        # Reroll dices if match the 'r' conditions (value less the condition)
+        # Reroll dice if match the 'r' conditions (value less the condition)
         try:
             for index, dice_rolled in enumerate(first_results):
                 a = int(reroll.split('r')[1])
