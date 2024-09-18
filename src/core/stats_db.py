@@ -67,8 +67,6 @@ def setup_db():
 
 try:
     setup_db()
-except:
-    pass
 finally:
     pg_db.close()
 
@@ -106,7 +104,7 @@ def update_player_stats(player_id, display_name, channel, start_date=None, end_d
             player.total_dice_rolled += 1
             player.sum_dice_number_rolled += r.value
 
-            if r.dice == "d20":
+            if r.result == "d20":
                 player.total_d20_values_rolled += r.value
                 player.total_d20_rolled += 1
                 if r.critical:
@@ -114,27 +112,27 @@ def update_player_stats(player_id, display_name, channel, start_date=None, end_d
                 if r.fail:
                     player.total_d20_fails_rolled += 1
 
-            if r.dice == "d4":
+            if r.result == "d4":
                 player.total_d4_values_rolled += r.value
                 player.total_d4_rolled += 1
 
-            if r.dice == "d6":
+            if r.result == "d6":
                 player.total_d6_values_rolled += r.value
                 player.total_d6_rolled += 1
 
-            if r.dice == "d8":
+            if r.result == "d8":
                 player.total_d8_values_rolled += r.value
                 player.total_d8_rolled += 1
 
-            if r.dice == "d10":
+            if r.result == "d10":
                 player.total_d10_values_rolled += r.value
                 player.total_d10_rolled += 1
 
-            if r.dice == "d12":
+            if r.result == "d12":
                 player.total_d12_values_rolled += r.value
                 player.total_d12_rolled += 1
 
-            if r.dice == "d100":
+            if r.result == "d100":
                 player.total_d100_values_rolled += r.value
                 player.total_d100_rolled += 1
 

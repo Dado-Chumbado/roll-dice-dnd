@@ -1,6 +1,6 @@
 import os
 import json
-import re
+
 from slugify import slugify
 
 # ROOT_DATA get relative path from here + data/
@@ -135,6 +135,4 @@ class InitTable:
         return await context.send(text)
 
 
-async def clean_dex(value):
-    negative = True if "-" in value else False
-    return int(re.sub('[^0-9]', '', value)), negative
+
