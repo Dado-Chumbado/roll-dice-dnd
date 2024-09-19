@@ -127,7 +127,6 @@ async def generate_dice_roll(number_of_dice, dice_size, reroll='', critical=Fals
     # Step 3: Apply reroll logic (if reroll is specified)
     if reroll:
         reroll_threshold = int(reroll.split('r')[1])
-        print(f"Reroll threshold: {reroll_threshold}")
         rolled_dice = await rolled_dice.apply_reroll(reroll_threshold)
 
     # Return final Roll object
@@ -135,8 +134,8 @@ async def generate_dice_roll(number_of_dice, dice_size, reroll='', critical=Fals
 
 
 class Roll:
-    def __init__(self):
-        self.dice_expression = ""
+    def __init__(self, dice_data: str):
+        self.dice_expression = dice_data
         self.rolled_sum_dice = []  # To store positive rolls
         self.rolled_subtract_die = []  # To store negative rolls
         self.additional_eval = 0

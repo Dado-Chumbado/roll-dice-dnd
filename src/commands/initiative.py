@@ -1,5 +1,5 @@
 from config import initiative_commands
-from core.dice_engine import process, calculate_dice
+from core.dice_engine import calculate_dice
 from core.initiative import InitTable
 from core.roll_view import multiple_d20_text
 from utils import clean_dex

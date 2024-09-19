@@ -82,7 +82,7 @@ async def handle_repeat(dice_data):
 
 async def validate_dice_expression(dice_data):
     # Fix any missing elements in the dice expression
-    dice_data = await fix_dice_expression(dice_data)
+    dice_data, rr = await fix_dice_expression(dice_data)
 
     # Use parse_dice to extract dice rolls
     parsed_positive, parsed_negative = await parse_dice(dice_data)
@@ -101,12 +101,18 @@ async def validate_dice_expression(dice_data):
     # Allow valid arithmetic expressions to remain, like "+2", "-1", or "+2-1"
     if remaining_data:
         # Check if the remaining data is a valid arithmetic expression
-        if not re.match(r'^[+\-]?\d+([+\-]\d+)*$', remaining_data):
+        if not re.match(r'^[+\-]?\d+([+\-]\d+)*(\s*r\d+)?$', remaining_data):
             raise ValueError(
                 f"Invalid remaining data in expression: {remaining_data}")
 
+    return dice_data, rr
 
 async def fix_dice_expression(dice_data):
+    # First remove any whitespace
+    dice_data = re.sub(r'\s+', '', dice_data)
+    # now undercase any letters
+    dice_data = dice_data.lower()
+
     # Add a 'd' before numbers followed by a + or - (like "20+5")
     if re.findall('^(\d+)(?=[\+\-])', dice_data):
         dice_data = 'd' + dice_data
@@ -149,19 +155,22 @@ async def fix_dice_expression(dice_data):
     # Clean up any extra "+" or "-" signs
     dice_data = dice_data.replace("++", "+").replace("--", "-")
 
-    return dice_data
+    rr = ''
+    if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
+        dice_data, rr = dice_data.split(dice_data[-2:])
+    return dice_data, rr
 
 
-async def process_input_dice(context, dice_data: str, reroll: str,
-                             adv: bool|None, critical: bool) -> list:
+async def process_input_dice(context, dice_data: str, adv: bool = None,
+                             critical: bool = None) -> list:
     # Validate dice expression
-    await validate_dice_expression(dice_data)
+    dice_data, reroll = await validate_dice_expression(dice_data)
 
     # Handle repeat logic
     dice_data, repeat = await handle_repeat(dice_data)
 
-    # Fix dice expression
-    dice_data = await fix_dice_expression(dice_data)
+    # # Fix dice expression
+    # dice_data = await fix_dice_expression(dice_data)
 
     # Parse dice
     dice_positive, dice_negative = await parse_dice(dice_data)
@@ -172,15 +181,17 @@ async def process_input_dice(context, dice_data: str, reroll: str,
 
     # Roll dice multiple times
     dice_roll_list = [
-        await calculate_dice(context, dice_positive, dice_negative, additional, reroll, adv=adv, critical=critical)
+        await calculate_dice(context, dice_data, dice_positive, dice_negative,
+                             additional, reroll, adv=adv, critical=critical)
         for _ in range(repeat)
     ]
     return dice_roll_list
 
 
-async def calculate_dice(context, dice_positive, dice_negative, additional,
+async def calculate_dice(context, dice_data: str, dice_positive: [],
+                         dice_negative: [], additional: str,
                          reroll=None, adv=None, critical=False) -> Roll:
-    roll = Roll()
+    roll = Roll(dice_data)
 
     try:
         # Handle positive dice rolls (subtractions)
@@ -215,6 +226,7 @@ async def calculate_dice(context, dice_positive, dice_negative, additional,
     except Exception as e:
         # Raise the exception after printing for debugging
         logging.error(f"Error processing dice: {e}")
+        raise
 
 
 async def register_dice_stats(context, roll: Roll):
