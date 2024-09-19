@@ -162,7 +162,7 @@ async def fix_dice_expression(dice_data):
 
 
 async def process_input_dice(context, dice_data: str, adv: bool = None,
-                             critical: bool = None) -> list:
+                             critical: bool = None) -> (list, list, list):
     # Validate dice expression
     dice_data, reroll = await validate_dice_expression(dice_data)
 
@@ -179,19 +179,20 @@ async def process_input_dice(context, dice_data: str, adv: bool = None,
     if critical:
         dice_positive = [(int(item[0])*2 if item[0] else '2', item[1]) for item in dice_positive]
 
-    # Roll dice multiple times
+    # Roll dice multiple times, return a list of Roll
     dice_roll_list = [
         await calculate_dice(context, dice_data, dice_positive, dice_negative,
                              additional, reroll, adv=adv, critical=critical)
         for _ in range(repeat)
     ]
-    return dice_roll_list
+    # Return the list of Roll + the data used to generate it
+    return dice_roll_list, dice_data, reroll
 
 
 async def calculate_dice(context, dice_data: str, dice_positive: [],
                          dice_negative: [], additional: str,
                          reroll=None, adv=None, critical=False) -> Roll:
-    roll = Roll(dice_data)
+    roll = Roll(dice_data, additional)
 
     try:
         # Handle positive dice rolls (subtractions)

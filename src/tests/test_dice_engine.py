@@ -357,7 +357,8 @@ async def test_process_input_dice_valid(monkeypatch):
     for context, dice_data, adv, critical, expected in test_cases:
         result = await process_input_dice(context, dice_data, adv=adv, critical=critical)
 
-        result = result[0] # Since we receive a list of Rolls
+        result, dice_data, reroll = result # Since we receive a list of Rolls
+        result = result[0]
         assert type(result) == Roll
         assert type(result.rolled_sum_dice) == list
         assert type(result.rolled_subtract_die) == list
@@ -370,6 +371,9 @@ async def test_process_input_dice_valid(monkeypatch):
 
         assert result.rolled_sum_dice[0].results[0].value == expected[0].results[0].value
         assert result.rolled_sum_dice[0].results[0].is_critical == expected[0].results[0].is_critical
+
+        assert type(dice_data) == str
+        assert reroll == ''
 
         if result.additional_eval:
             assert result.total_roll != expected[0].sum_total
@@ -423,7 +427,7 @@ async def test_process_input_dice_edge_cases(monkeypatch):
     for context, dice_data, adv, critical, expected in test_cases:
         result = await process_input_dice(context, dice_data,
                                           adv=adv, critical=critical)
-        result = result[0]  # Since we receive a list of Rolls
+        result = result[0][0]  # Since we receive a list of Rolls
         assert type(result) == Roll
         assert type(result.rolled_sum_dice) == list
         assert type(result.rolled_subtract_die) == list

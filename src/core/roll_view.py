@@ -1,54 +1,47 @@
-async def get_roll_text(context, dice_result_dict, first=True):
-    text = ""
+
+
+async def get_roll_text(context, roll, dice_data, reroll):
     try:
-        user = context.author
-        if first:
-            text = f"{user.nick}: \n"
+        username = f"{context.author.nick}"
     except:
-        text = f"Name not found: \n"
+        username = f"No name"
+    text = f"{username} rolled **{dice_data}{reroll}**: \n"
 
     try:
-        list_of_dice = []
-        for dice in dice_result_dict['result_die']:
-            list_of_dice.append(dice)
+        text_sum, op_desc_sum = await generate_dice_text(roll.rolled_sum_dice,
+                                                         True)
+        text_sub, op_desc_sub = await generate_dice_text(roll.rolled_subtract_die,
+                                                         False)
 
-        if dice_result_dict['result_minus_die']:
-            for dice in dice_result_dict['result_minus_die']:
-                list_of_dice.append(dice)
+        text += text_sum
+        text += text_sub
+        operation_description = f"{op_desc_sum[2:]}{op_desc_sub}"
 
-        for die in list_of_dice:
-            text += f"\n> *{die.verbose}* => ["
-            for index, dice_rolled in enumerate(die.list_of_result):
-                dice, confirmed = dice_rolled
-                comma = bold = ""
-                if index != len(die.list_of_result) - 1:
-                    comma = ","
-                if dice == int(die.dice_base) or dice == 1:
-                    bold = "!"
-                if not confirmed:
-                    text += f" ~~{dice}{bold}~~{comma}"
-                else:
-                    text += f" {dice}{bold}{comma}"
-            text += " ]"
+        text_additional = " ".join(c for c in roll.additional)
+        text += f"\n\n {operation_description} {text_additional} = **{roll.total_roll}**"
 
-        if not dice_result_dict['additional']:
-            dice_result_dict['additional'] = ""
-
-        if len(dice_result_dict['additional']) > 0:
-            if not "+" in dice_result_dict['additional'][0] and not "-" in dice_result_dict['additional'][0]:
-                dice_result_dict['additional'] = f"+{dice_result_dict['additional']}"
-
-        if dice_result_dict['additional_eval'] == 0 and len(dice_result_dict['additional']) == 0:
-            dice_result_dict['additional'] = f""
-
-        msg, msg_operation, msg_result = f"{text}", \
-                          f"{dice_result_dict['only_dice']}{dice_result_dict['additional']}", \
-                          f"= **{dice_result_dict['result_final']}**"
-
-        return msg, msg_operation, msg_result
+        return text
     except Exception as e:
-        print(e)
         raise
+
+
+async def generate_dice_text(dice_data, sum=True):
+    text = ""
+    operation_description = ""
+    for rolled_die in dice_data:
+        text += f"\n> {rolled_die.quantity_active}d{rolled_die.dice_base} => ["
+
+        for i, die in enumerate(rolled_die.get_list_valid_dice_results()):
+            comma = "," if i != rolled_die.quantity_active - 1 else ''
+            alert = "!" if die.is_critical or die.is_fail else ''
+            strike = "~~" if not die.is_active else ''
+
+            text += f" {strike}{die.value}{alert}{strike}{comma}"
+
+        text += f" ]"
+        operation_description += f"{' + ' if sum else ' - '}{rolled_die.sum_total}"
+    return text, operation_description
+
 
 
 async def multiple_d20_text(context, dice_result_dict, additional_data=None):

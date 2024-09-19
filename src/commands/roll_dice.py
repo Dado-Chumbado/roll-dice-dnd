@@ -11,9 +11,9 @@ def commands_dice(bot):
     async def command_roll_dice(context, args: str = "d20"):
         try:
             dice_data = ''.join(args)
-            rolls = await process_input_dice(context, dice_data)
-            await context.send(f"{rolls[0].dice_expression} => {rolls[0].total_roll}")
-
+            rolls, dice_data, reroll  = await process_input_dice(context, dice_data)
+            for roll in rolls:
+                await context.send(await get_roll_text(context, roll, dice_data, reroll))
         except Exception as e:
             raise
 

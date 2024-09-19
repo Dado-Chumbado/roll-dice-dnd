@@ -29,15 +29,22 @@ class RolledDice:
             self.results.append(Dice(value, True, is_critical, is_fail))
 
     @property
-    def sum_total(self):
+    def sum_total(self) -> int:
         return sum([die.value for die in self.results if die.is_active])
 
     @property
-    def quantity(self):
+    def quantity(self) -> int:
         return len(self.results)
 
-    def get_list_valid_results(self):
+    @property
+    def quantity_active(self) -> int:
+        return len([die for die in self.results if die.is_active])
+
+    def get_list_valid_results(self) -> list:
         return [r.value for r in self.results if r.is_active]
+
+    def get_list_valid_dice_results(self) -> list:
+        return [dice for dice in self.results if dice.is_active]
 
     def larger(self):
         return max(self.get_list_valid_results())
@@ -134,11 +141,12 @@ async def generate_dice_roll(number_of_dice, dice_size, reroll='', critical=Fals
 
 
 class Roll:
-    def __init__(self, dice_data: str):
+    def __init__(self, dice_data: str, additional: str = ""):
         self.dice_expression = dice_data
         self.rolled_sum_dice = []  # To store positive rolls
         self.rolled_subtract_die = []  # To store negative rolls
         self.additional_eval = 0
+        self.additional = additional
 
     def add_rolled_dice_sum(self, rolled_dice):
         self.rolled_sum_dice.append(rolled_dice)
