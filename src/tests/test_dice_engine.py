@@ -211,7 +211,35 @@ async def test_valid_dice_expression():
     ]
     for expr in valid_expressions:
         try:
-            await validate_dice_expression(expr)
+            dice_data, reroll = await validate_dice_expression(expr)
+            assert type(dice_data) == str
+            if expr[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
+                print(expr, dice_data)
+                assert reroll != ''
+
+        except ValueError:
+            pytest.fail(f"Unexpected ValueError for valid expression: {expr}")
+
+@pytest.mark.asyncio
+async def test_valid_dice_reroll_r2():
+
+    valid_expressions = [
+        "2d6r2", # Reroll command
+        "4d4 r2",  # Reroll command
+        "2d6 + 3d10 + 1r2",
+        "d20 - 2r2",
+        "3d6 +1+d6 r2",
+        "3D20-1 r2",
+        "20d4 R2"
+    ]
+    for expr in valid_expressions:
+        try:
+            dice_data, reroll = await validate_dice_expression(expr)
+            assert type(dice_data) == str
+            if expr[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
+                print(expr, dice_data)
+                assert reroll == 'r2'
+
         except ValueError:
             pytest.fail(f"Unexpected ValueError for valid expression: {expr}")
 
@@ -327,6 +355,20 @@ async def test_fix_dice_expression_exceed_limit(monkeypatch):
         assert result == expected, f"Expected '{expected}' but got '{result}'"
 
 @pytest.mark.asyncio
+async def test_fix_dice_expression_d0():
+
+    # Test ignoring the 'd20' fix when ignore_d20 is True
+    test_cases = [
+        ("20d0", "20d20"),
+        ("d0+d6-4", "1d20+1d6-4"),
+        ("2d10+4d0+2+1-d4", "2d10+4d20+2+1-1d4"),
+    ]
+
+    for dice_data, expected in test_cases:
+        result = await fix_dice_expression(dice_data)
+        assert result[0] == expected, f"Expected '{expected}' but got '{result}'"
+
+@pytest.mark.asyncio
 async def test_process_input_dice_valid(monkeypatch):
     # Mock random.randint to return fixed results for reproducibility
     monkeypatch.setattr('random.randint', lambda a, b: b)
@@ -366,7 +408,7 @@ async def test_process_input_dice_valid(monkeypatch):
 
         assert result.rolled_sum_dice[0].results == expected[0].results
         assert result.rolled_sum_dice[0].dice_base == expected[0].dice_base
-        assert result.rolled_sum_dice[0].sum_total == expected[0].sum_total
+        assert result.rolled_sum_dice[0].total == expected[0].total
         assert result.rolled_sum_dice[0].quantity == expected[0].quantity
 
         assert result.rolled_sum_dice[0].results[0].value == expected[0].results[0].value
@@ -376,7 +418,7 @@ async def test_process_input_dice_valid(monkeypatch):
         assert reroll == ''
 
         if result.additional_eval:
-            assert result.total_roll != expected[0].sum_total
+            assert result.total_roll != expected[0].total
 
 @pytest.mark.asyncio
 async def test_process_input_dice_invalid():
@@ -427,7 +469,8 @@ async def test_process_input_dice_edge_cases(monkeypatch):
     for context, dice_data, adv, critical, expected in test_cases:
         result = await process_input_dice(context, dice_data,
                                           adv=adv, critical=critical)
-        result = result[0][0]  # Since we receive a list of Rolls
+        result, dice_data, reroll = result  # Since we receive a list of Rolls
+        result = result[0]
         assert type(result) == Roll
         assert type(result.rolled_sum_dice) == list
         assert type(result.rolled_subtract_die) == list
@@ -435,7 +478,7 @@ async def test_process_input_dice_edge_cases(monkeypatch):
 
         assert result.rolled_sum_dice[0].results == expected[0].results
         assert result.rolled_sum_dice[0].dice_base == expected[0].dice_base
-        assert result.rolled_sum_dice[0].sum_total == expected[0].sum_total
+        assert result.rolled_sum_dice[0].total == expected[0].total
         assert result.rolled_sum_dice[0].quantity == expected[0].quantity
 
         assert result.rolled_sum_dice[0].results[0].value == \
@@ -444,8 +487,25 @@ async def test_process_input_dice_edge_cases(monkeypatch):
                expected[0].results[0].is_critical
 
         if result.additional_eval:
-            assert result.total_roll != expected[0].sum_total
+            assert result.total_roll != expected[0].total
 
+
+@pytest.mark.asyncio
+async def test_process_input_dice_reroll():
+
+    # Test edge cases and boundary values
+    test_cases = [
+        (None, "10d6r4", None, False),  # Minimal dice
+        (None, "10d6r2", None, False),  # Maximal dice
+          # Mixed operators
+    ]
+
+    for context, dice_data, adv, critical in test_cases:
+        result, dice_data, reroll = await process_input_dice(context, dice_data,
+                                          adv=adv, critical=critical)
+        result = result[0]
+        assert 'r' in reroll
+        assert result.rolled_sum_dice[0].quantity > 10
 
 @pytest.mark.asyncio
 async def test_calculate_dice_no_additional(monkeypatch):
@@ -465,8 +525,8 @@ async def test_calculate_dice_no_additional(monkeypatch):
     assert type(result.rolled_subtract_die) == list
     assert type(result.rolled_sum_dice[0].results) == list
 
-    assert result.rolled_sum_dice[0].sum_total == 12
-    assert result.rolled_subtract_die[0].sum_total == 4
+    assert result.rolled_sum_dice[0].total == 12
+    assert result.rolled_subtract_die[0].total == 4
     assert result.rolled_sum_dice[0].dice_base == 6
     assert result.rolled_subtract_die[0].dice_base == 4
     assert result.additional_eval == 0
@@ -492,8 +552,8 @@ async def test_calculate_dice_with_additional(monkeypatch):
     assert type(result.rolled_subtract_die) == list
     assert type(result.rolled_sum_dice[0].results) == list
 
-    assert result.rolled_sum_dice[0].sum_total == 12
-    assert result.rolled_subtract_die[0].sum_total == 4
+    assert result.rolled_sum_dice[0].total == 12
+    assert result.rolled_subtract_die[0].total == 4
     assert result.rolled_sum_dice[0].dice_base == 6
     assert result.rolled_subtract_die[0].dice_base == 4
     assert result.additional_eval == 5
@@ -519,10 +579,10 @@ async def test_calculate_dice_with_additional_complex(monkeypatch):
     assert type(result.rolled_subtract_die) == list
     assert type(result.rolled_sum_dice[0].results) == list
 
-    assert result.rolled_sum_dice[0].sum_total == 12
-    assert result.rolled_subtract_die[0].sum_total == 8
-    assert result.rolled_sum_dice[1].sum_total == 8
-    assert result.rolled_subtract_die[0].sum_total == 8
+    assert result.rolled_sum_dice[0].total == 12
+    assert result.rolled_subtract_die[0].total == 8
+    assert result.rolled_sum_dice[1].total == 8
+    assert result.rolled_subtract_die[0].total == 8
     assert result.rolled_sum_dice[0].dice_base == 6
     assert result.rolled_sum_dice[1].dice_base == 8
     assert result.rolled_subtract_die[0].dice_base == 4
@@ -537,7 +597,7 @@ async def test_calculate_dice_with_reroll(monkeypatch):
     monkeypatch.setenv("limit_of_dices_per_roll", '10')
     monkeypatch.setenv("limit_of_die_size", '20')
 
-    dice_data = "10d6+4r8"
+    dice_data = "10d6+4r8r8"
     dice_positive = [(10, 6)]
     dice_negative = []
     additional = "+4"
@@ -551,9 +611,33 @@ async def test_calculate_dice_with_reroll(monkeypatch):
     assert type(result.rolled_subtract_die) == list
     assert type(result.rolled_sum_dice[0].results) == list
 
-    assert result.rolled_sum_dice[0].sum_total >= 8
+    assert result.rolled_sum_dice[0].total >= 8
     assert result.rolled_sum_dice[0].dice_base == 6
     assert result.additional_eval == 4
-    assert len(result.rolled_sum_dice[0].get_list_valid_results()) == 10
-    assert len(result.rolled_sum_dice[0].results) > 10
 
+    assert result.rolled_sum_dice[0].quantity_active == 10
+    assert result.rolled_sum_dice[0].quantity > 10
+
+@pytest.mark.asyncio
+async def test_calculate_dice_with_critical(monkeypatch):
+    # Mock random.randint to return predictable results
+    monkeypatch.setattr('random.randint', lambda a, b: 2)
+
+    # Test edge cases and boundary values
+    test_cases = [
+        (None, "1d6+5", [6, 2]),
+        (None, "1d6+1d4+5", [6, 2]),
+        (None, "2d6+1d4+5", [6, 6, 2, 2]),
+        (None, "3d4+2d4+5", [4, 4, 4, 2, 2, 2]),
+        (None, "1d8+2d4+5-1", [8, 2]),
+        (None, "2d8-2d4+5-1", [8, 8, 2, 2]),
+        (None, "1d8-1d12+5-1", [8, 2]),
+
+    ]
+
+    for context, dice_data, expected in test_cases:
+        result, _, _ = await process_input_dice(context, dice_data,
+                                          critical=True)
+        result = result[0]
+        print(result.rolled_sum_dice[0].get_list_valid_values(), expected)
+        assert result.rolled_sum_dice[0].get_list_valid_values() == expected

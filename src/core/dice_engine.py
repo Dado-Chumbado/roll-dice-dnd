@@ -80,9 +80,9 @@ async def handle_repeat(dice_data):
     return dice_data, repeat
 
 
-async def validate_dice_expression(dice_data):
+async def validate_dice_expression(dice_data, adv=None, double_adv=False):
     # Fix any missing elements in the dice expression
-    dice_data, rr = await fix_dice_expression(dice_data)
+    dice_data, rr = await fix_dice_expression(dice_data, adv, double_adv)
 
     # Use parse_dice to extract dice rolls
     parsed_positive, parsed_negative = await parse_dice(dice_data)
@@ -107,11 +107,18 @@ async def validate_dice_expression(dice_data):
 
     return dice_data, rr
 
-async def fix_dice_expression(dice_data):
+async def fix_dice_expression(dice_data, adv=None, double_adv=False):
     # First remove any whitespace
     dice_data = re.sub(r'\s+', '', dice_data)
     # now undercase any letters
     dice_data = dice_data.lower()
+
+    rr = ''
+    if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
+        dice_data, rr = dice_data[:-2], dice_data[-2:]
+
+    # Replace d0 with d20
+    dice_data = re.sub(r'd0', 'd20', dice_data)
 
     # Add a 'd' before numbers followed by a + or - (like "20+5")
     if re.findall('^(\d+)(?=[\+\-])', dice_data):
@@ -119,6 +126,19 @@ async def fix_dice_expression(dice_data):
 
     # Append a "1" if the string starts with a die expression (e.g., "d20" to "1d20")
     dice_data = re.sub(r'(?<!\d)d(\d+)', r'1d\1', dice_data)
+
+    # Handle advantage and double advantage
+    if adv is not None:
+        # Determine the correct number of d20s based on double_adv
+        num_d20 = '3d20' if double_adv else '2d20'
+
+        # Check if there's a '1d20' or 'd20' in the expression
+        if re.search(r'\b(2d20|1d20|d20)\b', dice_data):
+            # Replace '1d20' or 'd20' with the appropriate number of d20s
+            dice_data = re.sub(r'\b(1d20|d20)\b', num_d20, dice_data)
+        else:
+            # If no d20 is present, add it to the beginning
+            dice_data = f'{num_d20}+{dice_data}'
 
     # Define the dice roll regex pattern (matches "XdY" where X and Y are numbers)
     dice_pattern = r'(\d*)d(\d+)'
@@ -155,34 +175,28 @@ async def fix_dice_expression(dice_data):
     # Clean up any extra "+" or "-" signs
     dice_data = dice_data.replace("++", "+").replace("--", "-")
 
-    rr = ''
-    if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
-        dice_data, rr = dice_data.split(dice_data[-2:])
     return dice_data, rr
 
 
 async def process_input_dice(context, dice_data: str, adv: bool = None,
-                             critical: bool = None) -> (list, list, list):
+                             critical: bool = None, double_adv: bool = False) -> (list, list, list):
     # Validate dice expression
-    dice_data, reroll = await validate_dice_expression(dice_data)
+    dice_data, reroll = await validate_dice_expression(dice_data, adv, double_adv)
 
     # Handle repeat logic
     dice_data, repeat = await handle_repeat(dice_data)
-
-    # # Fix dice expression
-    # dice_data = await fix_dice_expression(dice_data)
 
     # Parse dice
     dice_positive, dice_negative = await parse_dice(dice_data)
     additional = await parse_additional(dice_data, dice_positive, dice_negative)
 
     if critical:
-        dice_positive = [(int(item[0])*2 if item[0] else '2', item[1]) for item in dice_positive]
+        dice_positive = [(int(item[0])*2, item[1]) for item in dice_positive]
 
     # Roll dice multiple times, return a list of Roll
     dice_roll_list = [
         await calculate_dice(context, dice_data, dice_positive, dice_negative,
-                             additional, reroll, adv=adv, critical=critical)
+                             additional, reroll, adv=adv, critical=critical, double_adv=double_adv)
         for _ in range(repeat)
     ]
     # Return the list of Roll + the data used to generate it
@@ -191,19 +205,19 @@ async def process_input_dice(context, dice_data: str, adv: bool = None,
 
 async def calculate_dice(context, dice_data: str, dice_positive: [],
                          dice_negative: [], additional: str,
-                         reroll=None, adv=None, critical=False) -> Roll:
+                         reroll=None, adv=None, critical=False, double_adv=False) -> Roll:
     roll = Roll(dice_data, additional)
 
     try:
         # Handle positive dice rolls (subtractions)
-        for number_of_dice, dice_size in dice_positive:
+        for index, (number_of_dice, dice_size) in enumerate(dice_positive):
             is_critical = critical
             rolled_dice = await generate_dice_roll(number_of_dice, dice_size,
                                                    reroll=reroll,
-                                                   critical=is_critical)
+                                                   critical=is_critical if is_critical and index == 0 else False)
 
-            if adv is not None:
-                rolled_dice.set_advantage(adv)
+            if adv is not None and index == 0:
+                rolled_dice.set_advantage(adv, double_adv)
 
             roll.add_rolled_dice_sum(rolled_dice)
 

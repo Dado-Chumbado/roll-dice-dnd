@@ -42,7 +42,7 @@ async def test_generate_roll(monkeypatch):
                             Dice(value=6, is_active=True,
                                         is_critical=True, is_fail=False),
                             ]
-    assert rolled_dice.sum_total == 18
+    assert rolled_dice.total == 18
     assert rolled_dice.quantity == 3
     assert rolled_dice.dice_base == 6
 
@@ -62,7 +62,7 @@ async def test_generate_roll(monkeypatch):
                             Dice(value=1, is_active=True,
                                         is_critical=False, is_fail=True),
                             ]
-    assert rolled_dice.sum_total == 16
+    assert rolled_dice.total == 16
     assert rolled_dice.quantity == 5
     assert rolled_dice.dice_base == 6
 
@@ -71,23 +71,23 @@ async def test_generate_roll(monkeypatch):
 async def test_apply_critical():
 
     rolled_dice = RolledDice(6, [1, 4, 6])
-    assert rolled_dice.sum_total == 11
+    assert rolled_dice.total == 11
     assert rolled_dice.quantity == 3
-    assert rolled_dice.get_list_valid_results() == [1, 4, 6]
+    assert rolled_dice.get_list_valid_values() == [1, 4, 6]
     rolled_dice.apply_critical()
-    assert rolled_dice.get_list_valid_results() == [6, 4, 6]
-    assert rolled_dice.sum_total == 16
+    assert rolled_dice.get_list_valid_values() == [6, 4, 6]
+    assert rolled_dice.total == 16
     assert rolled_dice.quantity == 3
 
     rolled_dice = RolledDice(12, [6, 11])
     rolled_dice.apply_critical()
-    assert rolled_dice.get_list_valid_results() == [12, 11]
-    assert rolled_dice.sum_total == 23
+    assert rolled_dice.get_list_valid_values() == [12, 11]
+    assert rolled_dice.total == 23
 
     rolled_dice = RolledDice(12, [12, 11])
     rolled_dice.apply_critical()
-    assert rolled_dice.get_list_valid_results() == [12, 11]
-    assert rolled_dice.sum_total == 23
+    assert rolled_dice.get_list_valid_values() == [12, 11]
+    assert rolled_dice.total == 23
 
     rolled_dice = RolledDice(12, [1, 1])
     assert rolled_dice.results[0].is_critical == False
@@ -95,12 +95,12 @@ async def test_apply_critical():
     assert rolled_dice.results[1].is_critical == False
     assert rolled_dice.results[1].is_fail == True
     rolled_dice.apply_critical()
-    assert rolled_dice.get_list_valid_results() == [12, 1]
+    assert rolled_dice.get_list_valid_values() == [12, 1]
     assert rolled_dice.results[0].is_critical == True
     assert rolled_dice.results[0].is_fail == False
     assert rolled_dice.results[1].is_critical == False
     assert rolled_dice.results[1].is_fail == True
-    assert rolled_dice.sum_total == 13
+    assert rolled_dice.total == 13
 
 
 @pytest.mark.asyncio
@@ -148,7 +148,7 @@ async def test_apply_reroll_advanced(monkeypatch):
     assert rolled_dice.results[8].is_active == True
     assert rolled_dice.results[9].is_active == True
 
-    assert rolled_dice.sum_total == 35
+    assert rolled_dice.total == 35
 
 
 @pytest.mark.asyncio
@@ -159,8 +159,58 @@ async def test_set_adv():
     rolled_dice.set_advantage(True)
     assert rolled_dice.results[0].is_active == False
     assert rolled_dice.results[1].is_active == True
-    assert rolled_dice.get_list_valid_results() == [15]
-    assert rolled_dice.sum_total == 15
+    assert rolled_dice.get_list_valid_values() == [15]
+    assert rolled_dice.total == 15
+
+@pytest.mark.asyncio
+async def test_set_adv_same_value():
+    rolled_dice = RolledDice(20, [15, 15])
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == True
+    rolled_dice.set_advantage(True)
+    assert rolled_dice.results[0].is_active == False
+    assert rolled_dice.results[1].is_active == True
+    assert rolled_dice.get_list_valid_values() == [15]
+    assert rolled_dice.total == 15
+
+@pytest.mark.asyncio
+async def test_set_adv_same_value_double_advantage():
+    rolled_dice = RolledDice(20, [15, 15, 15])
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == True
+    assert rolled_dice.results[2].is_active == True
+    rolled_dice.set_advantage(True, True)
+    assert rolled_dice.results[0].is_active == False
+    assert rolled_dice.results[1].is_active == False
+    assert rolled_dice.results[2].is_active == True
+    assert rolled_dice.get_list_valid_values() == [15]
+    assert rolled_dice.total == 15
+
+@pytest.mark.asyncio
+async def test_set_adv_same_value_double_advantage():
+    rolled_dice = RolledDice(20, [18, 2, 3])
+    rolled_dice.set_advantage(True, True)
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == False
+    assert rolled_dice.results[2].is_active == False
+    assert rolled_dice.get_list_valid_values() == [18]
+    assert rolled_dice.total == 18
+
+    rolled_dice = RolledDice(20, [18, 2, 2])
+    rolled_dice.set_advantage(True, True)
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == False
+    assert rolled_dice.results[2].is_active == False
+    assert rolled_dice.get_list_valid_values() == [18]
+    assert rolled_dice.total == 18
+
+    rolled_dice = RolledDice(20, [18, 2, 18])
+    rolled_dice.set_advantage(True, True)
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == False
+    assert rolled_dice.results[2].is_active == False
+    assert rolled_dice.get_list_valid_values() == [18]
+    assert rolled_dice.total == 18
 
 @pytest.mark.asyncio
 async def test_set_disadv():
@@ -170,8 +220,19 @@ async def test_set_disadv():
     rolled_dice.set_advantage(False)
     assert rolled_dice.results[0].is_active == True
     assert rolled_dice.results[1].is_active == False
-    assert rolled_dice.get_list_valid_results() == [8]
-    assert rolled_dice.sum_total == 8
+    assert rolled_dice.get_list_valid_values() == [8]
+    assert rolled_dice.total == 8
+
+@pytest.mark.asyncio
+async def test_set_disadv_same_value():
+    rolled_dice = RolledDice(20, [8, 8])
+    assert rolled_dice.results[0].is_active == True
+    assert rolled_dice.results[1].is_active == True
+    rolled_dice.set_advantage(False)
+    assert rolled_dice.results[0].is_active == False
+    assert rolled_dice.results[1].is_active == True
+    assert rolled_dice.get_list_valid_values() == [8]
+    assert rolled_dice.total == 8
 
 @pytest.mark.asyncio
 async def test_set_adv_and_desadv():
@@ -181,8 +242,8 @@ async def test_set_adv_and_desadv():
     rolled_dice.set_advantage(True)
     assert rolled_dice.results[0].is_active == False
     assert rolled_dice.results[1].is_active == True
-    assert rolled_dice.get_list_valid_results() == [5]
-    assert rolled_dice.sum_total == 5
+    assert rolled_dice.get_list_valid_values() == [5]
+    assert rolled_dice.total == 5
 
     rolled_dice = RolledDice(20, [5, 5])
     assert rolled_dice.results[0].is_active == True
@@ -190,5 +251,5 @@ async def test_set_adv_and_desadv():
     rolled_dice.set_advantage(False)
     assert rolled_dice.results[0].is_active == False
     assert rolled_dice.results[1].is_active == True
-    assert rolled_dice.get_list_valid_results() == [5]
-    assert rolled_dice.sum_total == 5
+    assert rolled_dice.get_list_valid_values() == [5]
+    assert rolled_dice.total == 5

@@ -29,7 +29,7 @@ class RolledDice:
             self.results.append(Dice(value, True, is_critical, is_fail))
 
     @property
-    def sum_total(self) -> int:
+    def total(self) -> int:
         return sum([die.value for die in self.results if die.is_active])
 
     @property
@@ -38,52 +38,76 @@ class RolledDice:
 
     @property
     def quantity_active(self) -> int:
-        return len([die for die in self.results if die.is_active])
+        return len(self.get_list_valid_values())
 
-    def get_list_valid_results(self) -> list:
+    def get_list_valid_values(self) -> list:
         return [r.value for r in self.results if r.is_active]
 
-    def get_list_valid_dice_results(self) -> list:
-        return [dice for dice in self.results if dice.is_active]
+    def get_list_valid_dices(self, active=None) -> list:
+        if active:
+            return [dice for dice in self.results if dice.is_active == active]
+        else:
+            return [dice for dice in self.results]
+
 
     def larger(self):
-        return max(self.get_list_valid_results())
+        return max(self.get_list_valid_values())
 
     def smaller(self):
-        return min(self.get_list_valid_results())
+        return min(self.get_list_valid_values())
 
-    def set_advantage(self, advantage=True):
+    def set_advantage(self, advantage=True, double_adv=False):
         """ Disable rolls that are not the target.
 
             if advantage is True, the target is the larger value
             if advantage is False, the target is the smaller value
-            Breaks the loop if one die is disabled
         """
-        dice = self.get_list_valid_results()
-        target = max(dice) if advantage else min(dice)
+        target = self.larger() if advantage else self.smaller()
+        all_values = self.get_list_valid_values()
 
-        if len(set(dice)) != self.quantity:
+        # If all dices have the same result, disable all less the last
+        if len(set(all_values)) == 1:
             # All dices have the same result, so disable the first and return
             self.results[0].is_active = False
+            if double_adv:
+                self.results[1].is_active = False
             return
 
+        if not advantage:
+            if self.results[0].value > target:
+                self.results[0].is_active = False
+            else:
+                self.results[1].is_active = False
+            return
+
+        found_target = False
         for roll_result in self.results:
-            if roll_result.value != target and roll_result.is_active:
+            if roll_result.value == target and not found_target:
+                found_target = True
+                continue
+
+            if roll_result.value <= target:
                 roll_result.is_active = False
-                break  # Only disable one die
+                if double_adv:
+                    double_adv = False
+                    continue
+                break
+
 
     def apply_critical(self):
         """
         Apply critical hit logic by maximizing the first dice result.
 
         """
-        self.results[0].value = self.dice_base # Maximize first dice
-        self.results[0].is_critical = True # Mark first dice as critical
-        self.results[0].is_active = True # Mark first dice as active
-        self.results[0].is_fail = False # Mark first dice as not a failure
+        total_dice_to_maximize = len(self.results) / 2
+        for i in range(int(total_dice_to_maximize)):
+            self.results[i].value = self.dice_base
+            self.results[i].is_critical = True
+            self.results[i].is_active = True
+            self.results[i].is_fail = False
 
     async def apply_reroll(self, reroll_threshold: int):
-
+        print(f"Reroll threshold: {reroll_threshold}")
         current_dice_len = len(self.results)
         for index in range(current_dice_len):
             if self.results[index].value <= reroll_threshold:
@@ -133,6 +157,7 @@ async def generate_dice_roll(number_of_dice, dice_size, reroll='', critical=Fals
 
     # Step 3: Apply reroll logic (if reroll is specified)
     if reroll:
+        print("reroll")
         reroll_threshold = int(reroll.split('r')[1])
         rolled_dice = await rolled_dice.apply_reroll(reroll_threshold)
 
@@ -156,8 +181,8 @@ class Roll:
 
     @property
     def total_dice_result(self) -> int:
-        return (sum(rolled_dice.sum_total for rolled_dice in self.rolled_sum_dice)
-                - sum(rolled_dice.sum_total for rolled_dice in self.rolled_subtract_die))
+        return (sum(rolled_dice.total for rolled_dice in self.rolled_sum_dice)
+                - sum(rolled_dice.total for rolled_dice in self.rolled_subtract_die))
 
     @property
     def total_roll(self):
