@@ -1,11 +1,11 @@
 
 
-async def get_roll_text(context, roll, dice_data, reroll):
+async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_resume=False):
     try:
         username = f"{context.author.nick}"
     except:
         username = f"No name"
-    text = f"{username} rolled **{dice_data}{reroll}**: \n"
+    text = f"{username} rolled **{dice_data}{reroll}** {extra_info}: \n"
 
     try:
         text_sum, op_desc_sum = await generate_dice_text(roll.rolled_sum_dice,
@@ -17,9 +17,10 @@ async def get_roll_text(context, roll, dice_data, reroll):
         text += text_sub
         operation_description = f"{op_desc_sum[2:]}{op_desc_sub}"
 
-        # Add spaces around characters that are not digits
-        text_additional = "".join(f" {c} " if not c.isdigit() else c for c in roll.additional)
-        text += f"\n\n {operation_description}{text_additional} = **{roll.total_roll}**"
+        if not skip_resume:
+            # Add spaces around characters that are not digits
+            text_additional = "".join(f" {c} " if not c.isdigit() else c for c in roll.additional)
+            text += f"\n\n {operation_description}{text_additional} = **{roll.total_roll}**"
 
         return text
     except Exception as e:

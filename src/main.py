@@ -9,7 +9,6 @@ load_dotenv()
 STATS_ENABLE = os.getenv("save_stats_db")
 COMMAND_CHAR = os.getenv("command_char")
 
-
 intents = discord.Intents.default()
 intents.message_content = True
 
