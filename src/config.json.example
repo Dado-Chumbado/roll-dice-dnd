@@ -1,0 +1,25 @@
+{
+    "roll": {
+        "default": "roll",
+        "advantage": "advantage",
+        "double_advantage": "double_advantage",
+        "disadvantage": "disadvantage",
+        "dm_roll": "dm_roll",
+        "critical_damage": "critical_damage"
+    },
+    "initiative": {
+        "default": "initiative",
+        "advantage": "advantage_initiative",
+        "force": "force_initiative",
+        "reset": "reset_initiative",
+        "remove": "remove_initiative",
+        "next": "next",
+        "previous": "previous",
+        "add_condition": "add_condition",
+        "remove_condition": "remove_condition"
+    },
+    "stats": {
+        "player": "my-stats",
+        "session": "session-stats"
+    }
+}

@@ -200,9 +200,9 @@ async def test_valid_dice_expression():
         "1d20-d4+2-1",
         "2d20+d6-d4+1-2",
         "2d20+2d6+3d8-1d4+2+1-4+123-34d4+23d8-25d10-5d100+1",
-        "101d12", # Exceeds limit of dices per roll
-        "10d100",  # Exceeds limit of dices per roll
-        "101d101",  # Exceeds limit of dices per roll
+        "101d12", # Exceeds limit of dice per roll
+        "10d100",  # Exceeds limit of dice per roll
+        "101d101",  # Exceeds limit of dice per roll
         "2d6 + 3d10 + 1",
         "d20 - 2",
         "3d6 +1+d6 r2",

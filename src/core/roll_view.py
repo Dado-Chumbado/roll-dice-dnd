@@ -34,7 +34,7 @@ async def generate_dice_text(dice_data, is_sum=True):
         text += f"\n> {rolled_die.quantity_active}d{rolled_die.dice_base} => ["
 
         # Filter all dice (active and not active)
-        for i, die in enumerate(rolled_die.get_list_valid_dices()):
+        for i, die in enumerate(rolled_die.get_list_valid_dice()):
             comma = "," if i != rolled_die.quantity - 1 else ''
             alert = "!" if die.is_critical or die.is_fail else ''
             if rolled_die.dice_base == 20 and die.is_critical:

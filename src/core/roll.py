@@ -43,7 +43,7 @@ class RolledDice:
     def get_list_valid_values(self) -> list:
         return [r.value for r in self.results if r.is_active]
 
-    def get_list_valid_dices(self, active=None) -> list:
+    def get_list_valid_dice(self, active=None) -> list:
         if active:
             return [dice for dice in self.results if dice.is_active == active]
         else:
@@ -65,9 +65,9 @@ class RolledDice:
         target = self.larger() if advantage else self.smaller()
         all_values = self.get_list_valid_values()
 
-        # If all dices have the same result, disable all less the last
+        # If all dice have the same result, disable all less the last
         if len(set(all_values)) == 1:
-            # All dices have the same result, so disable the first and return
+            # All dice have the same result, so disable the first and return
             self.results[0].is_active = False
             if double_adv:
                 self.results[1].is_active = False
@@ -125,7 +125,7 @@ class RolledDice:
 
 async def _roll_dice(times: int, dice: int) -> list:
     """
-    Rolls dices multiple times and returns the results.
+    Rolls dice multiple times and returns the results.
 
     Args:
         times (int): Number of times to roll the dice.

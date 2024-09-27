@@ -8,4 +8,4 @@ services:
     volumes:
       - /var/lib/roll-dice-dnd:/data
     restart: unless-stopped
-    command: [ "python3", "./main.py" ]
+    command: [ "poetry", "run", "python3", "/app/src/main.py" ]

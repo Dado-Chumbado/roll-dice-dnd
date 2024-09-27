@@ -21,8 +21,8 @@ Features
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/discord-dice-bot.git
-cd discord-dice-bot
+git clone https://github.com/Dado-Chumbado/roll-dice-dnd.git
+cd roll-dice-dnd
 ```
 
 Install dependencies: Make sure you have Python 3.8+ installed. Install the required packages with:
@@ -359,6 +359,10 @@ In the first roll, the database table will be created.
 
 To access the database statistics, each player can use the `!stats` command.
 To get the session statistics, use the `!session-stats` command.
+
+## Testing
+
+To execute tests, run `poetry run pytest` in the terminal.
 
 
 Contributing
