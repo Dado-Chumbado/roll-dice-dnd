@@ -11,4 +11,3 @@ with open(config_file) as config_file:
 roll_commands = config["roll"]
 initiative_commands = config["initiative"]
 stats_commands = config["stats"]
-dice_commands = config["dice"]

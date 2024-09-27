@@ -335,8 +335,8 @@ async def test_fix_dice_expression_valid():
 @pytest.mark.asyncio
 async def test_fix_dice_expression_exceed_limit(monkeypatch):
 
-    # set limit to test env limit_of_dices_per_roll and limit_of_dice_size
-    monkeypatch.setenv("limit_of_dices_per_roll", '10')
+    # set limit to test env limit_of_dice_per_roll and limit_of_dice_size
+    monkeypatch.setenv("limit_of_dice_per_roll", '10')
     monkeypatch.setenv("limit_of_die_size", '10')
 
     # Test ignoring the 'd20' fix when ignore_d20 is True
@@ -441,8 +441,8 @@ async def test_process_input_dice_edge_cases(monkeypatch):
     # Mock random.randint to return predictable results
     monkeypatch.setattr('random.randint', lambda a, b: b)
 
-    # set limit to test env limit_of_dices_per_roll and limit_of_dice_size
-    monkeypatch.setenv("limit_of_dices_per_roll", '5')
+    # set limit to test env limit_of_dice_per_roll and limit_of_dice_size
+    monkeypatch.setenv("limit_of_dice_per_roll", '5')
     monkeypatch.setenv("limit_of_die_size", '10')
 
     # Test edge cases and boundary values
@@ -593,8 +593,8 @@ async def test_calculate_dice_with_additional_complex(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_calculate_dice_with_reroll(monkeypatch):
-    # set limit to test env limit_of_dices_per_roll and limit_of_dice_size
-    monkeypatch.setenv("limit_of_dices_per_roll", '10')
+    # set limit to test env limit_of_dice_per_roll and limit_of_dice_size
+    monkeypatch.setenv("limit_of_dice_per_roll", '10')
     monkeypatch.setenv("limit_of_die_size", '20')
 
     dice_data = "10d6+4r8r8"

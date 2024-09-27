@@ -107,7 +107,6 @@ class RolledDice:
             self.results[i].is_fail = False
 
     async def apply_reroll(self, reroll_threshold: int):
-        print(f"Reroll threshold: {reroll_threshold}")
         current_dice_len = len(self.results)
         for index in range(current_dice_len):
             if self.results[index].value <= reroll_threshold:
@@ -136,7 +135,7 @@ async def _roll_dice(times: int, dice: int) -> list:
         list: A list of integers representing the results of each dice roll.
     """
     # Get dice limit from environment variables, default to a safe value (e.g., 100) if not found
-    limit = int(os.getenv("limit_of_dices_per_roll", 100))
+    limit = int(os.getenv("limit_of_dice_per_roll", 100))
 
     # Ensure times and dice are valid
     times = max(1, times)  # No negative rolls allowed
@@ -157,7 +156,6 @@ async def generate_dice_roll(number_of_dice, dice_size, reroll='', critical=Fals
 
     # Step 3: Apply reroll logic (if reroll is specified)
     if reroll:
-        print("reroll")
         reroll_threshold = int(reroll.split('r')[1])
         rolled_dice = await rolled_dice.apply_reroll(reroll_threshold)
 

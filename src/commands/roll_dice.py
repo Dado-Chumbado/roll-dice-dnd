@@ -1,10 +1,6 @@
-from logging import critical
-
 from config import roll_commands
 from core.dice_engine import process_input_dice
-from core.save_dice import DiceTable
 from core.roll_view import get_roll_text # multiple_d20_text,
-
 
 
 def commands_dice(bot):

@@ -27,7 +27,7 @@ async def parse_dice(data: str):
 
     for sign, number, dice in parsed_dice:
         # Default number of dice to 1 if not specified
-        number = min(int(number), int(os.getenv("limit_of_dices_per_roll", 100)))
+        number = min(int(number), int(os.getenv("limit_of_dice_per_roll", 100)))
         dice = min(int(dice), int(os.getenv("limit_of_die_size", 100)))
         # Ensure that the dice is not overflow the limit
 
@@ -153,7 +153,7 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
         dice = int(dice)
 
         # Apply the limits from environment variables (or default to 100 if not set)
-        number = min(number, int(os.getenv("limit_of_dices_per_roll", 100)))
+        number = min(number, int(os.getenv("limit_of_dice_per_roll", 100)))
         dice = min(dice, int(os.getenv("limit_of_die_size", 100)))
 
         # Return the modified dice expression
