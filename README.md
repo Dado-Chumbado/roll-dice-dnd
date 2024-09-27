@@ -10,7 +10,6 @@ Features
 - Control Initiative Table: Add or remove characters from the initiative table.
 - Custom Limits: Configure dice limits (max number of dice and die size) through environment variables.
 
-#add image from readme-statics
 
 ![discord-dice-bot](./readme-statics/img.png)
 ![discord-dice-bot](./readme-statics/img_1.png)
