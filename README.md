@@ -23,7 +23,20 @@ Clone the repository:
 ```bash
 git clone https://github.com/Dado-Chumbado/roll-dice-dnd.git
 cd roll-dice-dnd
+
+cp .env.example .env
+cp config.json.example config.json
 ```
+
+### Configure Environment Variables
+
+This ensures the app runs using the environment managed by Poetry.
+
+Set up environment variables: Configure your .env file to set limits on dice rolls (optional):
+
+```env
+DISCORD_TOKEN=your_discord_bot_token 
+``` 
 
 Install dependencies: Make sure you have Python 3.8+ installed. Install the required packages with:
 
@@ -61,17 +74,8 @@ poetry shell
 
 This opens a shell within the environment where you can run your app.
 
-### 4. Configure Environment Variables
 
-This ensures the app runs using the environment managed by Poetry.
-
-Set up environment variables: Configure your .env file to set limits on dice rolls (optional):
-
-```env
-DISCORD_TOKEN=your_discord_bot_token 
-```
-
-### 5. Configure the commands in config.json
+### 4. Configure the commands in config.json (Optional)
 
 Edit the config.json file to configure the commands and limits.
 
@@ -79,7 +83,7 @@ There you can change the activation char and the commands for each type of roll.
 
 See the #Customization section for more details.
 
-### 6. Run the App
+### 5. Run the App
 
 You can run the bot after configuring the environment. You can run it within the Poetry environment like this:
 

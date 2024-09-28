@@ -1,7 +1,8 @@
 import re
+import os
 import logging
 from .stats_db import *
-from .roll import generate_dice_roll, Roll, RolledDice, Dice
+from .roll import generate_dice_roll, Roll
 
 logging.basicConfig(level=logging.INFO)
 
@@ -252,15 +253,14 @@ async def register_dice_stats(context, roll: Roll):
     - context: The context of the roll (contains author, channel, etc.)
     - rolled_dice: The list of dice results to be registered.
     """
-    for rolled_dice_list in roll.rolled_sum_dice + roll.rolled_subtract_die:
-        for rolled_dice in rolled_dice_list:
-            for die in rolled_dice:
+    for rolled_dice in roll.rolled_sum_dice + roll.rolled_subtract_die:
+        for die in rolled_dice.results:
 
-                insert_roll(
-                    context.author.id,
-                    context.channel.name,
-                    f"d{rolled_dice.dice_base}",
-                    die.value,
-                    die.is_critical,
-                    die.is_fail,
-                )
+            insert_roll(
+                context.author.id,
+                context.channel.name,
+                f"d{rolled_dice.dice_base}",
+                die.value,
+                die.is_critical,
+                die.is_fail,
+            )
