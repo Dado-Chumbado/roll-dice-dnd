@@ -1,12 +1,10 @@
 import pytest
 import os
 import json
-import tempfile
-from unittest.mock import AsyncMock, patch
-from slugify import slugify
+from unittest.mock import AsyncMock
 
 # Import the classes and functions to be tested
-from ..core.initiative import InitItem, InitTable, InitiativeFile
+from core.initiative import InitItem, InitTable, InitiativeFile
 
 # Define the root data directory
 ROOT_DATA = os.path.join(os.getcwd(), 'data/')

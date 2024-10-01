@@ -1,7 +1,7 @@
 import re
 import os
 import logging
-from .stats_db import *
+from .stats_db import insert_roll
 from .roll import generate_dice_roll, Roll
 
 logging.basicConfig(level=logging.INFO)

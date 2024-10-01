@@ -1,6 +1,6 @@
 import pytest
 
-from ..core.roll import RolledDice, Dice, _roll_dice, generate_dice_roll
+from core.roll import RolledDice, Dice, _roll_dice, generate_dice_roll
 
 
 @pytest.mark.asyncio

@@ -118,7 +118,6 @@ def get_session_stats(channel, date=None, end=None):
                                                    '%Y-%m-%d') if end else start_range + datetime.timedelta(
                 days=1)
 
-        print(f"Filtering per date: {start_range} until {end_range}")
         rs = RollDb.select().where(
             RollDb.created.between(start_range, end_range),
             RollDb.channel == channel)
@@ -152,8 +151,14 @@ def get_session_stats(channel, date=None, end=None):
             RollDb.created.between(start_range, end_range),
             RollDb.channel == channel).scalar() or 0
 
-    return [d20s_critical, d20s_fail, critics, fails, total_rolled,
-            rolled_d20_by_player]
+    return {
+        'critical_hits': d20s_critical,
+        'failures': d20s_fail,
+        'top_critics': critics,
+        'top_failures': fails,
+        'total_rolled': total_rolled,
+        'd20s_by_player': rolled_d20_by_player
+    }
 
 
 def get_display_name(player_id, channel):
@@ -168,50 +173,47 @@ async def show_session_stats(ctx, channel, date=None, end_date=None):
     try:
         data = get_session_stats(channel, date, end_date)
 
+        # Create the header
         date_str = date or "Last session"
         text = f"```STATISTICS {channel} from {date_str}\n"
 
-        text += f"Total critical hits: {data[0]}\nTotal failures: {data[1]}\n"
-        text += f"Critical/failure ratio: {data[1] and data[0] / data[1]:.2f}\n"
+        # Access values using descriptive keys
+        text += f"Total critical hits: {data['critical_hits']}\n"
+        text += f"Total failures: {data['failures']}\n"
+        text += f"Critical/failure ratio: {data['failures'] and data['critical_hits'] / data['failures']:.2f}\n"
 
-        if data[2]:
-            text += f"Player with the most critical hits: {get_display_name(data[2][0].player_id, channel)} with {data[2][0].count} critical hits!\n"
-        if data[3]:
-            text += f"Player with the most failures: {get_display_name(data[3][0].player_id, channel)} with {data[3][0].count} failures!\n"
+        if data['top_critics']:
+            text += f"Player with the most critical hits: {get_display_name(data['top_critics'][0].player_id, channel)} with {data['top_critics'][0].count} critical hits!\n"
+        if data['top_failures']:
+            text += f"Player with the most failures: {get_display_name(data['top_failures'][0].player_id, channel)} with {data['top_failures'][0].count} failures!\n"
 
+        # Create a table for players' statistics
         luck_table = []
-        for r in data[5]:
+        for r in data['d20s_by_player']:
             player_stats = {
                 "player_id": r.player_id,
-                "count_critical": next(
-                    (c.count for c in data[2] if c.player_id == r.player_id),
-                    0),
-                "count_fail": next(
-                    (f.count for f in data[3] if f.player_id == r.player_id),
-                    0),
+                "count_critical": next((c.count for c in data['top_critics'] if c.player_id == r.player_id), 0),
+                "count_fail": next((f.count for f in data['top_failures'] if f.player_id == r.player_id), 0),
                 "average_critical": 0,
                 "average_fail": 0,
                 "d20_rolled": r.count
             }
-            player_stats["average_critical"] = (player_stats[
-                                                    "count_critical"] * 100 / r.count) if r.count else 0
-            player_stats["average_fail"] = (player_stats[
-                                                "count_fail"] * 100 / r.count) if r.count else 0
+            player_stats["average_critical"] = (player_stats["count_critical"] * 100 / r.count) if r.count else 0
+            player_stats["average_fail"] = (player_stats["count_fail"] * 100 / r.count) if r.count else 0
             luck_table.append(player_stats)
 
-        luck_player = max(luck_table, key=lambda d: d['average_critical'],
-                          default=None)
-        unluck_player = max(luck_table, key=lambda d: d['average_fail'],
-                            default=None)
+        # Identify the luckiest and unluckiest players
+        luck_player = max(luck_table, key=lambda d: d['average_critical'], default=None)
+        unlucky_player = max(luck_table, key=lambda d: d['average_fail'], default=None)
 
         if luck_player:
             text += f"Luckiest player: {get_display_name(luck_player['player_id'], channel)} with {luck_player['average_critical']:.2f}% critical hits\n"
-        if unluck_player:
-            text += f"Unluckiest player: {get_display_name(unluck_player['player_id'], channel)} with {unluck_player['average_fail']:.2f}% failures\n"
+        if unlucky_player:
+            text += f"Unluckiest player: {get_display_name(unlucky_player['player_id'], channel)} with {unlucky_player['average_fail']:.2f}% failures\n"
 
-        text += f"Total rolled: {data[4]}```"
+        text += f"Total rolled: {data['total_rolled']}```"
         await ctx.send(text)
     except Exception as e:
         print(e)
+        raise
         await ctx.send("An error occurred while fetching session stats.")
-

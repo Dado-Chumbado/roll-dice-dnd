@@ -1,9 +1,9 @@
 # test_dice_engine.py
 import pytest
-from ..core.dice_engine import parse_dice, parse_additional, \
+from core.dice_engine import parse_dice, parse_additional, \
     validate_dice_expression, handle_repeat, fix_dice_expression, \
     process_input_dice, calculate_dice
-from ..core.roll import Roll, generate_dice_roll
+from core.roll import Roll, generate_dice_roll
 
 
 @pytest.mark.asyncio

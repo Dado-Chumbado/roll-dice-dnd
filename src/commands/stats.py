@@ -18,9 +18,9 @@ def commands_stats(bot):
         name=stats_commands.get("session"),
         description="Show stats per channel (session)"
     )
-    async def command_show_stats_session(context, date=None, end_date=None):
+    async def command_show_stats_session(context, channel='', date=None, end_date=None):
         try:
-            print(f"date: {date}")
-            await show_session_stats(context, context.channel.name, date, end_date)
+            print(f"Show session stats with date: {date} {end_date}")
+            await show_session_stats(context, channel or context.channel.name, date, end_date)
         except Exception as e:
             await context.send(f"Exception {e}")
