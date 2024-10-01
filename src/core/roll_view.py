@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_resume=False):
@@ -24,7 +27,8 @@ async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_re
 
         return text
     except Exception as e:
-        raise
+        logging.error(f"An error occurred while generating the roll text: {e}")
+        await context.send(f"Exception {e}")
 
 
 async def generate_dice_text(dice_data, is_sum=True):
@@ -48,46 +52,10 @@ async def generate_dice_text(dice_data, is_sum=True):
         operation_description += f"{' + ' if is_sum else ' - '}{rolled_die.total}"
     return text, operation_description
 
-
-
-# async def multiple_d20_text(context, dice_result_dict, additional_data=None):
-#     dice_obj = dice_result_dict['result_die'][0]
-#     dice_obj.set_validation_adv()
-#
-#     text, text_result, msg_result = await get_roll_text(context, dice_result_dict)
-#     result = dice_result_dict['result_final']
-#
-#     only_d20 = [sublist[0] for sublist in dice_obj.list_of_result]
-#     total_die_roll = len(dice_obj.list_of_result)
-#
+# TODO: Implement this:
 #     if len(dice_obj.list_of_result) == 2 and only_d20.count(1) == total_die_roll \
 #             or only_d20.count(20) == total_die_roll:
 #         text += f"\n ¯\_(ツ)_/¯ DADO CHUMBADO!!  uma chance em 400!\n"
-#
 #     elif only_d20.count(1) == total_die_roll \
 #             or only_d20.count(20) == total_die_roll:
 #         text += f"\n ¯\_(ツ)_/¯ DADO CHUMBADO!! uma chance em 8.000!!\n"
-#
-#     if not additional_data:
-#         return text
-#
-#     additional_data = additional_data[0]
-#
-#     # If there is no additional dice to calculate, return the result with the value evaluated
-#     if not additional_data['result_die'] and not additional_data['result_minus_die']:
-#         # msg, msg_operation, msg_result
-#         result_final = result + additional_data['result_final']
-#         signal = ""
-#         if additional_data['additional_eval'] > 0:
-#             signal = "+"
-#         elif additional_data['additional_eval'] == 0:
-#             signal = ""
-#             additional_data['result_final'] = ""
-#
-#         return f"{text} \n\n {result}{signal}{additional_data['result_final']}= **{result_final}**"
-#
-#     # Continue with a adv + dice + additional
-#     additional_text = await get_roll_text(context, additional_data, False)
-#     result_final = result + additional_data['result_final']
-#
-#     return f"{text} \n{additional_text[0]}\n\n {result}+{additional_text[1]}= **{result_final}**"

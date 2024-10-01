@@ -1,27 +1,30 @@
 #!/usr/bin/env python3
 
 import os
-from dotenv import load_dotenv
+
 import discord
+from dotenv import load_dotenv
 from discord.ext import commands
-
-load_dotenv()
-STATS_ENABLE = os.getenv("save_stats_db")
-COMMAND_CHAR = os.getenv("command_char")
-
-intents = discord.Intents.default()
-intents.message_content = True
-
-# Create a bot instance
-bot = commands.Bot(command_prefix=COMMAND_CHAR, intents=intents)
-
 from commands import commands_setup
-commands_setup(bot)
+from config import ConfigManager
+from logger import setup_logging
 
 
-@bot.event
-async def on_ready():
-    print(f"I'm logged in as {bot.user.display_name} !\n Statistics enable: {STATS_ENABLE}.")
+if __name__ == "__main__":
+    load_dotenv()
 
+    # Setup logging configuration
+    setup_logging()
 
-bot.run(os.getenv("discord_token"))
+    # Set up the discord bot
+    COMMAND_CHAR = os.getenv("command_char")
+    intents = discord.Intents.default()
+    intents.message_content = True
+
+    # Load the command configuration
+    config_manager = ConfigManager()
+
+    # Create a bot instance
+    bot = commands.Bot(command_prefix=COMMAND_CHAR, intents=intents)
+    commands_setup(bot, config_manager)
+    bot.run(os.getenv("discord_token"))

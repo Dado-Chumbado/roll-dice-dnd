@@ -1,8 +1,11 @@
 import datetime
+import logging
 from contextlib import contextmanager
 from peewee import *
 from enum import Enum
 from db.models import PlayerStats, RollDb, pg_db
+
+logger = logging.getLogger(__name__)
 
 
 class DiceType(Enum):
@@ -20,8 +23,7 @@ def connect_db():
     try:
         yield
     except Exception as e:
-        print(f"Exception connect_db {e}")
-        raise
+        logging.error(f"Error in connect db: {e}")
     finally:
         pg_db.close()
 
@@ -102,7 +104,7 @@ async def show_general_info(context, show_critical=True, show_fails=True,
         stats += f"The total of all rolled dice is: {ps.sum_dice_number_rolled}```"
         await context.send(stats)
     except Exception as e:
-        print(f"An error occurred while fetching stats: {e}")
+        logging.error(f"An error occurred while fetching stats: {e}")
         await context.send(f"An error occurred while fetching stats: {e}")
 
 
@@ -165,7 +167,8 @@ def get_display_name(player_id, channel):
     try:
         return PlayerStats.get(PlayerStats.player_id == player_id,
                                PlayerStats.channel == channel).display_name
-    except PlayerStats.DoesNotExist:
+    except PlayerStats.DoesNotExist as e:
+        logging.error(f"Player name not found in database: {e}")
         return f"Player name not found: {player_id}"
 
 
@@ -214,6 +217,5 @@ async def show_session_stats(ctx, channel, date=None, end_date=None):
         text += f"Total rolled: {data['total_rolled']}```"
         await ctx.send(text)
     except Exception as e:
-        print(e)
-        raise
+        logging.error(f"An error occurred while fetching session stats: {e}")
         await ctx.send("An error occurred while fetching session stats.")

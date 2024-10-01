@@ -4,7 +4,7 @@ import logging
 from .stats_db import insert_roll
 from .roll import generate_dice_roll, Roll
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 async def parse_dice(data: str):
@@ -240,9 +240,7 @@ async def calculate_dice(context, dice_data: str, dice_positive: [],
         return roll
 
     except Exception as e:
-        # Raise the exception after printing for debugging
-        logging.error(f"Error processing dice: {e}")
-        raise
+        logger.error(f"Error processing dice: {e}")
 
 
 async def register_dice_stats(context, roll: Roll):
