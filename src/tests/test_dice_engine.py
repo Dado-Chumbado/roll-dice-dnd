@@ -262,7 +262,52 @@ async def test_invalid_dice_expression():
     ]
     for expr in invalid_expressions:
         with pytest.raises(ValueError):
-            await validate_dice_expression(expr)
+            dice_data, _ = await validate_dice_expression(expr)
+            assert type(dice_data) == str
+
+
+@pytest.mark.asyncio
+async def test_only_modifier_dice_expression():
+
+    valid_expressions = [
+        "5",
+        "2",
+        "7",
+        "10",
+        "69",
+        "420",
+        "-5",
+        "-2",
+        "-7",
+        "-10",
+        "-69",
+        "-420",
+    ]
+    for expr in valid_expressions:
+        await validate_dice_expression(expr)
+
+@pytest.mark.asyncio
+async def test_fix_dice_expression_only_numbers_valid():
+    # Test valid dice expressions and their corrections
+    test_cases = [
+        ("5", "1d20+5"),
+        ("2", "1d20+2"),
+        ("7", "1d20+7"),
+        ("10", "1d20+10"),
+        ("69", "1d20+69"),
+        ("420", "1d20+420"),
+        ("-5", "1d20-5"),
+        ("-2", "1d20-2"),
+        ("-7", "1d20-7"),
+        ("-10", "1d20-10"),
+        ("-69", "1d20-69"),
+        ("-420", "1d20-420"),
+    ]
+
+    for dice_data, expected in test_cases:
+        result = await fix_dice_expression(dice_data)
+        result = result[0]
+        assert result == expected, f"Expected '{expected}' but got '{result}'"
 
 @pytest.mark.asyncio
 async def test_handle_repeat_valid():

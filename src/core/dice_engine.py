@@ -114,6 +114,16 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
     # now undercase any letters
     dice_data = dice_data.lower()
 
+    # If the entire string is a number, prefix it with 'd20' (this handles cases like "5")
+    try:
+        if int(dice_data):
+            if re.findall('-(\d+)?', dice_data):
+                dice_data = f'd20-{dice_data}'
+            else:
+                dice_data = f'd20+{dice_data}'
+    except ValueError:
+        pass
+
     rr = ''
     if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
         dice_data, rr = dice_data[:-2], dice_data[-2:]
@@ -162,16 +172,6 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
 
     # Apply the dice limits to all dice expressions in the input string
     dice_data = re.sub(dice_pattern, apply_dice_limits, dice_data)
-
-    # If the entire string is a number, prefix it with 'd20' (this handles cases like "5")
-    try:
-        if int(dice_data):
-            if re.findall('-(\d+)?', dice_data):
-                dice_data = f'd20-{dice_data}'
-            else:
-                dice_data = f'd20+{dice_data}'
-    except ValueError:
-        pass
 
     # Clean up any extra "+" or "-" signs
     dice_data = dice_data.replace("++", "+").replace("--", "-")
