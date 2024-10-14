@@ -21,6 +21,12 @@ def commands_debug(bot, config_manager):
         latency_ms = bot.latency * 1000  # Convert from seconds to ms
         await context.send(f"Pong {context.author.nick} - {latency_ms:.2f} ms")
 
+    @bot.command(name="sync")
+    async def sync(ctx):
+        await bot.tree.sync()
+        await ctx.send('Command tree synced.')
+        logging.info("Command tree synced.")
+
     @bot.command(name=config_manager.get_prefix("debug", "help"), description="Show all available commands")
     async def send_help(context):
         try:

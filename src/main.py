@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
@@ -26,5 +25,6 @@ if __name__ == "__main__":
 
     # Create a bot instance
     bot = commands.Bot(command_prefix=COMMAND_CHAR, intents=intents)
+
     commands_setup(bot, config_manager)
     bot.run(os.getenv("discord_token"))

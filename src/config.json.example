@@ -3,9 +3,9 @@
         "default": {"alias": "r", "description": "Roll a default dice (d20) or any other dice expression (e.g., 3d6+d4-2)"},
         "advantage": {"alias": "v", "description": "Roll with advantage. Not necessary write d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "double_advantage": {"alias": "vv", "description": "Roll with double advantage, evaluate any extra expression (e.g., 3d6+2d4+...)"},
-        "disadvantage": {"alias": "d", "description": "Roll with disadvantage. Not necessary write d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
+        "disadvantage": {"alias": "d", "description": "Roll with disadvantage. Not necessary use d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "dm_roll": {"alias": "dm", "description": "Rolls any dice expression and send results on DM channel for calling player"},
-        "critical_damage": {"alias": "critic", "description": "Roll for critical damage. Maximize the first die and roll the rest. Evaluate any extra expression (e.g., 3d6+2d4+...)"}
+        "critical_damage": {"alias": "critic", "description": "Roll for critical damage. Max the first die and roll the rest. Eval any extra exp (e.g., 3d6+2d4...)"}
     },
     "initiative": {
         "default": {"alias": "i", "description": "Roll initiative. Accept the dexterity modifier, can accept a custom name and an extra parameter to roll multiple times. e.g. 5 Kobold 2"},

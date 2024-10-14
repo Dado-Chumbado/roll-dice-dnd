@@ -42,3 +42,18 @@ class ConfigManager:
         except KeyError as e:
             logger.error(f"KeyError: {e}")
             raise KeyError(f"'{command}' not found in '{category}' category") from e
+
+    def get_description(self, category, command):
+        """
+        Retrieves the description for a command from the specified category.
+
+        :param category: The command category (e.g., 'roll', 'initiative', 'stats')
+        :param command: The specific command within the category (e.g., 'default', 'advantage')
+        :return: The description for the command.
+        :raises KeyError: If the category or command is not found.
+        """
+        try:
+            return self.config[category][command]['description']
+        except KeyError as e:
+            logger.error(f"KeyError: {e}")
+            raise KeyError(f"'{command}' not found in '{category}' category") from e
