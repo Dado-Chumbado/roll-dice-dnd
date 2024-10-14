@@ -1,8 +1,10 @@
 import os
 import json
+import logging
 from slugify import slugify
 
 ROOT_DATA = os.path.join(os.getcwd(), 'data/')
+logger = logging.getLogger(__name__)
 
 
 class InitItem:
@@ -41,6 +43,7 @@ class InitiativeFile:
             self.save_initiative_table(channel, [])
             f = open(file_name)
         except Exception as e:
+            logger.error(f"Exception in load file {e}")
             print(f"Exception in load file {e}")
 
         data = json.load(f)

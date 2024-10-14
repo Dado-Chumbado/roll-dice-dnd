@@ -178,6 +178,10 @@ class Roll:
         self.rolled_subtract_die.append(rolled_dice)
 
     @property
+    def amount_of_dice_rolled(self):
+        return len(self.rolled_sum_dice) + len(self.rolled_subtract_die)
+
+    @property
     def total_dice_result(self) -> int:
         return (sum(rolled_dice.total for rolled_dice in self.rolled_sum_dice)
                 - sum(rolled_dice.total for rolled_dice in self.rolled_subtract_die))

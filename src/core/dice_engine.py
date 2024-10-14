@@ -93,6 +93,7 @@ async def validate_dice_expression(dice_data, adv=None, double_adv=False):
 
     # Check if there are any valid dice expressions
     if not all_dice:
+        logger.error(f"Invalid dice expression: {dice_data}")
         raise ValueError(f"Invalid dice expression: {dice_data}")
 
     # Use parse_additional to remove all valid dice expressions and see what's left

@@ -684,5 +684,22 @@ async def test_calculate_dice_with_critical(monkeypatch):
         result, _, _ = await process_input_dice(context, dice_data,
                                           critical=True)
         result = result[0]
-        print(result.rolled_sum_dice[0].get_list_valid_values(), expected)
         assert result.rolled_sum_dice[0].get_list_valid_values() == expected
+
+@pytest.mark.asyncio
+async def test_number_dice_rolled(monkeypatch):
+    # Mock random.randint to return predictable results
+    monkeypatch.setattr('random.randint', lambda a, b: b)
+
+    # Test edge cases and boundary values
+    test_cases = [
+        (None, "1d20+1d4+5", [[20], [4]]),
+        (None, "1d20+2d4+5", [[20], [4, 4]]),
+        (None, "1d20+1d4+2d6+5", [[20], [4], [6, 6]]),
+    ]
+
+    for context, dice_data, expected in test_cases:
+        result, _, _ = await process_input_dice(context, dice_data)
+        result = result[0]
+        for i in range(len(expected)):
+            assert result.rolled_sum_dice[i].get_list_valid_values() == expected[i]

@@ -18,6 +18,7 @@ def commands_initiative(bot, config_manager):
     async def roll_initiative(context, initiative: str = "", name: str = "", repeat: int = 1):
         await initiative_roll(context, initiative, name, repeat)
 
+
     @bot.command(
         name=config_manager.get_prefix("initiative", "advantage"),
         description="Roll initiative with advantage!"
@@ -25,6 +26,7 @@ def commands_initiative(bot, config_manager):
     async def roll_initiative_advantage(context, initiative: str = "",
                                         name: str = "", repeat: int = 1):
         await initiative_roll(context, initiative, name, repeat, adv=True)
+
 
     @bot.command(
         name=config_manager.get_prefix("initiative", "reset"),
@@ -180,6 +182,14 @@ def commands_initiative(bot, config_manager):
                                             dice_data,
                                             " for initiative with advantage",
                                             skip_resume=True))
+                elif rolls[0].amount_of_dice_rolled > 1:
+                    await context.send(
+                        await get_roll_text(context,
+                                            roll,
+                                            dice_data,
+                                            " for initiative",
+                                            skip_resume=True))
+
                 # After send the data
                 await init_items.add(channel,
                                      new_name,

@@ -167,7 +167,6 @@ async def test_next_previous_changes_2(init_table):
     await init_table.add(CHANNEL_NAME, "Dragon", 14, "2")
     await init_table.add(CHANNEL_NAME, "Healer", 12, "1")
     result = await init_table.previous(CHANNEL_NAME)
-    print(init_table.initiative_table)
     assert result.name == "Hero"  # since current was 1, go back to the last one
 
 @pytest.mark.asyncio
