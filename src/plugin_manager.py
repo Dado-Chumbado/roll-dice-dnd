@@ -9,11 +9,15 @@ class Plugin:
     def __init__(self, bot):
         self.bot = bot
 
+    def __str__(self):
+        #TODO: Check this
+        return self.__class__.__name__
+
     def commands_plugin(self, bot):
         @bot.event
         async def on_ready():
             logging.debug(
-                f"Plugin {self.__class__.__name__} loaded!")
+                f"{self.__class__.__name__} loaded!")
 
 
 # Load Plugins Dynamically
@@ -35,7 +39,7 @@ def load_plugins(plugin_folder="src/plugins"):
     plugins = []
     for root, dirs, files in os.walk(plugin_folder):
         for file in files:
-            if file == "plugin_main.py":
+            if file.startswith("plugin_") and file.endswith(".py"):
                 plugin_path = os.path.join(root, file)
                 module_name = os.path.splitext(file)[0]
                 spec = importlib.util.spec_from_file_location(module_name,

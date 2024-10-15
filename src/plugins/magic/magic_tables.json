@@ -1,0 +1,28 @@
+{
+  "magic_luck": [
+      {
+        "range": [1, 5],
+        "description": "The spell fails as a critical failure with a bad effect"
+      },
+      {
+        "range": [6, 25],
+        "description": "The spell happens weak with a wild magic surge"
+      },
+      {
+        "range": [26, 49],
+        "description": "The spell causes a random effect (wild magic surge) but works normally"
+      },
+      {
+        "range": [50, 89],
+        "description": "The spell works correctly"
+      },
+      {
+        "range": [90, 94],
+        "description": "The spell works and causes maximum damage or has its duration extended"
+      },
+      {
+        "range": [95, 100],
+        "description": "The spell is considered critical, or has its duration/effect significantly improved"
+      }
+  ]
+}

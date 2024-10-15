@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
-from plugins.hello_world.plugin_main import PluginMain
+from plugins.hello_world.plugin_example import PluginExample
 from discord.ext import commands
 
 
@@ -30,14 +30,14 @@ def bot():
 
 @pytest.fixture
 def plugin(bot):
-    # Create an instance of PluginMain
-    return PluginMain(bot)
+    # Create an instance of PluginExample
+    return PluginExample(bot)
 
 
 @pytest.fixture
 def test_plugin_initialization(bot, plugin):
     # Ensure the plugin was initialized correctly
-    assert isinstance(plugin, PluginMain)
+    assert isinstance(plugin, PluginExample)
 
 
 @pytest.mark.asyncio
