@@ -27,4 +27,5 @@ if __name__ == "__main__":
     bot = commands.Bot(command_prefix=COMMAND_CHAR, intents=intents)
 
     commands_setup(bot, config_manager)
+
     bot.run(os.getenv("discord_token"))

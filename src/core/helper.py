@@ -1,7 +1,6 @@
 import re
 
 
-
 def format_commands(config_manager):
     """Formats the commands from the configuration for displaying in the help message"""
     help_text = "Here are the available commands:\n\n"
