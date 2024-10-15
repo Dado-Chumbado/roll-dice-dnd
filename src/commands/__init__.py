@@ -10,8 +10,9 @@ def commands_setup(bot, config_manager):
     commands_initiative(bot, config_manager)
     commands_stats(bot, config_manager)
 
-    # Use loaded plugins
+    # Load the plugins dynamically from the plugin folder
     plugins = load_plugins()
-    print(plugins)
+
+    # Instantiate and register each plugin, passing the bot instance
     for plugin in plugins:
         plugin(bot)

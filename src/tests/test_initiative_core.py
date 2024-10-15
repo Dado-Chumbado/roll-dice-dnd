@@ -47,7 +47,6 @@ def test_load_initiative_table(init_table):
     assert init_table.initiative_table[0].condition == 'Stunned'
 
 
-
 # Test saving initiative table
 def test_save_initiative_table(init_table):
     # Create a sample list of InitItem objects
