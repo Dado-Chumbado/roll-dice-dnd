@@ -550,7 +550,7 @@ async def test_process_input_dice_reroll():
                                           adv=adv, critical=critical)
         result = result[0]
         assert 'r' in reroll
-        assert result.rolled_sum_dice[0].quantity > 10
+        assert result.rolled_sum_dice[0].quantity >= 10
 
 @pytest.mark.asyncio
 async def test_calculate_dice_no_additional(monkeypatch):

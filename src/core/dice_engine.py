@@ -1,8 +1,8 @@
 import re
 import os
 import logging
-from .stats_db import insert_roll
-from .roll import generate_dice_roll, Roll
+from core.stats_db import insert_roll
+from core.roll import generate_dice_roll, Roll
 
 logger = logging.getLogger(__name__)
 

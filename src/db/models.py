@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 import datetime
 import peewee
 from peewee import *
+import logging
 
-
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 pg_db = PostgresqlDatabase(os.getenv("db"), user=os.getenv("user"), password=os.getenv("pass"),
@@ -59,13 +60,17 @@ class RollDb(Model):
 
 
 def setup_db():
+    if not bool(os.getenv("save_stats_db")):
+        logger.warning(f"Using DB to save stats: {os.getenv("save_stats_db") == False}")
+        return True
+
     pg_db.connect()
     try:
         pg_db.create_tables([PlayerStats, RollDb])
     except peewee.OperationalError:
         pass
     except Exception as e:
-        print(f"Exception setup_db {e}")
+        logger.error(f"Exception setup_db {e}")
         raise
     finally:
         pg_db.close()
@@ -74,4 +79,5 @@ def setup_db():
 try:
     setup_db()
 finally:
-    pg_db.close()
+    if os.getenv("save_stats_db"):
+        pg_db.close()

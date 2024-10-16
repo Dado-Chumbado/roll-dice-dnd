@@ -1,0 +1,5 @@
+{
+    "hello_world": {
+        "default": {"alias": "hello", "description": "Say Hello World!"}
+    }
+}

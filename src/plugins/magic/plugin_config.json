@@ -1,0 +1,7 @@
+{
+    "magic": {
+        "luck": {"alias": "magic", "description": "Check magic status for spell roll"},
+        "surge": {"alias": "magic_surge", "description": "Roll a magic surge for spell roll"},
+        "surge_type": {"alias": "magic_surge_type", "description": "Set the type of magic surge for spell roll (NORMAL, FEY)"}
+    }
+}

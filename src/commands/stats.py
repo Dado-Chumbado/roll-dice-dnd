@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 def commands_stats(bot, config_manager):
     @bot.command(
         name=config_manager.get_prefix("stats", "player"),
-        description="Show stats per player in the channel"
+        help="Show stats per player in the channel"
     )
     async def command_show_stats_player(context):
         try:
@@ -19,7 +19,7 @@ def commands_stats(bot, config_manager):
     
     @bot.command(
         name=config_manager.get_prefix("stats", "session"),
-        description="Show stats per channel (session)"
+        help="Show stats per channel (session)"
     )
     async def command_show_stats_session(context, channel='', date=None, end_date=None):
         try:
