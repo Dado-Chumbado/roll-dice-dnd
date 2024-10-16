@@ -1,6 +1,6 @@
 {
     "roll": {
-        "default": {"alias": "r", "description": "Roll a default dice (d20) or any other dice expression (e.g., 3d6+d4-2)"},
+        "roll_dice": {"alias": "r", "description": "Roll a default dice (d20) or any other dice expression (e.g., 3d6+d4-2)"},
         "advantage": {"alias": "v", "description": "Roll with advantage. Not necessary write d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "double_advantage": {"alias": "vv", "description": "Roll with double advantage, evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "disadvantage": {"alias": "d", "description": "Roll with disadvantage. Not necessary use d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
@@ -8,7 +8,7 @@
         "critical_damage": {"alias": "critic", "description": "Roll for critical damage. Max the first die and roll the rest. Eval any extra exp (e.g., 3d6+2d4...)"}
     },
     "initiative": {
-        "default": {"alias": "i", "description": "Roll initiative. Accept the dexterity modifier, can accept a custom name and an extra parameter to roll multiple times. e.g. 5 Kobold 2"},
+        "roll_initiative": {"alias": "i", "description": "Roll initiative. Accept the dexterity modifier, can accept a custom name and an extra parameter to roll multiple times. e.g. 5 Kobold 2"},
         "advantage": {"alias": "iv", "description": "Roll initiative with advantage. Will roll 2 d20s and choose the higher result. Accept the dexterity modifier."},
         "force": {"alias": "iset", "description": "Force set initiative. e.g. <dice> <dex> <name>"},
         "reset": {"alias": "iclean", "description": "Reset initiative tracker"},
