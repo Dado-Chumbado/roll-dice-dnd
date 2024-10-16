@@ -19,7 +19,7 @@ class PluginExample(Plugin):
     def commands_plugin(self, bot):
         @bot.command(
             name=self.cm.get_prefix("hello_world", "default"),
-            description=self.cm.get_description("hello_world", "default")
+            help=self.cm.get_description("hello_world", "default")
         )
         async def say_hello_world(context):
             await context.send(f"Hello World")

@@ -2,27 +2,33 @@
   "magic_luck": [
       {
         "range": [1, 5],
-        "description": "The spell fails as a critical failure with a bad effect"
+        "description": ":skull: A disastrous miscast occurs, with the spell backfiring dangerously :skull:",
+        "surge": true
       },
       {
         "range": [6, 25],
-        "description": "The spell happens weak with a wild magic surge"
+        "description": ":weary: The spell manifests faintly due to a wild magic surge :weary:",
+        "surge": true
       },
       {
         "range": [26, 49],
-        "description": "The spell causes a random effect (wild magic surge) but works normally"
+        "description": ":face_with_raised_eyebrow: The spell functions as intended, but triggers a random wild magic effect :face_with_raised_eyebrow: ",
+        "surge": true
       },
       {
         "range": [50, 89],
-        "description": "The spell works correctly"
+        "description": ":magic_wand: The spell is effective :magic_wand:",
+        "surge": false
       },
       {
         "range": [90, 94],
-        "description": "The spell works and causes maximum damage or has its duration extended"
+        "description": ":sunglasses: A surge of power amplifies the spell, delivering maximum damage or extending its duration :sunglasses:",
+        "surge": false
       },
       {
         "range": [95, 100],
-        "description": "The spell is considered critical, or has its duration/effect significantly improved"
+        "description": ":fire: A critical surge empowers the spell, greatly increasing its potency or duration :fire:",
+        "surge": false
       }
   ]
 }

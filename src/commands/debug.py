@@ -27,7 +27,7 @@ def commands_debug(bot, config_manager):
         await ctx.send('Command tree synced.')
         logging.info("Command tree synced.")
 
-    @bot.command(name=config_manager.get_prefix("debug", "help"), description="Show all available commands")
+    @bot.command(name=config_manager.get_prefix("debug", "help"), help="Show all available commands")
     async def send_help(context):
         try:
             help_text = format_commands(config_manager)

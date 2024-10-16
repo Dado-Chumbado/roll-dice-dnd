@@ -7,30 +7,27 @@ from core.roll_view import get_roll_text
 logger = logging.getLogger(__name__)
 
 
-def commands_initiative(bot, config_manager):
-
+def commands_initiative(bot, cm):
     init_items = InitTable()
 
     @bot.command(
-        name=config_manager.get_prefix("initiative", "default"),
-        description="Roll initiative!"
+        name=cm.get_prefix("initiative", "default"),
+        help=cm.get_description("initiative", "default"),
     )
     async def roll_initiative(context, initiative: str = "", name: str = "", repeat: int = 1):
         await initiative_roll(context, initiative, name, repeat)
 
-
     @bot.command(
-        name=config_manager.get_prefix("initiative", "advantage"),
-        description="Roll initiative with advantage!"
+        name=cm.get_prefix("initiative", "advantage"),
+        help=cm.get_description("initiative", "advantage")
     )
     async def roll_initiative_advantage(context, initiative: str = "",
                                         name: str = "", repeat: int = 1):
         await initiative_roll(context, initiative, name, repeat, adv=True)
 
-
     @bot.command(
-        name=config_manager.get_prefix("initiative", "reset"),
-        description="Reset the initiative table"
+        name=cm.get_prefix("initiative", "reset"),
+        help=cm.get_description("initiative", "reset")
     )
     async def roll_reset_initiative(context):
         await init_items.reset(context.channel.name)
@@ -40,13 +37,12 @@ def commands_initiative(bot, config_manager):
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
                 logging.error(f"Error reseting initiative: {e}")
-    
+
         init_items.initiative_last_msg = await context.send("OK, Initiative table cleared! :)")
 
-
     @bot.command(
-        name=config_manager.get_prefix("initiative", "remove"),
-        description="Remove item from table"
+        name=cm.get_prefix("initiative", "remove"),
+        help=cm.get_description("initiative", "remove")
     )
     async def remove_initiative(context, index=0):
         try:
@@ -57,15 +53,14 @@ def commands_initiative(bot, config_manager):
                     await init_items.initiative_last_msg.delete()
                 except Exception as e:
                     logging.error(f"Error removing initiative: {e}")
-    
+
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
         except Exception as e:
             await context.send(f"Exception {e}")
-    
-    
+
     @bot.command(
-        name=config_manager.get_prefix("initiative", "add_condition"),
-        description="Add item from table"
+        name=cm.get_prefix("initiative", "add_condition"),
+        help=cm.get_description("initiative", "add_condition")
     )
     async def add_condition_initiative(context, index: int, args: str = ""):
         try:
@@ -73,16 +68,15 @@ def commands_initiative(bot, config_manager):
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 await init_items.initiative_last_msg.delete()
-    
+
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
         except Exception as e:
             logging.error(f"Error adding condition: {e}")
             await context.send(f"Exception {e}")
-    
-    
+
     @bot.command(
-        name=config_manager.get_prefix("initiative", "remove_condition"),
-        description="Remove item from table"
+        name=cm.get_prefix("initiative", "remove_condition"),
+        help=cm.get_description("initiative", "remove_condition")
     )
     async def remove_condition_initiative(context, index: int):
         try:
@@ -90,16 +84,15 @@ def commands_initiative(bot, config_manager):
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 await init_items.initiative_last_msg.delete()
-    
+
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
         except Exception as e:
             logging.error(f"Error removing condition: {e}")
             await context.send(f"Exception {e}")
 
-
     @bot.command(
-        name=config_manager.get_prefix("initiative", "next"),
-        description="Move the initiative to the next character."
+        name=cm.get_prefix("initiative", "next"),
+        help=cm.get_description("initiative", "next")
     )
     async def next_initiative(context):
         await init_items.next(context.channel.name)
@@ -109,13 +102,12 @@ def commands_initiative(bot, config_manager):
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
                 logging.error(f"Error moving initiative: {e}")
-    
+
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
-    
-    
+
     @bot.command(
-        name=config_manager.get_prefix("initiative", "previous"),
-        description="Move the initiative to the previous character."
+        name=cm.get_prefix("initiative", "previous"),
+        help=cm.get_description("initiative", "previous")
     )
     async def prev_initiative(context):
         await init_items.previous(context.channel.name)
@@ -125,30 +117,29 @@ def commands_initiative(bot, config_manager):
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
                 logging.error(f"Error moving initiative: {e}")
-    
+
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
     @bot.command(
-        name=config_manager.get_prefix("initiative", "force"),
-        description="Add manually initiative"
+        name=cm.get_prefix("initiative", "force"),
+        help=cm.get_description("initiative", "force")
     )
     async def force_initiative(context, dice: int = 0, dex: int = 0, args: str = ""):
         try:
             dice, _ = await clean_dex(str(dice))
             dex, neg = await clean_dex(str(dex))
             name = f"{args}" if args else context.author.nick
-    
+
             await init_items.add(context.channel.name, name, dice, str(dex) if not neg else str(dex * -1))
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 await init_items.initiative_last_msg.delete()
-    
+
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
-    
+
         except Exception as e:
             logging.error(f"Error forcing initiative: {e}")
             await context.send(f"Exception {e}")
-
 
     async def initiative_roll(context, initiative, name, repeat, adv=None):
         try:

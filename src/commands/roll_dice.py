@@ -8,14 +8,14 @@ logger = logging.getLogger(__name__)
 
 def commands_dice(bot, cm):
     @bot.hybrid_command(name=cm.get_prefix("roll", "default"),
-                        description=cm.get_description("roll", "default"))
-    async def command_roll_dice(ctx, *, command):
+                        help=cm.get_description("roll", "default"))
+    async def command_roll_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
             for roll in rolls:
                 logging.debug(f"Roll: {roll}")
-                await ctx.send(await get_roll_text(ctx, roll, dice_data, reroll))
+                await ctx.send(await get_roll_text(ctx, roll, dice_data, reroll, sk))
         except Exception as e:
             logging.error(f"Error processing dice: {e}")
             await ctx.send(f"Exception {e}")
@@ -23,9 +23,9 @@ def commands_dice(bot, cm):
 
     @bot.hybrid_command(
         name=cm.get_prefix("roll", "dm_roll"),
-        description=cm.get_description("roll", "dm_roll")
+        help=cm.get_description("roll", "dm_roll")
     )
-    async def command_roll_dm_dice(ctx, *, command):
+    async def command_roll_dm_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
@@ -39,9 +39,9 @@ def commands_dice(bot, cm):
 
     @bot.hybrid_command(
         name=cm.get_prefix("roll", "critical_damage"),
-        description=cm.get_description("roll", "critical_damage")
+        help=cm.get_description("roll", "critical_damage")
     )
-    async def command_roll_critical_damage_dice(ctx, *, command):
+    async def command_roll_critical_damage_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data, critical=True)
@@ -55,9 +55,9 @@ def commands_dice(bot, cm):
 
     @bot.hybrid_command(
         name=cm.get_prefix("roll", "advantage"),
-        description=cm.get_description("roll", "advantage")
+        help=cm.get_description("roll", "advantage")
     )
-    async def command_roll_advantage_dice(ctx, *, command):
+    async def command_roll_advantage_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data, adv=True)
@@ -71,9 +71,9 @@ def commands_dice(bot, cm):
 
     @bot.hybrid_command(
         name=cm.get_prefix("roll", "double_advantage"),
-        description=cm.get_description("roll", "double_advantage")
+        help=cm.get_description("roll", "double_advantage")
     )
-    async def command_roll_double_advantage_dice(ctx, *, command):
+    async def command_roll_double_advantage_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data, adv=True, double_adv=True)
@@ -87,9 +87,9 @@ def commands_dice(bot, cm):
 
     @bot.hybrid_command(
         name=cm.get_prefix("roll", "disadvantage"),
-        description=cm.get_description("roll", "disadvantage")
+        help=cm.get_description("roll", "disadvantage")
     )
-    async def command_roll_disadvantage_dice(ctx, *, command):
+    async def command_roll_disadvantage_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data, adv=False)
