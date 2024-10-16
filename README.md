@@ -374,10 +374,10 @@ The plugin system is managed by the plugin_manager.py module. To add a plugin, f
 ### Current plugins installed ###
 
 A simple hello world plugin is installed by default.
-- [hello_world](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/plugins/hello_world)
+- [hello_world](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/hello_world)
 
 Plugin to generate magic surge based on normal and fey tables. Mode details in the plugin folder.
-- [magic](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/plugins/magic)
+- [magic](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/magic)
 
 ## Database statistics [alpha]
 
