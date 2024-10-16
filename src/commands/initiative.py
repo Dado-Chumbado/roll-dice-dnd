@@ -11,8 +11,8 @@ def commands_initiative(bot, cm):
     init_items = InitTable()
 
     @bot.command(
-        name=cm.get_prefix("initiative", "default"),
-        help=cm.get_description("initiative", "default"),
+        name=cm.get_prefix("initiative", "roll_initiative"),
+        help=cm.get_description("initiative", "roll_initiative"),
     )
     async def roll_initiative(context, initiative: str = "", name: str = "", repeat: int = 1):
         await initiative_roll(context, initiative, name, repeat)
@@ -55,6 +55,8 @@ def commands_initiative(bot, cm):
                     logging.error(f"Error removing initiative: {e}")
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        except IndexError:
+            pass
         except Exception as e:
             await context.send(f"Exception {e}")
 

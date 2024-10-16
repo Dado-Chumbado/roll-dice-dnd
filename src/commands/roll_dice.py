@@ -7,15 +7,15 @@ logger = logging.getLogger(__name__)
 
 
 def commands_dice(bot, cm):
-    @bot.hybrid_command(name=cm.get_prefix("roll", "default"),
-                        help=cm.get_description("roll", "default"))
+    @bot.hybrid_command(name=cm.get_prefix("roll", "roll_dice"),
+                        help=cm.get_description("roll", "roll_dice"))
     async def command_roll_dice(ctx, *, command=None):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
             for roll in rolls:
                 logging.debug(f"Roll: {roll}")
-                await ctx.send(await get_roll_text(ctx, roll, dice_data, reroll, sk))
+                await ctx.send(await get_roll_text(ctx, roll, dice_data, reroll))
         except Exception as e:
             logging.error(f"Error processing dice: {e}")
             await ctx.send(f"Exception {e}")

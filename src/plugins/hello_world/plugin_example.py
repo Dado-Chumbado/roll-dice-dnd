@@ -17,6 +17,11 @@ class PluginExample(Plugin):
         logging.info(f"{self.__class__.__name__} initialized!")
 
     def commands_plugin(self, bot):
+        @bot.event
+        async def on_ready():
+            logging.debug(
+                f"{self.__class__.__name__} loaded!")
+
         @bot.command(
             name=self.cm.get_prefix("hello_world", "default"),
             help=self.cm.get_description("hello_world", "default")
