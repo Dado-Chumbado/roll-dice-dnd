@@ -158,6 +158,7 @@ Rafa - DM rolled 5d10+4d6+2d8-3d5+4 :
 
 #### Private Roll for the DM:
 Send dice rolls to your private messages.
+
 :information_source: Supports slash command
 
 ```bash
@@ -166,6 +167,8 @@ Send dice rolls to your private messages.
 
 #### Critical Damage Roll:
 Roll with critical damage, that maximize the first dice and roll the rest.
+
+:information_source: Supports slash command
 
 ```bash
 !critical_damage d8+5
@@ -180,6 +183,7 @@ Rafa - DM rolled 1d8+5 :
 
 #### Roll with Advantage:
 Roll with advantage using two d20s, keeping the highest result.
+
 :information_source: Supports slash command
 
 ```bash
@@ -207,6 +211,7 @@ Rafa - DM rolled 2d20+1d4+2 :
 
 #### Roll with Double Advantage:
 Roll with three d20s, keeping the highest result.
+
 :information_source: Supports slash command
 
 ```bash
@@ -223,6 +228,7 @@ Rafa - DM rolled 3d20 :
 
 #### Roll with Disadvantage:
 Roll with disadvantage, keeping the lowest result.
+
 :information_source: Supports slash command
 
 ```bash
