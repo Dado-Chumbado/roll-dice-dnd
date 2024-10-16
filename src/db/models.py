@@ -59,6 +59,11 @@ class RollDb(Model):
 
 
 def setup_db():
+    print(bool(os.getenv("save_stats_db")))
+    if not bool(os.getenv("save_stats_db")):
+        print("save_stats_db:", os.getenv("save_stats_db") == False)
+        return True
+
     pg_db.connect()
     try:
         pg_db.create_tables([PlayerStats, RollDb])
@@ -74,4 +79,5 @@ def setup_db():
 try:
     setup_db()
 finally:
-    pg_db.close()
+    if os.getenv("save_stats_db"):
+        pg_db.close()

@@ -12,7 +12,7 @@ class PluginExample(Plugin):
     def __init__(self, bot):
         super().__init__(bot)
 
-        self.cm = ConfigManager(os.path.join(current_folder, 'config.json'))
+        self.cm = ConfigManager(os.path.join(current_folder, 'plugin_config.json'))
         self.commands_plugin(bot)
         logging.info(f"{self.__class__.__name__} initialized!")
 

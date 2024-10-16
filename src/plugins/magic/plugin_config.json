@@ -1,0 +1,5 @@
+{
+    "magic": {
+        "luck": {"alias": "magic", "description": "Check magic status for spell roll"}
+    }
+}
