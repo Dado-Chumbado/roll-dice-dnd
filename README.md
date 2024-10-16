@@ -100,6 +100,8 @@ Once the bot is running, invite it to your Discord server. Use the following com
 #### Standard Dice Roll:
 Roll any combination of dice (default is 1d20 if no arguments are passed).
 
+:information_source: Supports slash command
+
 ```bash
 !roll d20
 ```
@@ -156,6 +158,7 @@ Rafa - DM rolled 5d10+4d6+2d8-3d5+4 :
 
 #### Private Roll for the DM:
 Send dice rolls to your private messages.
+:information_source: Supports slash command
 
 ```bash
 !dm_roll d20+5
@@ -177,6 +180,7 @@ Rafa - DM rolled 1d8+5 :
 
 #### Roll with Advantage:
 Roll with advantage using two d20s, keeping the highest result.
+:information_source: Supports slash command
 
 ```bash
 !advantage 5
@@ -203,6 +207,7 @@ Rafa - DM rolled 2d20+1d4+2 :
 
 #### Roll with Double Advantage:
 Roll with three d20s, keeping the highest result.
+:information_source: Supports slash command
 
 ```bash
 !double_advantage
@@ -218,6 +223,7 @@ Rafa - DM rolled 3d20 :
 
 #### Roll with Disadvantage:
 Roll with disadvantage, keeping the lowest result.
+:information_source: Supports slash command
 
 ```bash
 !disadvantage
@@ -354,6 +360,18 @@ command_char=!
 ```
 
 :exclamation:  it's not recommended to use `/` as activation character, since Discord will try to map as slash command.
+
+## Plugins ##
+
+The plugin system is managed by the plugin_manager.py module. To add a plugin, follow the instructions in the plugin README.
+
+### Current plugins installed ###
+
+A simple hello world plugin is installed by default.
+- [hello_world](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/plugins/hello_world)
+
+Plugin to generate magic surge based on normal and fey tables. Mode details in the plugin folder.
+- [magic](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/plugins/magic)
 
 ## Database statistics [alpha]
 
