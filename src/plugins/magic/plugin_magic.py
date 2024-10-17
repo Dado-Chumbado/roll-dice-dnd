@@ -28,14 +28,21 @@ def load_json(filename) -> json:
 def find_effect(roll, data):
     for effect in data:
         if effect['range'][0] <= roll <= effect['range'][-1]:
-            return effect['description'], effect['surge']
-    return "No effect found for this roll", False  # In case no matching range is found
+            return effect
+    return None
 
 
 def get_magic_surge_effect(roll, data):
     # get the correct list of effect based on magic_surge_type
     for effect in data[magic_surge_type]:
         if effect['range'][0] <= roll <= effect['range'][-1]:
+            return effect
+    return None
+
+def get_failed_magic_surge_effect(roll, data):
+    # Find the exaclty same effect
+    for effect in data:
+        if effect['range'][0] == roll:
             return effect
     return None
 
@@ -48,6 +55,7 @@ class PluginMagic(Plugin):
         self.commands_plugin(bot)
         self.magic_list = load_json('magic_tables.json')
         self.magic_surge_list = load_json('magic_surge.json')
+        self.magic_fail_list = load_json('magic_fail.json')
         logging.info(f"{self.__class__.__name__} initialized!")
 
     def commands_plugin(self, bot):
@@ -62,12 +70,25 @@ class PluginMagic(Plugin):
             logging.debug(f"Magic Roll: {roll}")
             roll_text = await get_roll_text(ctx, roll, dice_data, reroll, skip_resume=True)
 
-            descriptions, surge = find_effect(roll.total_dice_result, self.magic_list["magic_luck"])
-            await ctx.send(f"{roll_text} \n\n **{descriptions}**")
+            eff = find_effect(roll.total_dice_result, self.magic_list["magic_luck"])
+            await ctx.send(f"{roll_text} \n\n **{eff['description']}**")
 
-            if surge:
-                effect = get_magic_surge_effect(roll.total_dice_result, self.magic_surge_list)
-                await ctx.send(f"||**{effect['description']}**||")
+            rolls, dice_data, reroll = await process_input_dice(ctx, "1d100")
+            roll = rolls[0]
+            logging.debug(f"Magic Surge Roll: {roll}")
+            roll_text = await get_roll_text(ctx, roll, dice_data, reroll,
+                                            skip_resume=True, skip_user_and_dice=True)
+            if not eff['surge'] and not eff['fail']:
+                return
+
+            if eff['surge']:
+                effect = get_magic_surge_effect(roll.total_dice_result,
+                                                self.magic_surge_list)
+            else:
+                effect = get_failed_magic_surge_effect(roll.total_dice_result,
+                                                       self.magic_fail_list)
+            await ctx.send(
+                f"{roll_text} \n\n ||**{effect['description']}**||")
 
         @bot.command(
             name=self.cm.get_prefix("magic", "surge"),

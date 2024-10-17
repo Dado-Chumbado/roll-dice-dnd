@@ -1,34 +1,40 @@
 {
   "magic_luck": [
       {
-        "range": [1, 5],
+        "range": [1, 10],
         "description": ":skull: A disastrous miscast occurs, with the spell backfiring dangerously :skull:",
-        "surge": true
+        "surge": false,
+        "fail": true
       },
       {
-        "range": [6, 25],
+        "range": [11, 25],
         "description": ":weary: The spell manifests faintly due to a wild magic surge :weary:",
-        "surge": true
+        "surge": true,
+        "fail": false
       },
       {
         "range": [26, 49],
         "description": ":face_with_raised_eyebrow: The spell functions as intended, but triggers a random wild magic effect :face_with_raised_eyebrow: ",
-        "surge": true
+        "surge": true,
+        "fail": false
       },
       {
         "range": [50, 89],
         "description": ":magic_wand: The spell is effective :magic_wand:",
-        "surge": false
+        "surge": false,
+        "fail": false
       },
       {
         "range": [90, 94],
         "description": ":sunglasses: A surge of power amplifies the spell, delivering maximum damage or extending its duration :sunglasses:",
-        "surge": false
+        "surge": false,
+        "fail": false
       },
       {
         "range": [95, 100],
         "description": ":fire: A critical surge empowers the spell, greatly increasing its potency or duration :fire:",
-        "surge": false
+        "surge": false,
+        "fail": false
       }
   ]
 }

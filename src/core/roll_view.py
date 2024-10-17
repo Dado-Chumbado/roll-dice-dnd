@@ -3,12 +3,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_resume=False):
+async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_resume=False, skip_user_and_dice=False):
     try:
         username = f"{context.author.nick}"
     except:
         username = f"No name"
-    text = f"{username} rolled **{dice_data}{reroll}** {extra_info}: \n"
+
+    text = ""
+    if not skip_user_and_dice:
+        text = f"{username} rolled **{dice_data}{reroll}** {extra_info}: \n"
 
     try:
         text_sum, op_desc_sum = await generate_dice_text(roll.rolled_sum_dice,

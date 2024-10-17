@@ -1,0 +1,401 @@
+[{
+    "range": [1],
+    "description": "The caster casts Disguise Self"
+  },
+  {
+    "range": [2],
+    "description": "The caster smells like a skunk for 10 minutes."
+  },
+  {
+    "range": [3],
+    "description": "The caster casts Earth Tremor centered on themselves"
+  },
+  {
+    "range": [4],
+    "description": "The caster's clothes itch (Disadvantage on concentration checks for 1d2 rounds)."
+  },
+  {
+    "range": [5],
+    "description": "The caster glows as if hit by Faerie Fire for 2d4 rounds"
+  },
+  {
+    "range": [6],
+    "description": "Every creature within 60 feet of the caster is targeted by a level 1 Magic Missile spell (1 missile per creature)"
+  },
+  {
+    "range": [7],
+    "description": "The next sentence spoken by the caster is amplified, all within a 15-foot radius of the caster must make a Constitution saving throw DC 15 or lose concentration on their spells and take 2d6 psychic damage."
+  },
+  {
+    "range": [8],
+    "description": "The caster's hair grows 1 meter in length and changes to a random color"
+  },
+  {
+    "range": [9],
+    "description": "The caster spins 180 degrees and fires magic missiles (level 1) at the creatures closest to them."
+  },
+  {
+    "range": [10],
+    "description": "The caster's face is darkened by a small explosion. Take 1d4 fire damage."
+  },
+  {
+    "range": [11],
+    "description": "The caster develops an allergy to magic. The character can't control their sneezing and is Incapacitated until all magical items are removed. The allergy lasts until the end of the caster's next turn after removing all their magical items."
+  },
+  {
+    "range": [12],
+    "description": "The caster's head increases in size for 1 minute. Enemies score a critical hit on the caster with a result of 19 or 20 on a d20."
+  },
+  {
+    "range": [13],
+    "description": "The caster shrinks (equivalent to the Reduce spell) for 1 minute."
+  },
+  {
+    "range": [14],
+    "description": "The caster falls madly in love with the target until a Remove Curse spell is cast."
+  },
+  {
+    "range": [15],
+    "description": "A wave of cold hits the caster, who takes 1d6 cold damage, and has disadvantage on the next weapon attack roll it makes before the end of its next turn."
+  },
+  {
+    "range": [16],
+    "description": "A random part of the caster's body transforms. (change at the DM's discretion without altering the character sheet parameters) Ex. Head becomes small, arm becomes long, legs become thin."
+  },
+  {
+    "range": [17],
+    "description": "Colored bubbles come out of the caster's mouth instead of words. The words are released when the bubbles burst. Spells with verbal components only take effect on the caster's next turn."
+  },
+  {
+    "range": [18],
+    "description": "Tongues spell affects everyone within 60 feet of the caster."
+  },
+  {
+    "range": [19],
+    "description": "The caster casts Shatter centered on themselves"
+  },
+  {
+    "range": [20],
+    "description": "The caster's feet increase in size, reducing their movement by half for 1d10 rounds"
+  },
+  {
+    "range": [21],
+    "description": "The caster suffers the same effect as the target if it's an offensive spell, if not, just ignore the result."
+  },
+  {
+    "range": [22],
+    "description": "The caster levitates like a balloon 20 feet for 1d4 turns without being able to control direction or height. The DM may ask for a random roll to determine height and direction."
+  },
+  {
+    "range": [23],
+    "description": "Causes fear in a 60-foot radius centered on the caster. Everyone within the radius, except the caster, must make a saving throw."
+  },
+  {
+    "range": [24],
+    "description": "The caster speaks with a high-pitched voice for 1d6 days."
+  },
+  {
+    "range": [25],
+    "description": "The caster cannot cast the same spell for 1 hour or until the end of combat"
+  },
+  {
+    "range": [26],
+    "description": "The caster ages 10 years."
+  },
+  {
+    "range": [27],
+    "description": "Silence, 15-foot radius centered on the caster."
+  },
+  {
+    "range": [28],
+    "description": "A 10-foot x 10-foot hole appears immediately in front of the caster, with a depth of 5 feet per caster level, up to a maximum of 25 feet."
+  },
+  {
+    "range": [29],
+    "description": "The caster no longer has a reflection or shadow. Lasts 1 day."
+  },
+  {
+    "range": [30],
+    "description": "Colored ribbons come out of the caster's fingertips for 1 hour, if cut or burned they grow back again."
+  },
+  {
+    "range": [31],
+    "description": "The spell effect ricochets off the target if offensive, if not, it ricochets off the target and hits a random creature (including the caster)"
+  },
+  {
+    "range": [32],
+    "description": "The caster casts Silvery Barbs on the next roll of an ally"
+  },
+  {
+    "range": [33],
+    "description": "The caster casts Hold Person on a random target within range"
+  },
+  {
+    "range": [34],
+    "description": "A stream of butterflies comes out of the caster's mouth, ending at the end of their next turn."
+  },
+  {
+    "range": [35],
+    "description": "The caster leaves monster-shaped footprints instead of their own until a Dispel Magic spell is cast."
+  },
+  {
+    "range": [36],
+    "description": "Birds, bats, or flying creatures appear and circle around the caster, causing disadvantage on their attack and concentration checks for 2 rounds"
+  },
+  {
+    "range": [37],
+    "description": "Music coming from the caster fills the air for 2 rounds"
+  },
+  {
+    "range": [38],
+    "description": "The caster's hands double in size for 1 hour."
+  },
+  {
+    "range": [39],
+    "description": "All normal fires within 60 feet of the caster are extinguished."
+  },
+  {
+    "range": [40],
+    "description": "A magical item within 30 feet of the caster (chosen randomly) loses all its charges (as if it had been used)"
+  },
+  {
+    "range": [41],
+    "description": "A normal item within 30 feet of the caster (chosen randomly) becomes permanently magical, gaining a magical quirk."
+  },
+  {
+    "range": [42],
+    "description": "The eye color of the caster and the target switch places."
+  },
+  {
+    "range": [43],
+    "description": "Smoke comes out of the ears of all creatures within 60 feet of the caster for 1 turn. The creatures become deaf."
+  },
+  {
+    "range": [44],
+    "description": "The caster cannot regain hit points for 2 rounds."
+  },
+  {
+    "range": [45],
+    "description": "All creatures within 30 feet of the caster start hiccuping (like Tasha's Hideous Laughter spell, but with hiccups)."
+  },
+  {
+    "range": [46],
+    "description": "All normal doors, secret doors, gates, etc. (including those that are locked or blocked) within 60 feet of the caster open as if by the Knock spell."
+  },
+  {
+    "range": [47],
+    "description": "The caster and the target switch places."
+  },
+  {
+    "range": [48],
+    "description": "The spell affects a random target within 60 feet of the caster."
+  },
+  {
+    "range": [49],
+    "description": "All normal doors, secret doors, gates, etc. (including those that are open) within 60 feet of the caster lock."
+  },
+  {
+    "range": [50],
+    "description": "Casts Infestation centered on the caster."
+  },
+  {
+    "range": [51],
+    "description": "Sudden change in weather (temperature increase, snow, rain, etc.) lasting 1d6 turns."
+  },
+  {
+    "range": [52],
+    "description": "A deafening boom affects everyone within 60 feet. All who can hear must make a Constitution saving throw (DC 15) or be stunned for 1d2 rounds."
+  },
+  {
+    "range": [53],
+    "description": "Casts Dispel Magic on a random spell."
+  },
+  {
+    "range": [54],
+    "description": "An extraplanar creature appears: 25% Celestial, 25% Fey, 25% Infernal, 25% Elemental. The creature has a 50% chance of being friendly."
+  },
+  {
+    "range": [55],
+    "description": "Casts Thunderwave"
+  },
+  {
+    "range": [56],
+    "description": "The caster is affected by the Mind Sliver spell"
+  },
+  {
+    "range": [57],
+    "description": "The caster is affected by the Dissonant Whispers spell"
+  },
+  {
+    "range": [58],
+    "description": "Summons a random genie not under the caster's control. The Elemental remains for 2 rounds and has a 1% chance of granting 1 wish to the caster."
+  },
+  {
+    "range": [59],
+    "description": "All enemy weapons within 30 feet of the caster (including natural weapons) glow for 1d4 rounds, causing an additional 1d4 radiant damage"
+  },
+  {
+    "range": [60],
+    "description": "All allied weapons within 30 feet of the caster (including natural weapons) glow for 1d4 rounds, REDUCING damage by 1d4."
+  },
+  {
+    "range": [61],
+    "description": "A Web spell is centered on the caster."
+  },
+  {
+    "range": [62],
+    "description": "Casts Sleet Storm centered on self"
+  },
+  {
+    "range": [63],
+    "description": "The caster changes a physical characteristic (skin color, eye color, height, scar, etc.)"
+  },
+  {
+    "range": [64],
+    "description": "Casts the Slow spell on self"
+  },
+  {
+    "range": [65],
+    "description": "The target grows a tail that lasts until a Remove Curse spell is cast."
+  },
+  {
+    "range": [66],
+    "description": "The target gains a random form of permanent madness."
+  },
+  {
+    "range": [67],
+    "description": "The caster is the target of the Shocking Grasp spell"
+  },
+  {
+    "range": [68],
+    "description": "Darkness centered on the target for 1 round"
+  },
+  {
+    "range": [69],
+    "description": "Plant Growth centered on the target creating difficult terrain in a 10-foot radius area"
+  },
+  {
+    "range": [70],
+    "description": "1,000 pounds of inanimate matter within 15 feet of the target disappear."
+  },
+  {
+    "range": [71],
+    "description": "A stinky cow falls from a portal in the sky and hits the caster, exploding (Functions like a Fireball centered on the target)."
+  },
+  {
+    "range": [72],
+    "description": "The target (if enemy) regains 2d10 hit points, if ally takes 1d10 damage"
+  },
+  {
+    "range": [73],
+    "description": "The target (if enemy) gains advantage on all attacks for 2 rounds, if ally disadvantage on all dice rolls for 1 round"
+  },
+  {
+    "range": [74],
+    "description": "All allies within 10 feet of the caster take 2d4 psychic damage."
+  },
+  {
+    "range": [75],
+    "description": "The caster becomes dizzy (-4 AC and disadvantage on melee attacks and cannot cast spells) for 1d2 rounds."
+  },
+  {
+    "range": [76],
+    "description": "Thorn Whip is magically conjured from the target to the caster"
+  },
+  {
+    "range": [77],
+    "description": "The caster levitates like a balloon 20 feet for 1d4 turns without being able to control direction or height. The DM may ask for a random roll to determine height and direction."
+  },
+  {
+    "range": [78],
+    "description": "Arms of Hadar is conjured from the caster, but only affects allies."
+  },
+  {
+    "range": [79],
+    "description": "The caster is charmed as by the Charm Monster spell."
+  },
+  {
+    "range": [80],
+    "description": "Casts Life Transference between the caster and the nearest enemy."
+  },
+  {
+    "range": [81],
+    "description": "The target's feet increase in size, reducing movement by half for 1 day"
+  },
+  {
+    "range": [82],
+    "description": "The caster is affected by Eldritch Blast"
+  },
+  {
+    "range": [83],
+    "description": "The caster randomly transforms into a rabbit or a butterfly (50/50) for 1 round. If killed in this form, the target returns to its normal form."
+  },
+  {
+    "range": [84],
+    "description": "Casts Slow on their allies until the end of their turn"
+  },
+  {
+    "range": [85],
+    "description": "The caster changes gender until Dispel Magic is cast."
+  },
+  {
+    "range": [86],
+    "description": "Casts Summon Lesser Demons that are enemies to all, the demons will only be dispelled if they die."
+  },
+  {
+    "range": [87],
+    "description": "Stinking Cloud centers on the target for 2 rounds"
+  },
+  {
+    "range": [88],
+    "description": "Casts Mass Healing Word on enemies. If out of combat, deals the same amount of damage to allies."
+  },
+  {
+    "range": [89],
+    "description": "The caster starts sneezing and becomes incapacitated (1d6 rounds)."
+  },
+  {
+    "range": [90],
+    "description": "The caster is the target of Confusion for 2 rounds"
+  },
+  {
+    "range": [91],
+    "description": "The caster is the target of a 2nd level Poison Spray (2d12)"
+  },
+  {
+    "range": [92],
+    "description": "The target regains 2d10 hit points, the caster takes the same amount in damage (of a type they cannot benefit from resistances)"
+  },
+  {
+    "range": [93],
+    "description": "The target becomes ethereal for 1d2 turns."
+  },
+  {
+    "range": [94],
+    "description": "Casts Death Ward on an enemy of the DM's choice."
+  },
+  {
+    "range": [95],
+    "description": "All fabric on the target turns to dust."
+  },
+  {
+    "range": [96],
+    "description": "Casts Guardian of Faith that is allied with the enemy."
+  },
+  {
+    "range": [97],
+    "description": "The target develops a new useless appendage (wings, arm, ear, etc.), which remains until Remove Curse is cast."
+  },
+  {
+    "range": [98],
+    "description": "Casts Shadow of Moil on the nearest enemy, if out of combat the caster takes 2d8 necrotic damage."
+  },
+  {
+    "range": [99],
+    "description": "The caster is the target of the Bane spell for 1d6 rounds"
+  },
+  {
+    "range": [100],
+    "description": "Casts Hunger of Hadar centered on self until the start of their next turn for 1 round."
+  }
+]
