@@ -46,7 +46,7 @@
     },
     {
       "range": [23, 24],
-      "description": "You cast Fireball as a 1rd-level spell centered on yourself."
+      "description": "You cast Fireball spell centered on yourself."
     },
     {
       "range": [25, 26],
@@ -78,7 +78,7 @@
     },
     {
       "range": [39, 40],
-      "description": "You cast Fireball as a 2rd-level spell centered on yourself."
+      "description": "You cast Fireball as a 4rd-level spell centered on yourself."
     },
     {
       "range": [41, 42],
@@ -130,7 +130,7 @@
     },
     {
       "range": [65, 66],
-      "description": "You cast Fireball as a 3rd-level spell centered on yourself."
+      "description": "You cast Fireball as a 4rd-level spell centered on yourself."
     },
     {
       "range": [67, 68],
@@ -236,7 +236,7 @@
     },
     {
       "range": [7, 8],
-      "description": "You cast Fireball as a 1rd-level spell centered on yourself."
+      "description": "You cast Fireball as a 3rd-level spell centered on yourself."
     },
     {
       "range": [9, 10],

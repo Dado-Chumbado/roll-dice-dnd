@@ -290,6 +290,7 @@ async def test_only_modifier_dice_expression():
 async def test_fix_dice_expression_only_numbers_valid():
     # Test valid dice expressions and their corrections
     test_cases = [
+        ("0", "1d20"),
         ("5", "1d20+5"),
         ("2", "1d20+2"),
         ("7", "1d20+7"),

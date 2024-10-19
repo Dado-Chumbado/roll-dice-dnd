@@ -43,7 +43,7 @@ def commands_dice(bot, cm):
     )
     async def command_roll_critical_damage_dice(ctx, *, command=None):
         try:
-            dice_data = ''.join(command) if command else 'd20'
+            dice_data = ''.join(command)
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data, critical=True)
             for roll in rolls:
                 logging.debug(f"Roll critical damage: {roll}")

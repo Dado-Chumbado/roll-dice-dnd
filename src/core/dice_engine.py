@@ -115,6 +115,10 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
     # now undercase any letters
     dice_data = dice_data.lower()
 
+    # Check if data is just "0"
+    if dice_data == "0":
+        dice_data = "d20"
+
     # If the entire string is a number, prefix it with 'd20' (this handles cases like "5")
     try:
         if int(dice_data):
