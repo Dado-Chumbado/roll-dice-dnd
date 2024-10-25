@@ -1,6 +1,7 @@
 import logging
 
 from core.dice_engine import process_input_dice
+from core.helper import send_message
 from core.roll_view import get_roll_text
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,8 @@ def commands_dice(bot, cm):
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
             for roll in rolls:
                 logging.debug(f"Roll: {roll}")
-                await ctx.send(await get_roll_text(ctx, roll, dice_data, reroll))
+                response = await get_roll_text(ctx, roll, dice_data, reroll)
+                await send_message(ctx, response)
         except Exception as e:
             logging.error(f"Error processing dice: {e}")
             await ctx.send(f"Exception {e}")
