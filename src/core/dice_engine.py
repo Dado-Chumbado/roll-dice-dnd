@@ -1,3 +1,4 @@
+import asyncio
 import re
 import os
 import logging
@@ -232,7 +233,7 @@ async def calculate_dice(context, dice_data: str, dice_positive: [],
 
         # Register dice rolls for stats, if enabled
         if os.getenv("save_stats_db") == "True":
-            await register_dice_stats(context, roll)
+            asyncio.create_task(register_dice_stats(context, roll))
 
         return roll
 
