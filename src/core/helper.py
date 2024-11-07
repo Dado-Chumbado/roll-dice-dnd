@@ -28,3 +28,19 @@ def format_plugin_commands():
 async def clean_dex(value):
     negative = True if "-" in value else False
     return int(re.sub('[^0-9]', '', value)), negative
+
+
+async def send_message(ctx, message):
+    '''Send a message to the channel respecting the message limit of 2000 characters
+    
+    Args:
+        ctx: Context of the message
+        message: Message to send
+    '''
+
+    if len(message) > 2000:
+
+        for i in range(0, len(message), 2000):
+            await ctx.send(message[i:i+2000])
+    else:
+        await ctx.send(message)
