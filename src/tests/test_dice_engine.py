@@ -207,14 +207,17 @@ async def test_valid_dice_expression():
         "d20 - 2",
         "3d6 +1+d6 r2",
         "3D20-1 r2",
-        "20d4 R2"
+        "20d4 R2",
+        "7+1d4",
+        "5+d6",
+        "-2+2d4",
+        "+12+1d4"
     ]
     for expr in valid_expressions:
         try:
             dice_data, reroll = await validate_dice_expression(expr)
             assert type(dice_data) == str
             if expr[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
-                print(expr, dice_data)
                 assert reroll != ''
 
         except ValueError:
@@ -360,16 +363,22 @@ async def test_handle_repeat_invalid():
 async def test_fix_dice_expression_valid():
     # Test valid dice expressions and their corrections
     test_cases = [
-        ("20+5", "1d20+5"),  # Missing 'd' should be added
+        ("20+5", "1d20+20+5"),  # Missing 'd' should be added
         ("d20-5", "1d20-5"),  # No change needed
         ("d6", "1d6"),  # Missing number before 'd' should be added
         ("5d10+2d4+1", "5d10+2d4+1"),  # No change needed
         ("d4+3d6", "1d4+3d6"),  # Missing number before 'd' should be added
-        ("3+d4", "1d3+1d4"),  # Add missing '+' at start
+
+        ("3+d4", "1d20+3+1d4"),  # Should add the d20
+        ("d4+3", "1d4+3"),  # Should do the operation without change.
+
+        ("10+2d6-1d4", "1d20+10+2d6-1d4"), # Should do the operation without change.
         ("d4+3", "1d4+3"),
         ("1d4+d6", "1d4+1d6"),
         ("2d8-d8", "2d8-1d8"),
-        ("--5+10", "-5+10"),  # Clean up double signs
+        ("-5+10", "1d20-5+10"),  # Clean up double signs and add d20
+        ("d20--5+10", "1d20-5+10"),  # Clean up double signs and add d20
+        ("+10--5", "+10-5"), # Just fix the signs
         ("1000d10", "100d10")
     ]
 
