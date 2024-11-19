@@ -279,6 +279,12 @@ async def test_only_modifier_dice_expression():
         "10",
         "69",
         "420",
+        "+5",
+        "+2",
+        "+7",
+        "+10",
+        "+69",
+        "+420",
         "-5",
         "-2",
         "-7",
@@ -299,7 +305,12 @@ async def test_fix_dice_expression_only_numbers_valid():
         ("7", "1d20+7"),
         ("10", "1d20+10"),
         ("69", "1d20+69"),
-        ("420", "1d20+420"),
+        ("+5", "1d20+5"),
+        ("+2", "1d20+2"),
+        ("+7", "1d20+7"),
+        ("+10", "1d20+10"),
+        ("+69", "1d20+69"),
+        ("+420", "1d20+420"),
         ("-5", "1d20-5"),
         ("-2", "1d20-2"),
         ("-7", "1d20-7"),
@@ -378,7 +389,7 @@ async def test_fix_dice_expression_valid():
         ("2d8-d8", "2d8-1d8"),
         ("-5+10", "1d20-5+10"),  # Clean up double signs and add d20
         ("d20--5+10", "1d20-5+10"),  # Clean up double signs and add d20
-        ("+10--5", "+10-5"), # Just fix the signs
+        ("+10--5", "1d20+10-5"), # Just fix the signs
         ("1000d10", "100d10")
     ]
 

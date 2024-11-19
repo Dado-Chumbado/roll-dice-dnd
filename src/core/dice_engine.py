@@ -112,25 +112,38 @@ async def validate_dice_expression(dice_data, adv=None, double_adv=False):
 
 
 async def fix_dice_expression(dice_data, adv=None, double_adv=False):
+    """
+    Fix and normalize dice expression strings.
+
+    Parameters:
+    - dice_data (str): The raw dice expression.
+    - adv (bool): Indicates advantage.
+    - double_adv (bool): Indicates double advantage.
+
+    Returns:
+    - tuple: The fixed dice expression and any reroll indicator (e.g., "r1").
+    """
     # Remove any whitespace and lowercase all letters
     dice_data = re.sub(r'\s+', '', dice_data).lower()
+
+    # Remove leading "+" if present (it's redundant)
+    if dice_data.startswith('+'):
+        dice_data = dice_data[1:]
 
     # Check if data is just "0"
     if dice_data == "0":
         dice_data = "d20"
 
-    # Handle cases where the expression starts with a number but lacks a dice prefix
+    # Handle cases where the expression starts with a number or "-"
     if re.match(r'^\d+([\+\-]|$)', dice_data):
         dice_data = f'1d20+{dice_data}'
-
-    # Handle standalone negative numbers like "-5" by adding "1d20" as a prefix
-    if re.match(r'^-\d+([\+\-]|$)', dice_data):
+    elif re.match(r'^-\d+([\+\-]|$)', dice_data):
         dice_data = f'1d20{dice_data}'
 
     # Replace d0 with d20
     dice_data = re.sub(r'd0', 'd20', dice_data)
 
-    # Add a "d" before numbers followed by a + or - (like "20+5")
+    # Add a "d" before numbers followed by a + or -
     if re.match(r'^\d+(?=[\+\-])', dice_data):
         dice_data = 'd' + dice_data
 
@@ -157,7 +170,7 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
         number = match.group(1) or '1'
         dice_size = match.group(2)
 
-        # Apply limits from environment variables (or default to 100)
+        # Apply limits from environment variables (or defaults)
         number = min(int(number),
                      int(os.getenv("limit_of_dice_per_roll", 100)))
         dice_size = min(int(dice_size),
@@ -170,6 +183,7 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
     # Clean up any extra "+" or "-" signs
     dice_data = dice_data.replace("++", "+").replace("--", "-")
 
+    # Handle reroll indicators (e.g., "r1", "r2")
     rr = ''
     if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
         dice_data, rr = dice_data[:-2], dice_data[-2:]
