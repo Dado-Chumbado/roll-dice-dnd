@@ -9,6 +9,6 @@ COPY pyproject.toml poetry.lock /app/
 
 RUN apt-get update && apt-get install -y libpq-dev gcc python3-psycopg2
 
-RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
+RUN pip install poetry && poetry config virtualenvs.create false && poetry install --only main
 
 CMD ["poetry", "run", "python3", "/app/src/main.py"]
