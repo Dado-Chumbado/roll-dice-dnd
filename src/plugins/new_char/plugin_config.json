@@ -1,0 +1,5 @@
+{
+    "new_char": {
+        "default": {"alias": "new-char", "description": "Roll stats for a new character"}
+    }
+}

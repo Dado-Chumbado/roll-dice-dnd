@@ -35,6 +35,19 @@ async def test_roll_text_view():
 
 @pytest.mark.asyncio
 async def test_roll_text_view_2():
+    dice_data = "4d6+4d6+4d6"
+    rolls, dice_data, reroll = await process_input_dice(None, dice_data)
+
+    context = AsyncMock()  # Mocking discord context for sending messages
+
+    response = await get_roll_text(context, rolls[0], dice_data, reroll,
+                         extra_info="", skip_resume=False, skip_user_and_dice=False)
+    assert "4d6 => [" in response
+    assert "4d6 => [" in response
+    assert "4d6 => [" in response
+
+@pytest.mark.asyncio
+async def test_roll_text_view_2():
     dice_data = "d8+5-1"
     rolls, dice_data, reroll = await process_input_dice(None, dice_data)
 

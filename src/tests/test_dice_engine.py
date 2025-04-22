@@ -724,3 +724,22 @@ async def test_number_dice_rolled(monkeypatch):
         result = result[0]
         for i in range(len(expected)):
             assert result.rolled_sum_dice[i].get_list_valid_values() == expected[i]
+
+@pytest.mark.asyncio
+async def test_repeat_dice_rolled(monkeypatch):
+    # Mock random.randint to return predictable results
+    # monkeypatch.setattr('random.randint', lambda a, b: b)
+
+    # Test edge cases and boundary values
+    test_cases = [
+        (None, "2x4d6", [[6,6,6,6], [6,6,6,6]]),
+        (None, "2x2d4+1", [[4, 4], [4, 4]]),
+        (None, "6xd10", [[10],[10],[10],[10],[10],[10]]),
+    ]
+
+    for context, dice_data, expected in test_cases:
+        result, _, _ = await process_input_dice(context, dice_data)
+
+        for i in range(len(expected)):
+            result[i].rolled_sum_dice[0].disable_smaller()
+            assert result[i].rolled_sum_dice[0].quantity_active < result[i].rolled_sum_dice[0].quantity

@@ -49,12 +49,17 @@ class RolledDice:
         else:
             return [dice for dice in self.results]
 
-
     def larger(self):
         return max(self.get_list_valid_values())
 
     def smaller(self):
         return min(self.get_list_valid_values())
+
+    def disable_smaller(self):
+        for roll_result in self.results:
+            if roll_result.value == self.smaller():
+                roll_result.is_active = False
+                break
 
     def set_advantage(self, advantage=True, double_adv=False):
         """ Disable rolls that are not the target.

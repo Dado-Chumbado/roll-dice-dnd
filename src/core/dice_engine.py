@@ -193,11 +193,11 @@ async def fix_dice_expression(dice_data, adv=None, double_adv=False):
 
 async def process_input_dice(context, dice_data: str, adv: bool = None,
                              critical: bool = None, double_adv: bool = False) -> (list, list, list):
-    # Validate dice expression
-    dice_data, reroll = await validate_dice_expression(dice_data, adv, double_adv)
-
     # Handle repeat logic
     dice_data, repeat = await handle_repeat(dice_data)
+
+    # Validate dice expression
+    dice_data, reroll = await validate_dice_expression(dice_data, adv, double_adv)
 
     # Parse dice
     dice_positive, dice_negative = await parse_dice(dice_data)
