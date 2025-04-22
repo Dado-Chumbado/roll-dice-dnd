@@ -4,7 +4,7 @@ import json
 from unittest.mock import AsyncMock
 
 # Import the classes and functions to be tested
-from core.initiative import InitItem, InitTable, InitiativeFile
+from core.initiative import InitItem, InitTable
 
 # Define the root data directory
 ROOT_DATA = os.path.join(os.getcwd(), 'data/')

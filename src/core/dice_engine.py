@@ -1,3 +1,4 @@
+import asyncio
 import re
 import os
 import logging
@@ -109,88 +110,94 @@ async def validate_dice_expression(dice_data, adv=None, double_adv=False):
 
     return dice_data, rr
 
+
 async def fix_dice_expression(dice_data, adv=None, double_adv=False):
-    # First remove any whitespace
-    dice_data = re.sub(r'\s+', '', dice_data)
-    # now undercase any letters
-    dice_data = dice_data.lower()
+    """
+    Fix and normalize dice expression strings.
+
+    Parameters:
+    - dice_data (str): The raw dice expression.
+    - adv (bool): Indicates advantage.
+    - double_adv (bool): Indicates double advantage.
+
+    Returns:
+    - tuple: The fixed dice expression and any reroll indicator (e.g., "r1").
+    """
+    # Remove any whitespace and lowercase all letters
+    dice_data = re.sub(r'\s+', '', dice_data).lower()
+
+    # Remove leading "+" if present (it's redundant)
+    if dice_data.startswith('+'):
+        dice_data = dice_data[1:]
 
     # Check if data is just "0"
     if dice_data == "0":
         dice_data = "d20"
 
-    # If the entire string is a number, prefix it with 'd20' (this handles cases like "5")
-    try:
-        if int(dice_data):
-            if re.findall('-(\d+)?', dice_data):
-                dice_data = f'd20-{dice_data}'
-            else:
-                dice_data = f'd20+{dice_data}'
-    except ValueError:
-        pass
-
-    rr = ''
-    if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
-        dice_data, rr = dice_data[:-2], dice_data[-2:]
+    # Handle cases where the expression starts with a number or "-"
+    if re.match(r'^\d+([\+\-]|$)', dice_data):
+        dice_data = f'1d20+{dice_data}'
+    elif re.match(r'^-\d+([\+\-]|$)', dice_data):
+        dice_data = f'1d20{dice_data}'
 
     # Replace d0 with d20
     dice_data = re.sub(r'd0', 'd20', dice_data)
 
-    # Add a 'd' before numbers followed by a + or - (like "20+5")
-    if re.findall('^(\d+)(?=[\+\-])', dice_data):
+    # Add a "d" before numbers followed by a + or -
+    if re.match(r'^\d+(?=[\+\-])', dice_data):
         dice_data = 'd' + dice_data
 
-    # Append a "1" if the string starts with a die expression (e.g., "d20" to "1d20")
+    # Append a "1" if the string starts with a die expression without a quantity (e.g., "d20" to "1d20")
     dice_data = re.sub(r'(?<!\d)d(\d+)', r'1d\1', dice_data)
 
     # Handle advantage and double advantage
     if adv is not None:
-        # Determine the correct number of d20s based on double_adv
+        # Set the number of d20s based on double_adv
         num_d20 = '3d20' if double_adv else '2d20'
 
-        # Check if there's a '1d20' or 'd20' in the expression
+        # If '1d20' or 'd20' exists, replace it with the appropriate roll for advantage
         if re.search(r'\b(2d20|1d20|d20)\b', dice_data):
-            # Replace '1d20' or 'd20' with the appropriate number of d20s
             dice_data = re.sub(r'\b(1d20|d20)\b', num_d20, dice_data)
         else:
-            # If no d20 is present, add it to the beginning
+            # If no d20 present, add the d20 expression at the beginning
             dice_data = f'{num_d20}+{dice_data}'
 
-    # Define the dice roll regex pattern (matches "XdY" where X and Y are numbers)
+    # Apply limits for dice count and size
     dice_pattern = r'(\d*)d(\d+)'
 
     def apply_dice_limits(match):
-        # Get the number of dice and the size of the dice from the match
-        number = match.group(1)
-        dice = match.group(2)
+        # Get the number of dice and the size of the dice
+        number = match.group(1) or '1'
+        dice_size = match.group(2)
 
-        # If the number of dice is not specified, default to 1
-        number = int(number) if number else 1
-        dice = int(dice)
+        # Apply limits from environment variables (or defaults)
+        number = min(int(number),
+                     int(os.getenv("limit_of_dice_per_roll", 100)))
+        dice_size = min(int(dice_size),
+                        int(os.getenv("limit_of_die_size", 100)))
 
-        # Apply the limits from environment variables (or default to 100 if not set)
-        number = min(number, int(os.getenv("limit_of_dice_per_roll", 100)))
-        dice = min(dice, int(os.getenv("limit_of_die_size", 100)))
+        return f'{number}d{dice_size}'
 
-        # Return the modified dice expression
-        return f'{number}d{dice}'
-
-    # Apply the dice limits to all dice expressions in the input string
     dice_data = re.sub(dice_pattern, apply_dice_limits, dice_data)
 
     # Clean up any extra "+" or "-" signs
     dice_data = dice_data.replace("++", "+").replace("--", "-")
+
+    # Handle reroll indicators (e.g., "r1", "r2")
+    rr = ''
+    if dice_data[-2:] in ["r1", "r2", "r3", "r4", "r5"]:
+        dice_data, rr = dice_data[:-2], dice_data[-2:]
 
     return dice_data, rr
 
 
 async def process_input_dice(context, dice_data: str, adv: bool = None,
                              critical: bool = None, double_adv: bool = False) -> (list, list, list):
-    # Validate dice expression
-    dice_data, reroll = await validate_dice_expression(dice_data, adv, double_adv)
-
     # Handle repeat logic
     dice_data, repeat = await handle_repeat(dice_data)
+
+    # Validate dice expression
+    dice_data, reroll = await validate_dice_expression(dice_data, adv, double_adv)
 
     # Parse dice
     dice_positive, dice_negative = await parse_dice(dice_data)
@@ -240,7 +247,7 @@ async def calculate_dice(context, dice_data: str, dice_positive: [],
 
         # Register dice rolls for stats, if enabled
         if os.getenv("save_stats_db") == "True":
-            await register_dice_stats(context, roll)
+            asyncio.create_task(register_dice_stats(context, roll))
 
         return roll
 
