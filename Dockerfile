@@ -4,6 +4,7 @@ LABEL author="Rafael Sandrini" maintainer="rafael@sandrini.com.br"
 
 WORKDIR /app
 
+
 COPY ./src /app/src
 COPY pyproject.toml poetry.lock /app/
 
