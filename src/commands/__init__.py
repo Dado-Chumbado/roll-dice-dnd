@@ -19,4 +19,5 @@ def commands_setup(bot, config_manager):
     # Instantiate and register each plugin, passing the bot instance
     for plugin in plugins:
         plugin(bot)
+        # TODO: Fix this, the "name" is incorrect
         logger.info(f"Plugin: {plugin.__class__.__name__} ready!")

@@ -246,7 +246,7 @@ async def calculate_dice(context, dice_data: str, dice_positive: [],
         roll.additional_eval = additional_eval
 
         # Register dice rolls for stats, if enabled
-        if os.getenv("save_stats_db") == "True":
+        if os.getenv("save_stats_db") in ["True", "1"]:
             asyncio.create_task(register_dice_stats(context, roll))
 
         return roll

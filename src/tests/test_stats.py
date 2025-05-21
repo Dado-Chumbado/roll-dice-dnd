@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from core.stats_db import show_general_info, show_session_stats
+from core.stats_db import show_player_stats, show_session_stats
 
 
 # Mock the player stats response
@@ -34,14 +34,14 @@ mock_ps.sum_dice_number_rolled = 200
 
 @patch('core.stats_db.update_player_stats')
 @pytest.mark.asyncio
-async def test_show_general_info(update_player_stats):
+async def test_show_player_stats(update_player_stats):
     update_player_stats.return_value = mock_ps  # Example mock return value
 
     mock_context = AsyncMock()
     mock_context.author.id = 1
     mock_context.author.display_name = "Player1"
     mock_context.channel.name = "General"
-    await show_general_info(mock_context)
+    await show_player_stats(mock_context)
 
     # Assert
     mock_context.send.assert_called_once_with(

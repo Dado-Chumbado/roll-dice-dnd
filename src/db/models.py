@@ -16,29 +16,29 @@ class PlayerStats(Model):
     id = AutoField()
     player_id = BigIntegerField()
     display_name = CharField()
-    channel = CharField()
-
-    total_dice_rolled = IntegerField(default=0)
-
-    total_d20_rolled = IntegerField(default=0)
-    total_d20_values_rolled = BigIntegerField(default=0)
-    total_d20_critical_rolled = IntegerField(default=0)
-    total_d20_fails_rolled = IntegerField(default=0)
-
-    total_d4_rolled = IntegerField(default=0)
-    total_d4_values_rolled = IntegerField(default=0)
-    total_d6_rolled = IntegerField(default=0)
-    total_d6_values_rolled = IntegerField(default=0)
-    total_d8_rolled = IntegerField(default=0)
-    total_d8_values_rolled = IntegerField(default=0)
-    total_d10_rolled = IntegerField(default=0)
-    total_d10_values_rolled = IntegerField(default=0)
-    total_d12_rolled = IntegerField(default=0)
-    total_d12_values_rolled = IntegerField(default=0)
-    total_d100_rolled = IntegerField(default=0)
-    total_d100_values_rolled = IntegerField(default=0)
-
-    sum_dice_number_rolled = BigIntegerField(default=0)
+    # channel = CharField()
+    #
+    # total_dice_rolled = IntegerField(default=0)
+    #
+    # total_d20_rolled = IntegerField(default=0)
+    # total_d20_values_rolled = BigIntegerField(default=0)
+    # total_d20_critical_rolled = IntegerField(default=0)
+    # total_d20_fails_rolled = IntegerField(default=0)
+    #
+    # total_d4_rolled = IntegerField(default=0)
+    # total_d4_values_rolled = IntegerField(default=0)
+    # total_d6_rolled = IntegerField(default=0)
+    # total_d6_values_rolled = IntegerField(default=0)
+    # total_d8_rolled = IntegerField(default=0)
+    # total_d8_values_rolled = IntegerField(default=0)
+    # total_d10_rolled = IntegerField(default=0)
+    # total_d10_values_rolled = IntegerField(default=0)
+    # total_d12_rolled = IntegerField(default=0)
+    # total_d12_values_rolled = IntegerField(default=0)
+    # total_d100_rolled = IntegerField(default=0)
+    # total_d100_values_rolled = IntegerField(default=0)
+    #
+    # sum_dice_number_rolled = BigIntegerField(default=0)
 
     class Meta:
         database = pg_db
@@ -60,10 +60,12 @@ class RollDb(Model):
 
 
 def setup_db():
+    logger.info("Setting up DB")
     if not bool(os.getenv("save_stats_db")):
-        logger.warning(f"Using DB to save stats: {os.getenv("save_stats_db") == False}")
+        logger.info(f"Using DB to save stats: {os.getenv("save_stats_db") == False}")
         return True
 
+    logger.info("Connecting and preparing DB")
     pg_db.connect()
     try:
         pg_db.create_tables([PlayerStats, RollDb])

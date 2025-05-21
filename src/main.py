@@ -40,6 +40,10 @@ if __name__ == "__main__":
     # Load the command configuration
     config_manager = ConfigManager()
 
+    # Load and prepare DB
+    from db.models import setup_db
+    setup_db()
+
     # Create a bot instance
     bot = commands.Bot(command_prefix=COMMAND_CHAR, intents=intents)
 
