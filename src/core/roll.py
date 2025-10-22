@@ -56,10 +56,29 @@ class RolledDice:
         return min(self.get_list_valid_values())
 
     def disable_smaller(self):
-        for roll_result in self.results:
-            if roll_result.value == self.smaller():
-                roll_result.is_active = False
-                break
+        """
+        Disables the smallest active die. When multiple dice have the same value,
+        preserves the dice at the ends (first/last positions) when possible.
+        """
+        active_dice = [(i, d) for i, d in enumerate(self.results) if d.is_active]
+        if not active_dice:
+            return
+            
+        # Find the smallest active value
+        min_value = min(d.value for _, d in active_dice)
+        
+        # Get all positions of dice with the minimum value
+        min_positions = [i for i, d in active_dice if d.value == min_value]
+        
+        # If we have multiple minimum values, prefer disabling middle positions
+        if len(min_positions) > 1:
+            # Skip first and last positions if possible
+            middle_positions = min_positions[1:-1] if len(min_positions) > 2 else min_positions
+            position_to_disable = middle_positions[0] if middle_positions else min_positions[0]
+        else:
+            position_to_disable = min_positions[0]
+            
+        self.results[position_to_disable].is_active = False
 
     def set_advantage(self, advantage=True, double_adv=False):
         """ Disable rolls that are not the target.

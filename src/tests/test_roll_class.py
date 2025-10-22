@@ -230,3 +230,38 @@ async def test_roll_class_real_random_double_advantage():
     assert len(rolled_dice.results) == 3
     assert rolled_dice.quantity_active == 1
     assert value_target == rolled_dice.total
+
+@pytest.mark.asyncio
+async def test_disable_smaller_with_similar_values():
+    # Create a test case with known dice values
+    dice = RolledDice(6, [6, 5, 5, 5, 6])
+    
+    # Verify initial state
+    assert len(dice.results) == 5
+    assert all(d.is_active for d in dice.results)
+    assert [d.value for d in dice.results] == [6, 5, 5, 5, 6]
+    
+    # Try to disable 2 lowest dice
+    # First call disable_smaller() twice since it only disables one at a time
+    dice.disable_smaller()
+    dice.disable_smaller()
+    
+    # Count active dice
+    active_dice = sum(1 for d in dice.results if d.is_active)
+    assert active_dice == 3, f"Expected 3 active dice, but got {active_dice}"
+    
+    # Verify which dice are active/inactive
+    values = [(d.value, d.is_active) for d in dice.results]
+    expected = [
+        (6, True),   # Keep highest
+        (5, False),  # Disable one of the 5s
+        (5, False),  # Disable another 5
+        (5, True),   # Keep remaining 5
+        (6, True)    # Keep highest
+    ]
+    assert values == expected, f"Expected {expected} but got {values}"
+    
+    # Verify total is calculated only from active dice
+    active_values = [d.value for d in dice.results if d.is_active]
+    assert sum(active_values) == dice.total
+    assert dice.total == 17  # 6 + 5 + 6
