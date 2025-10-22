@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def get_new_char_roll_text(context, roll):
+async def get_new_char_roll_text(context, roll, mode: str = "new"):
     try:
         username = f"{context.author.nick}"
     except:
@@ -25,11 +25,17 @@ async def get_new_char_roll_text(context, roll):
         if roll.total_dice_result == 69:
             text += " nice"
 
-        if roll.total_dice_result <= 60:
+        # thresholds depend on mode: "classic" uses older values, "new" uses higher thresholds
+        if mode == "classic":
+            t_low, t_mid, t_high = 60, 70, 90
+        else:
+            t_low, t_mid, t_high = 65, 75, 95
+
+        if roll.total_dice_result <= t_low:
             text += " \n\n# Holy cow, this is pure :shit:"
-        elif roll.total_dice_result < 70:
+        elif roll.total_dice_result < t_mid:
             text += " \n\n-# Recommended to reroll, you're a little unlucky"
-        elif roll.total_dice_result >= 90:
+        elif roll.total_dice_result >= t_high:
             text += " \n\n# :crown: JESUS FUCKING CHRIST BRO! :crown: "
 
         return text

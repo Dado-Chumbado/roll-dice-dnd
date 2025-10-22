@@ -37,9 +37,11 @@ class PluginNewChar(Plugin):
             if variant and variant.lower() in ("classic", "4d6"):
                 dice_expr = "4d6+4d6+4d6+4d6+4d6+4d6"
                 drop_count = 1
+                mode = "classic"
             else:
                 dice_expr = "5d6+5d6+5d6+5d6+5d6+5d6"
                 drop_count = 2
+                mode = "new"
 
             rolls, dice_data, reroll = await process_input_dice(context, dice_expr)
 
@@ -53,4 +55,4 @@ class PluginNewChar(Plugin):
                         rolled.disable_smaller()
 
             await context.send(
-                await get_new_char_roll_text(context, roll))
+                await get_new_char_roll_text(context, roll, mode))
