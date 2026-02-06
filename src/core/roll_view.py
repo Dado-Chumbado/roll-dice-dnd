@@ -30,8 +30,8 @@ async def get_roll_text(context, roll, dice_data, reroll, extra_info="", skip_re
 
         return text
     except Exception as e:
-        logging.error(f"An error occurred while generating the roll text: {e}")
-        await context.send(f"Exception {e}")
+        logger.error(f"An error occurred while generating the roll text: {e}", exc_info=True)
+        await context.send("Sorry, I couldn't format the roll results properly.")
 
 
 async def generate_dice_text(dice_data, is_sum=True):

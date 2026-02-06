@@ -32,16 +32,17 @@ mock_ps.total_d100_rolled = 142
 mock_ps.sum_dice_number_rolled = 200
 
 
-@patch('core.stats_db.update_player_stats')
+@patch('core.stats_db.PlayerStats.get', create=True)
 @pytest.mark.asyncio
-async def test_show_player_stats(update_player_stats):
-    update_player_stats.return_value = mock_ps  # Example mock return value
+async def test_show_player_stats(player_get):
+    # Return the mocked player-stats object used to build the message
+    player_get.return_value = mock_ps
 
     mock_context = AsyncMock()
     mock_context.author.id = 1
     mock_context.author.display_name = "Player1"
     mock_context.channel.name = "General"
-    await show_player_stats(mock_context)
+    await show_player_stats(mock_context, mock_context.channel.name)
 
     # Assert
     mock_context.send.assert_called_once_with(

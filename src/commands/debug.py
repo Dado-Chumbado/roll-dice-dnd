@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def commands_debug(bot, config_manager):
     @bot.event
     async def on_ready():
-        logging.debug(
+        logger.debug(
             f"I'm logged in as {bot.user.display_name} !\n Statistics enable: {STATS_ENABLE}.")
 
     @bot.command(name=config_manager.get_prefix("debug", "ping"))
@@ -25,7 +25,7 @@ def commands_debug(bot, config_manager):
     async def sync(ctx):
         await bot.tree.sync()
         await ctx.send('Command tree synced.')
-        logging.info("Command tree synced.")
+        logger.info("Command tree synced.")
 
     @bot.command(name=config_manager.get_prefix("debug", "help"), help="Show all available commands")
     async def send_help(context):
@@ -38,5 +38,5 @@ def commands_debug(bot, config_manager):
             help_text += format_plugin_commands()
             await context.send(f"{help_text}")
         except Exception as e:
-            logging.error(f"Error processing help message: {e}")
-            await context.send(f"An error occurred while fetching the commands: {e}")
+            logger.error(f"Error processing help message: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't fetch the help information.")

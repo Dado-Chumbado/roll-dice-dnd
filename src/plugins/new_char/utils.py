@@ -40,8 +40,8 @@ async def get_new_char_roll_text(context, roll, mode: str = "new"):
 
         return text
     except Exception as e:
-        logging.error(f"An error occurred while generating the roll text: {e}")
-        await context.send(f"Exception {e}")
+        logger.error(f"An error occurred while generating new char roll text: {e}", exc_info=True)
+        await context.send("Sorry, I couldn't generate the character stats properly.")
 
 
 async def _generate_dice_text(dice_data):

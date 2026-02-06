@@ -35,3 +35,4 @@ images_fail_helper/*
 
 database.ini
 *.db
+*.log

@@ -15,7 +15,16 @@ def commands_initiative(bot, cm):
         help=cm.get_description("initiative", "roll_initiative"),
     )
     async def roll_initiative(context, initiative: str = "", name: str = "", repeat: int = 1):
-        await initiative_roll(context, initiative, name, repeat)
+        try:
+            await initiative_roll(context, initiative, name, repeat)
+        except ValueError as e:
+            logger.warning(f"Invalid initiative roll parameters: {e}")
+            await context.send(
+                "Invalid parameters! Try these examples:\n"
+                "• `!i 5` - Roll initiative with +5 dex\n"
+                "• `!i 3 Goblin` - Roll initiative for 'Goblin' with +3 dex\n"
+                "• `!i 2 Kobold 4` - Roll initiative 4 times for 'Kobold' with +2 dex"
+            )
 
     @bot.command(
         name=cm.get_prefix("initiative", "advantage"),
@@ -23,7 +32,31 @@ def commands_initiative(bot, cm):
     )
     async def roll_initiative_advantage(context, initiative: str = "",
                                         name: str = "", repeat: int = 1):
-        await initiative_roll(context, initiative, name, repeat, adv=True)
+        try:
+            await initiative_roll(context, initiative, name, repeat, adv=True)
+        except ValueError as e:
+            logger.warning(f"Invalid advantage initiative parameters: {e}")
+            await context.send(
+                "Invalid parameters! Try these examples:\n"
+                "• `!iv 4` - Roll initiative with advantage and +4 dex\n"
+                "• `!iv 2 Rogue` - Roll initiative with advantage for 'Rogue' with +2 dex"
+            )
+
+    @bot.command(
+        name=cm.get_prefix("initiative", "disadvantage"),
+        help=cm.get_description("initiative", "disadvantage")
+    )
+    async def roll_initiative_disadvantage(context, initiative: str = "",
+                                           name: str = "", repeat: int = 1):
+        try:
+            await initiative_roll(context, initiative, name, repeat, adv=False)
+        except ValueError as e:
+            logger.warning(f"Invalid disadvantage initiative parameters: {e}")
+            await context.send(
+                "Invalid parameters! Try these examples:\n"
+                "• `!id 1` - Roll initiative with disadvantage and +1 dex\n"
+                "• `!id -1 Zombie` - Roll initiative with disadvantage for 'Zombie' with -1 dex"
+            )
 
     @bot.command(
         name=cm.get_prefix("initiative", "reset"),
@@ -36,7 +69,7 @@ def commands_initiative(bot, cm):
             try:
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
-                logging.error(f"Error reseting initiative: {e}")
+                logger.error(f"Error reseting initiative: {e}")
 
         init_items.initiative_last_msg = await context.send("OK, Initiative table cleared! :)")
 
@@ -46,51 +79,99 @@ def commands_initiative(bot, cm):
     )
     async def remove_initiative(context, index=0):
         try:
+            if index <= 0:
+                await context.send(
+                    "Please provide a valid index! Example:\n"
+                    "• `!iremove 3` - Remove entry #3 from initiative"
+                )
+                return
             await init_items.remove_index(context.channel.name, index)
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 try:
                     await init_items.initiative_last_msg.delete()
                 except Exception as e:
-                    logging.error(f"Error removing initiative: {e}")
+                    logger.error(f"Error removing initiative: {e}")
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
         except IndexError:
-            pass
+            await context.send(
+                f"Index {index} not found in initiative table. Check the table and try again."
+            )
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid remove initiative parameters: {e}")
+            await context.send(
+                "Invalid index! Example:\n"
+                "• `!iremove 3` - Remove entry #3 from initiative"
+            )
         except Exception as e:
-            await context.send(f"Exception {e}")
+            logger.error(f"Error removing initiative entry: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't remove that initiative entry.")
 
     @bot.command(
         name=cm.get_prefix("initiative", "add_condition"),
         help=cm.get_description("initiative", "add_condition")
     )
-    async def add_condition_initiative(context, index: int, args: str = ""):
+    async def add_condition_initiative(context, index: int = 0, args: str = ""):
         try:
+            if index <= 0 or not args:
+                await context.send(
+                    "Please provide both index and condition! Examples:\n"
+                    "• `!icond 2 Poisoned` - Add 'Poisoned' condition to entry #2\n"
+                    "• `!icond 5 Stunned` - Add 'Stunned' condition to entry #5"
+                )
+                return
             await init_items.add_condition(context.channel.name, index, args)
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        except IndexError:
+            await context.send(
+                f"Index {index} not found in initiative table. Check the table and try again."
+            )
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid add condition parameters: {e}")
+            await context.send(
+                "Invalid parameters! Examples:\n"
+                "• `!icond 2 Poisoned` - Add 'Poisoned' condition to entry #2"
+            )
         except Exception as e:
-            logging.error(f"Error adding condition: {e}")
-            await context.send(f"Exception {e}")
+            logger.error(f"Error adding condition: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't add that condition. Please check the index and try again.")
 
     @bot.command(
         name=cm.get_prefix("initiative", "remove_condition"),
         help=cm.get_description("initiative", "remove_condition")
     )
-    async def remove_condition_initiative(context, index: int):
+    async def remove_condition_initiative(context, index: int = 0):
         try:
+            if index <= 0:
+                await context.send(
+                    "Please provide a valid index! Example:\n"
+                    "• `!icond-remove 2` - Remove condition from entry #2"
+                )
+                return
             await init_items.remove_condition(context.channel.name, index)
             # Delete last msg and send the new one
             if init_items.initiative_last_msg:
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        except IndexError:
+            await context.send(
+                f"Index {index} not found in initiative table. Check the table and try again."
+            )
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid remove condition parameters: {e}")
+            await context.send(
+                "Invalid index! Example:\n"
+                "• `!icond-remove 2` - Remove condition from entry #2"
+            )
         except Exception as e:
-            logging.error(f"Error removing condition: {e}")
-            await context.send(f"Exception {e}")
+            logger.error(f"Error removing condition: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't remove that condition. Please check the index and try again.")
 
     @bot.command(
         name=cm.get_prefix("initiative", "next"),
@@ -103,7 +184,7 @@ def commands_initiative(bot, cm):
             try:
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
-                logging.error(f"Error moving initiative: {e}")
+                logger.error(f"Error moving initiative: {e}")
 
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
@@ -118,7 +199,7 @@ def commands_initiative(bot, cm):
             try:
                 await init_items.initiative_last_msg.delete()
             except Exception as e:
-                logging.error(f"Error moving initiative: {e}")
+                logger.error(f"Error moving initiative: {e}")
 
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
@@ -128,6 +209,14 @@ def commands_initiative(bot, cm):
     )
     async def force_initiative(context, dice: int = 0, dex: int = 0, args: str = ""):
         try:
+            if dice == 0:
+                await context.send(
+                    "Please provide the dice roll and dex modifier! Examples:\n"
+                    "• `!iset 15 3 Fighter` - Set 'Fighter' with roll=15, dex=+3 (total 18)\n"
+                    "• `!iset 8 2 Goblin` - Set 'Goblin' with roll=8, dex=+2 (total 10)\n"
+                    "• `!iset 12 -1` - Set your character with roll=12, dex=-1 (total 11)"
+                )
+                return
             dice, _ = await clean_dex(str(dice))
             dex, neg = await clean_dex(str(dex))
             name = f"{args}" if args else context.author.nick
@@ -139,9 +228,16 @@ def commands_initiative(bot, cm):
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
 
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid force initiative parameters: {e}")
+            await context.send(
+                "Invalid parameters! Examples:\n"
+                "• `!iset 15 3 Fighter` - Set 'Fighter' with roll=15, dex=+3\n"
+                "• `!iset 8 2` - Set your character with roll=8, dex=+2"
+            )
         except Exception as e:
-            logging.error(f"Error forcing initiative: {e}")
-            await context.send(f"Exception {e}")
+            logger.error(f"Error forcing initiative: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't force that initiative value. Please check your command and try again.")
 
     async def initiative_roll(context, initiative, name, repeat, adv=None):
         try:
@@ -155,25 +251,32 @@ def commands_initiative(bot, cm):
                 try:
                     new_name = f"{name}" if name else context.author.nick
                 except Exception as e:
-                    logging.warning(f"Unable to get name: {e}")
+                    logger.warning(f"Unable to get name: {e}")
                     new_name = f"{name}" if name else context.author.global_name
 
                 if int(repeat) > 1:
                     new_name = f"{new_name} {i + 1}"
 
-                n_die = "1" if not adv else "2"
+                n_die = "1" if adv is None else "2"
                 dice_data = f"{n_die}d20+{initiative}"
 
                 rolls, dice_data, _ = await process_input_dice(context,
                                                                dice_data,
                                                                adv=adv)
                 roll = rolls[0]
-                if adv:
+                if adv is True:
                     await context.send(
                         await get_roll_text(context,
                                             roll,
                                             dice_data,
                                             " for initiative with advantage",
+                                            skip_resume=True))
+                elif adv is False:
+                    await context.send(
+                        await get_roll_text(context,
+                                            roll,
+                                            dice_data,
+                                            " for initiative with disadvantage",
                                             skip_resume=True))
                 elif rolls[0].amount_of_dice_rolled > 1:
                     await context.send(
@@ -197,5 +300,5 @@ def commands_initiative(bot, cm):
                                                                    context)
 
         except Exception as e:
-            logging.error(f"Error rolling initiative: {e}")
-            await context.send(f"Exception {e}")
+            logger.error(f"Error rolling initiative: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't roll initiative. Please check your command and try again.")
