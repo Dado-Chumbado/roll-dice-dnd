@@ -10,6 +10,7 @@
     "initiative": {
         "roll_initiative": {"alias": "i", "description": "Roll initiative. Accept the dexterity modifier, can accept a custom name and an extra parameter to roll multiple times. e.g. 5 Kobold 2"},
         "advantage": {"alias": "iv", "description": "Roll initiative with advantage. Will roll 2 d20s and choose the higher result. Accept the dexterity modifier."},
+        "disadvantage": {"alias": "id", "description": "Roll initiative with disadvantage. Will roll 2 d20s and choose the lower result. Accept the dexterity modifier."},
         "force": {"alias": "iset", "description": "Force set initiative. e.g. <dice> <dex> <name>"},
         "reset": {"alias": "iclean", "description": "Reset initiative tracker"},
         "remove": {"alias": "iremove", "description": "Using the index remove a player from initiative. "},
