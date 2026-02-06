@@ -3,6 +3,7 @@ import logging
 from core.dice_engine import process_input_dice
 from core.helper import send_message
 from core.roll_view import get_roll_text
+from core.dm_manager import dm_manager
 
 logger = logging.getLogger(__name__)
 
@@ -40,19 +41,54 @@ def commands_dice(bot, cm):
         try:
             dice_data = ''.join(command) if command else 'd20'
             rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
-            for roll in rolls:
-                logger.debug(f"Roll dm: {roll}")
-                await ctx.author.send(await get_roll_text(ctx, roll, dice_data, reroll))
+
+            # Get the DM for this channel
+            dm_info = dm_manager.get_dm(ctx.channel.name)
+
+            if dm_info:
+                # Send to the DM
+                try:
+                    dm_user = await bot.fetch_user(dm_info['user_id'])
+                    for roll in rolls:
+                        logger.debug(f"Roll dm: {roll}")
+                        roll_text = await get_roll_text(ctx, roll, dice_data, reroll)
+                        # Add context about who rolled
+                        message = f"**Secret roll from {ctx.author.display_name} in #{ctx.channel.name}:**\n{roll_text}"
+                        await dm_user.send(message)
+
+                    # Confirm to the player
+                    await ctx.send(f"🎲 Roll sent to DM ({dm_info['username']})!", delete_after=5)
+                except Exception as e:
+                    logger.error(f"Error sending to DM: {e}")
+                    await ctx.send(
+                        f"❌ Couldn't send to DM {dm_info['username']}. They may have DMs disabled.\n"
+                        f"Sending to your DMs instead..."
+                    )
+                    # Fallback to sending to player
+                    for roll in rolls:
+                        await ctx.author.send(await get_roll_text(ctx, roll, dice_data, reroll))
+            else:
+                # No DM set, send to player's own DMs (legacy behavior)
+                for roll in rolls:
+                    logger.debug(f"Roll dm: {roll}")
+                    await ctx.author.send(await get_roll_text(ctx, roll, dice_data, reroll))
+
+                await ctx.send(
+                    "ℹ️ No DM set for this channel. Roll sent to your DMs.\n"
+                    "Tip: Use `!set-dm @username` to set a DM for this channel.",
+                    delete_after=10
+                )
+
         except ValueError as e:
             logger.warning(f"Invalid dice expression for DM roll: {e}")
             await ctx.send(
                 "Invalid dice expression! Try these examples:\n"
-                "• `!dm d20+3` - Roll a d20+3 (sent to your DM)\n"
-                "• `!dm 4d6` - Roll 4d6 (sent to your DM)"
+                "• `!dm d20+3` - Roll a d20+3 (sent to DM)\n"
+                "• `!dm 4d6` - Roll 4d6 (sent to DM)"
             )
         except Exception as e:
             logger.error(f"Error processing DM dice roll: {e}", exc_info=True)
-            await ctx.send("Sorry, I couldn't send that roll to your DM. Please check your syntax and try again.")
+            await ctx.send("Sorry, I couldn't send that roll. Please check your syntax and try again.")
 
 
     @bot.hybrid_command(

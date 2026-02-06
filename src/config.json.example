@@ -11,6 +11,9 @@
         "roll_initiative": {"alias": "i", "description": "Roll initiative. Accept the dexterity modifier, can accept a custom name and an extra parameter to roll multiple times. e.g. 5 Kobold 2"},
         "advantage": {"alias": "iv", "description": "Roll initiative with advantage. Will roll 2 d20s and choose the higher result. Accept the dexterity modifier."},
         "disadvantage": {"alias": "id", "description": "Roll initiative with disadvantage. Will roll 2 d20s and choose the lower result. Accept the dexterity modifier."},
+        "npc_initiative": {"alias": "npc-init", "description": "Roll initiative for multiple NPCs. e.g. 3 Goblin 2 2 Kobold 1 (3 goblins with +2, 2 kobolds with +1)"},
+        "npc_advantage": {"alias": "npc-iv", "description": "Roll initiative with advantage for multiple NPCs. Same format as npc-init."},
+        "npc_disadvantage": {"alias": "npc-id", "description": "Roll initiative with disadvantage for multiple NPCs. Same format as npc-init."},
         "force": {"alias": "iset", "description": "Force set initiative. e.g. <dice> <dex> <name>"},
         "reset": {"alias": "iclean", "description": "Reset initiative tracker"},
         "remove": {"alias": "iremove", "description": "Using the index remove a player from initiative. "},
@@ -25,6 +28,8 @@
     },
     "debug": {
         "ping": {"alias": "ping", "description": "Ping the bot"},
-        "help": {"alias": "helpme", "description": "Show this help message"}
+        "help": {"alias": "helpme", "description": "Show this help message"},
+        "set_dm": {"alias": "set-dm", "description": "Set the DM for this channel. DM rolls will be sent to this user. Usage: !set-dm or !set-dm @username"},
+        "show_dm": {"alias": "show-dm", "description": "Show who is the current DM for this channel"}
     }
 }

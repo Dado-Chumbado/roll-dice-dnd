@@ -2,6 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from core.helper import format_commands, format_plugin_commands
+from core.dm_manager import dm_manager
 
 
 load_dotenv()
@@ -40,3 +41,55 @@ def commands_debug(bot, config_manager):
         except Exception as e:
             logger.error(f"Error processing help message: {e}", exc_info=True)
             await context.send("Sorry, I couldn't fetch the help information.")
+
+    @bot.command(name=config_manager.get_prefix("debug", "set_dm"), help="Set the DM for this channel")
+    async def set_dm(context, member=None):
+        try:
+            # If a member is mentioned, use them
+            if context.message.mentions:
+                dm_user = context.message.mentions[0]
+            # Otherwise, use the command author
+            else:
+                dm_user = context.author
+
+            # Set the DM for this channel
+            dm_manager.set_dm(
+                context.channel.name,
+                dm_user.id,
+                dm_user.display_name
+            )
+
+            await context.send(
+                f"✅ **DM set for this channel:** {dm_user.mention}\n"
+                f"All `!dm` rolls will now be sent to {dm_user.display_name}'s DMs."
+            )
+
+        except Exception as e:
+            logger.error(f"Error setting DM: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't set the DM. Please try again.")
+
+    @bot.command(name=config_manager.get_prefix("debug", "show_dm"), help="Show the current DM for this channel")
+    async def show_dm(context):
+        try:
+            dm_info = dm_manager.get_dm(context.channel.name)
+
+            if dm_info:
+                # Try to get the user object to mention them
+                try:
+                    dm_user = await bot.fetch_user(dm_info['user_id'])
+                    await context.send(
+                        f"📜 **Current DM for this channel:** {dm_user.mention} ({dm_info['username']})"
+                    )
+                except:
+                    await context.send(
+                        f"📜 **Current DM for this channel:** {dm_info['username']}"
+                    )
+            else:
+                await context.send(
+                    "❌ No DM set for this channel.\n"
+                    "Use `!set-dm` to set yourself as DM, or `!set-dm @username` to set someone else."
+                )
+
+        except Exception as e:
+            logger.error(f"Error showing DM: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't retrieve the DM information.")

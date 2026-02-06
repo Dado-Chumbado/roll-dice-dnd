@@ -239,6 +239,120 @@ def commands_initiative(bot, cm):
             logger.error(f"Error forcing initiative: {e}", exc_info=True)
             await context.send("Sorry, I couldn't force that initiative value. Please check your command and try again.")
 
+    @bot.command(
+        name=cm.get_prefix("initiative", "npc_initiative"),
+        help=cm.get_description("initiative", "npc_initiative")
+    )
+    async def npc_initiative(context, *args):
+        await npc_initiative_roll(context, args, adv=None)
+
+    @bot.command(
+        name=cm.get_prefix("initiative", "npc_advantage"),
+        help=cm.get_description("initiative", "npc_advantage")
+    )
+    async def npc_initiative_advantage(context, *args):
+        await npc_initiative_roll(context, args, adv=True)
+
+    @bot.command(
+        name=cm.get_prefix("initiative", "npc_disadvantage"),
+        help=cm.get_description("initiative", "npc_disadvantage")
+    )
+    async def npc_initiative_disadvantage(context, *args):
+        await npc_initiative_roll(context, args, adv=False)
+
+    async def npc_initiative_roll(context, args, adv=None):
+        """
+        Roll initiative for multiple NPCs.
+        Format: count1 name1 dex1 count2 name2 dex2 ...
+        Example: 3 Goblin 2 2 Kobold 1
+        """
+        try:
+            if not args or len(args) < 3:
+                mode = "advantage" if adv is True else "disadvantage" if adv is False else "normal"
+                await context.send(
+                    f"Please provide NPC groups in format: count name dex. Examples:\n"
+                    f"• `!npc-init 3 Goblin 2` - Roll initiative for 3 goblins with +2 dex\n"
+                    f"• `!npc-init 2 Kobold 1 1 Dragon 3` - 2 kobolds (+1) and 1 dragon (+3)\n"
+                    f"• `!npc-iv 5 Guard 0` - 5 guards with advantage\n"
+                    f"• `!npc-id 3 Zombie -1` - 3 zombies with disadvantage"
+                )
+                return
+
+            # Parse arguments in groups of 3: count, name, dex
+            npc_groups = []
+            i = 0
+            while i < len(args):
+                if i + 2 >= len(args):
+                    await context.send(
+                        f"Invalid format. Need groups of 3: count name dex\n"
+                        f"Example: `!npc-init 3 Goblin 2 2 Kobold 1`"
+                    )
+                    return
+
+                try:
+                    count = int(args[i])
+                    name = str(args[i + 1])
+                    dex = str(args[i + 2])
+                    npc_groups.append((count, name, dex))
+                    i += 3
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"Invalid NPC group parameters: {e}")
+                    await context.send(
+                        f"Invalid format at position {i+1}. Need: count(number) name(text) dex(number)\n"
+                        f"Example: `!npc-init 3 Goblin 2`"
+                    )
+                    return
+
+            # Roll initiative for each NPC group
+            channel = context.channel.name
+            summary_lines = []
+            mode_text = " with advantage" if adv is True else " with disadvantage" if adv is False else ""
+
+            await context.send(f"🎲 Rolling initiative{mode_text} for NPCs...")
+
+            for count, name, dex in npc_groups:
+                for i in range(count):
+                    # Create unique name for each NPC
+                    npc_name = f"{name} {i + 1}" if count > 1 else name
+
+                    # Build dice expression
+                    n_die = "1" if adv is None else "2"
+                    dice_data = f"{n_die}d20+{dex}"
+
+                    # Roll initiative
+                    rolls, dice_data, _ = await process_input_dice(context, dice_data, adv=adv)
+                    roll = rolls[0]
+
+                    # Add to initiative table
+                    await init_items.add(channel, npc_name, roll.total_dice_result, roll.additional)
+
+                    # Build summary line
+                    dice_roll = roll.total_dice_result
+                    modifier = roll.additional_eval
+                    total = roll.total_roll
+                    summary_lines.append(f"• {npc_name}: rolled {dice_roll} + {modifier} = **{total}**")
+
+            # Send summary
+            summary = "**Initiative Results:**\n" + "\n".join(summary_lines)
+            await context.send(summary)
+
+            # Delete last initiative message and show new table
+            if init_items.initiative_last_msg:
+                await init_items.initiative_last_msg.delete()
+
+            init_items.initiative_last_msg = await init_items.show(channel, context)
+
+        except ValueError as e:
+            logger.warning(f"Invalid NPC initiative parameters: {e}")
+            await context.send(
+                "Invalid parameters! Examples:\n"
+                "• `!npc-init 3 Goblin 2` - 3 goblins with +2 dex\n"
+                "• `!npc-iv 2 Rogue 4` - 2 rogues with advantage"
+            )
+        except Exception as e:
+            logger.error(f"Error rolling NPC initiative: {e}", exc_info=True)
+            await context.send("Sorry, I couldn't roll NPC initiative. Please check your command and try again.")
+
     async def initiative_roll(context, initiative, name, repeat, adv=None):
         try:
             channel = context.channel.name
