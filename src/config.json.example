@@ -4,7 +4,9 @@
         "advantage": {"alias": "v", "description": "Roll with advantage. Not necessary write d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "double_advantage": {"alias": "vv", "description": "Roll with double advantage, evaluate any extra expression (e.g., 3d6+2d4+...)"},
         "disadvantage": {"alias": "d", "description": "Roll with disadvantage. Not necessary use d20+... Evaluate any extra expression (e.g., 3d6+2d4+...)"},
-        "dm_roll": {"alias": "dm", "description": "Rolls any dice expression and send results on DM channel for calling player"},
+        "dm_roll": {"alias": "dm", "description": "Rolls any dice expression and send results to DM"},
+        "dm_advantage": {"alias": "dm-v", "description": "Roll with advantage and send results to DM"},
+        "dm_disadvantage": {"alias": "dm-d", "description": "Roll with disadvantage and send results to DM"},
         "critical_damage": {"alias": "critic", "description": "Roll for critical damage. Max the first die and roll the rest. Eval any extra exp (e.g., 3d6+2d4...)"}
     },
     "initiative": {

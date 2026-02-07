@@ -33,31 +33,35 @@ def commands_dice(bot, cm):
             await ctx.send("Sorry, I couldn't process that dice roll. Please try again.")
 
 
-    @bot.hybrid_command(
-        name=cm.get_prefix("roll", "dm_roll"),
-        help=cm.get_description("roll", "dm_roll")
-    )
-    async def command_roll_dm_dice(ctx, *, command=None):
+    async def dm_roll_helper(ctx, command, adv=None):
+        """Helper function for DM rolls with optional advantage/disadvantage."""
         try:
             dice_data = ''.join(command) if command else 'd20'
-            rolls, dice_data, reroll  = await process_input_dice(ctx, dice_data)
+            rolls, dice_data, reroll = await process_input_dice(ctx, dice_data, adv=adv)
 
             # Get the DM for this channel
             dm_info = dm_manager.get_dm(ctx.channel.name)
+
+            # Build roll text with advantage/disadvantage label
+            mode_text = ""
+            if adv is True:
+                mode_text = " with advantage"
+            elif adv is False:
+                mode_text = " with disadvantage"
 
             if dm_info:
                 # Send to the DM
                 try:
                     dm_user = await bot.fetch_user(dm_info['user_id'])
                     for roll in rolls:
-                        logger.debug(f"Roll dm: {roll}")
+                        logger.debug(f"Roll dm{mode_text}: {roll}")
                         roll_text = await get_roll_text(ctx, roll, dice_data, reroll)
                         # Add context about who rolled
-                        message = f"**Secret roll from {ctx.author.display_name} in #{ctx.channel.name}:**\n{roll_text}"
+                        message = f"**Secret roll{mode_text} from {ctx.author.display_name} in #{ctx.channel.name}:**\n{roll_text}"
                         await dm_user.send(message)
 
                     # Confirm to the player
-                    await ctx.send(f"🎲 Roll sent to DM ({dm_info['username']})!", delete_after=5)
+                    await ctx.send(f"🎲 Roll{mode_text} sent to DM ({dm_info['username']})!", delete_after=5)
                 except Exception as e:
                     logger.error(f"Error sending to DM: {e}")
                     await ctx.send(
@@ -70,11 +74,11 @@ def commands_dice(bot, cm):
             else:
                 # No DM set, send to player's own DMs (legacy behavior)
                 for roll in rolls:
-                    logger.debug(f"Roll dm: {roll}")
+                    logger.debug(f"Roll dm{mode_text}: {roll}")
                     await ctx.author.send(await get_roll_text(ctx, roll, dice_data, reroll))
 
                 await ctx.send(
-                    "ℹ️ No DM set for this channel. Roll sent to your DMs.\n"
+                    f"ℹ️ No DM set for this channel. Roll{mode_text} sent to your DMs.\n"
                     "Tip: Use `!set-dm @username` to set a DM for this channel.",
                     delete_after=10
                 )
@@ -84,11 +88,34 @@ def commands_dice(bot, cm):
             await ctx.send(
                 "Invalid dice expression! Try these examples:\n"
                 "• `!dm d20+3` - Roll a d20+3 (sent to DM)\n"
-                "• `!dm 4d6` - Roll 4d6 (sent to DM)"
+                "• `!dm 4d6` - Roll 4d6 (sent to DM)\n"
+                "• `!dm-v d20+5` - Roll with advantage (sent to DM)\n"
+                "• `!dm-d d20+2` - Roll with disadvantage (sent to DM)"
             )
         except Exception as e:
             logger.error(f"Error processing DM dice roll: {e}", exc_info=True)
             await ctx.send("Sorry, I couldn't send that roll. Please check your syntax and try again.")
+
+    @bot.hybrid_command(
+        name=cm.get_prefix("roll", "dm_roll"),
+        help=cm.get_description("roll", "dm_roll")
+    )
+    async def command_roll_dm_dice(ctx, *, command=None):
+        await dm_roll_helper(ctx, command, adv=None)
+
+    @bot.hybrid_command(
+        name=cm.get_prefix("roll", "dm_advantage"),
+        help=cm.get_description("roll", "dm_advantage")
+    )
+    async def command_roll_dm_advantage(ctx, *, command=None):
+        await dm_roll_helper(ctx, command, adv=True)
+
+    @bot.hybrid_command(
+        name=cm.get_prefix("roll", "dm_disadvantage"),
+        help=cm.get_description("roll", "dm_disadvantage")
+    )
+    async def command_roll_dm_disadvantage(ctx, *, command=None):
+        await dm_roll_helper(ctx, command, adv=False)
 
 
     @bot.hybrid_command(

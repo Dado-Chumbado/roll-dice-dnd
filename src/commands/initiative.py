@@ -10,6 +10,26 @@ logger = logging.getLogger(__name__)
 def commands_initiative(bot, cm):
     init_items = InitTable()
 
+    # Emojis for initiative reactions
+    REACTION_NEXT = "⏭️"
+    REACTION_PREV = "⏮️"
+    REACTION_REFRESH = "🔄"
+    REACTION_REMOVE = "❌"
+    REACTION_DEATH = "☠️"
+    REACTION_HEAL = "❤️"
+
+    async def add_initiative_reactions(message):
+        """Add reaction buttons to initiative table message."""
+        try:
+            await message.add_reaction(REACTION_PREV)
+            await message.add_reaction(REACTION_NEXT)
+            await message.add_reaction(REACTION_REFRESH)
+            await message.add_reaction(REACTION_REMOVE)
+            await message.add_reaction(REACTION_DEATH)
+            await message.add_reaction(REACTION_HEAL)
+        except Exception as e:
+            logger.error(f"Error adding reactions: {e}")
+
     @bot.command(
         name=cm.get_prefix("initiative", "roll_initiative"),
         help=cm.get_description("initiative", "roll_initiative"),
@@ -94,6 +114,7 @@ def commands_initiative(bot, cm):
                     logger.error(f"Error removing initiative: {e}")
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
         except IndexError:
             await context.send(
                 f"Index {index} not found in initiative table. Check the table and try again."
@@ -127,6 +148,7 @@ def commands_initiative(bot, cm):
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
         except IndexError:
             await context.send(
                 f"Index {index} not found in initiative table. Check the table and try again."
@@ -159,6 +181,7 @@ def commands_initiative(bot, cm):
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
         except IndexError:
             await context.send(
                 f"Index {index} not found in initiative table. Check the table and try again."
@@ -187,6 +210,7 @@ def commands_initiative(bot, cm):
                 logger.error(f"Error moving initiative: {e}")
 
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        await add_initiative_reactions(init_items.initiative_last_msg)
 
     @bot.command(
         name=cm.get_prefix("initiative", "previous"),
@@ -202,6 +226,7 @@ def commands_initiative(bot, cm):
                 logger.error(f"Error moving initiative: {e}")
 
         init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+        await add_initiative_reactions(init_items.initiative_last_msg)
 
     @bot.command(
         name=cm.get_prefix("initiative", "force"),
@@ -227,6 +252,7 @@ def commands_initiative(bot, cm):
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(context.channel.name, context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
 
         except (ValueError, TypeError) as e:
             logger.warning(f"Invalid force initiative parameters: {e}")
@@ -341,6 +367,7 @@ def commands_initiative(bot, cm):
                 await init_items.initiative_last_msg.delete()
 
             init_items.initiative_last_msg = await init_items.show(channel, context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
 
         except ValueError as e:
             logger.warning(f"Invalid NPC initiative parameters: {e}")
@@ -412,7 +439,158 @@ def commands_initiative(bot, cm):
 
             init_items.initiative_last_msg = await init_items.show(channel,
                                                                    context)
+            await add_initiative_reactions(init_items.initiative_last_msg)
 
         except Exception as e:
             logger.error(f"Error rolling initiative: {e}", exc_info=True)
             await context.send("Sorry, I couldn't roll initiative. Please check your command and try again.")
+
+    @bot.event
+    async def on_raw_reaction_add(payload):
+        """Handle reactions on initiative table messages."""
+        # Ignore bot's own reactions
+        if payload.user_id == bot.user.id:
+            return
+
+        try:
+            # Get the channel and message
+            channel = bot.get_channel(payload.channel_id)
+            if not channel:
+                return
+
+            message = await channel.fetch_message(payload.message_id)
+
+            # Check if this is an initiative table message
+            if not message.author.bot or message.author.id != bot.user.id:
+                return
+
+            # Check if message contains initiative table
+            if "```ml" not in message.content or "Init" not in message.content:
+                return
+
+            # Get the user who reacted
+            user = await bot.fetch_user(payload.user_id)
+            emoji = str(payload.emoji)
+
+            # Create a mock context for command execution
+            class MockContext:
+                def __init__(self, channel, author):
+                    self.channel = channel
+                    self.author = author
+                    self.send = channel.send
+
+            context = MockContext(channel, user)
+
+            # Handle different reactions
+            if emoji == REACTION_NEXT:
+                # Next turn
+                await init_items.next(channel.name)
+                await message.delete()
+                init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                await add_initiative_reactions(init_items.initiative_last_msg)
+
+            elif emoji == REACTION_PREV:
+                # Previous turn
+                await init_items.previous(channel.name)
+                await message.delete()
+                init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                await add_initiative_reactions(init_items.initiative_last_msg)
+
+            elif emoji == REACTION_REFRESH:
+                # Refresh table
+                await message.delete()
+                init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                await add_initiative_reactions(init_items.initiative_last_msg)
+
+            elif emoji == REACTION_REMOVE:
+                # Remove entry - ask for index
+                prompt_msg = await channel.send(
+                    f"{user.mention} Which entry to remove? Reply with the number (or 'cancel'):",
+                    delete_after=30
+                )
+
+                def check(m):
+                    return m.author.id == user.id and m.channel.id == channel.id
+
+                try:
+                    response = await bot.wait_for('message', check=check, timeout=30.0)
+
+                    if response.content.lower() != 'cancel':
+                        index = int(response.content)
+                        await init_items.remove_index(channel.name, index)
+                        await response.delete()
+                        await message.delete()
+                        init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                        await add_initiative_reactions(init_items.initiative_last_msg)
+                    else:
+                        await response.delete()
+
+                except ValueError:
+                    await channel.send("Invalid number. Cancelled.", delete_after=5)
+                except Exception as e:
+                    logger.error(f"Error removing initiative entry: {e}")
+                    await channel.send("Error removing entry.", delete_after=5)
+
+            elif emoji == REACTION_DEATH:
+                # Mark as dead - ask for index
+                prompt_msg = await channel.send(
+                    f"{user.mention} Which entry to mark as dead? Reply with the number (or 'cancel'):",
+                    delete_after=30
+                )
+
+                def check(m):
+                    return m.author.id == user.id and m.channel.id == channel.id
+
+                try:
+                    response = await bot.wait_for('message', check=check, timeout=30.0)
+
+                    if response.content.lower() != 'cancel':
+                        index = int(response.content)
+                        await init_items.add_condition(channel.name, index, "☠️ Dead")
+                        await response.delete()
+                        await message.delete()
+                        init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                        await add_initiative_reactions(init_items.initiative_last_msg)
+                    else:
+                        await response.delete()
+
+                except ValueError:
+                    await channel.send("Invalid number. Cancelled.", delete_after=5)
+                except Exception as e:
+                    logger.error(f"Error marking as dead: {e}")
+                    await channel.send("Error marking as dead.", delete_after=5)
+
+            elif emoji == REACTION_HEAL:
+                # Remove death marker - ask for index
+                prompt_msg = await channel.send(
+                    f"{user.mention} Which entry to heal? Reply with the number (or 'cancel'):",
+                    delete_after=30
+                )
+
+                def check(m):
+                    return m.author.id == user.id and m.channel.id == channel.id
+
+                try:
+                    response = await bot.wait_for('message', check=check, timeout=30.0)
+
+                    if response.content.lower() != 'cancel':
+                        index = int(response.content)
+                        await init_items.remove_condition(channel.name, index)
+                        await response.delete()
+                        await message.delete()
+                        init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                        await add_initiative_reactions(init_items.initiative_last_msg)
+                    else:
+                        await response.delete()
+
+                except ValueError:
+                    await channel.send("Invalid number. Cancelled.", delete_after=5)
+                except Exception as e:
+                    logger.error(f"Error healing: {e}")
+                    await channel.send("Error removing condition.", delete_after=5)
+
+            # Remove user's reaction
+            await message.remove_reaction(emoji, user)
+
+        except Exception as e:
+            logger.error(f"Error handling initiative reaction: {e}", exc_info=True)
