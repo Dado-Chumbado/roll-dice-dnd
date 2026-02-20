@@ -1,11 +1,13 @@
 version: '3.3'
 
 services:
-  discord:
+  bots:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - /var/lib/roll-dice-dnd:/data
     restart: unless-stopped
-    command: [ "poetry", "run", "python3", "/app/src/main.py" ]
+    env_file:
+      - ./src/.env
+    command: ["/app/start-bots.sh"]
