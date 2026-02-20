@@ -16,6 +16,7 @@ def commands_initiative(bot, cm):
     REACTION_REFRESH = "🔄"
     REACTION_REMOVE = "❌"
     REACTION_DEATH = "☠️"
+    REACTION_ADD_CONDITION = "➕"
     REACTION_HEAL = "❤️"
 
     async def add_initiative_reactions(message):
@@ -26,6 +27,7 @@ def commands_initiative(bot, cm):
             await message.add_reaction(REACTION_REFRESH)
             await message.add_reaction(REACTION_REMOVE)
             await message.add_reaction(REACTION_DEATH)
+            await message.add_reaction(REACTION_ADD_CONDITION)
             await message.add_reaction(REACTION_HEAL)
         except Exception as e:
             logger.error(f"Error adding reactions: {e}")
@@ -560,10 +562,90 @@ def commands_initiative(bot, cm):
                     logger.error(f"Error marking as dead: {e}")
                     await channel.send("Error marking as dead.", delete_after=5)
 
-            elif emoji == REACTION_HEAL:
-                # Remove death marker - ask for index
+            elif emoji == REACTION_ADD_CONDITION:
+                # Add condition - ask for index and condition from D&D 2024 list
                 prompt_msg = await channel.send(
-                    f"{user.mention} Which entry to heal? Reply with the number (or 'cancel'):",
+                    f"{user.mention} Which entry to add a condition to? Reply with the number (or 'cancel'):",
+                    delete_after=30
+                )
+
+                def check(m):
+                    return m.author.id == user.id and m.channel.id == channel.id
+
+                # D&D 2024 conditions
+                conditions = {
+                    1: "👁️ Blinded",
+                    2: "💫 Charmed",
+                    3: "🔇 Deafened",
+                    4: "😵 Exhaustion",
+                    5: "😨 Frightened",
+                    6: "🤼 Grappled",
+                    7: "🚫 Incapacitated",
+                    8: "👻 Invisible",
+                    9: "⚡ Paralyzed",
+                    10: "🗿 Petrified",
+                    11: "🤢 Poisoned",
+                    12: "🔻 Prone",
+                    13: "🔗 Restrained",
+                    14: "💥 Stunned",
+                    15: "💤 Unconscious",
+                    16: "☠️ Dead"
+                }
+
+                try:
+                    # Get index
+                    response = await bot.wait_for('message', check=check, timeout=30.0)
+
+                    if response.content.lower() == 'cancel':
+                        await response.delete()
+                        return
+
+                    index = int(response.content)
+                    await response.delete()
+
+                    # Show condition options
+                    condition_list = "**Select a condition:**\n"
+                    for num, cond in conditions.items():
+                        condition_list += f"{num}. {cond}\n"
+                    condition_list += "\nReply with the number or type custom text (or 'cancel'):"
+
+                    condition_prompt = await channel.send(
+                        f"{user.mention} {condition_list}",
+                        delete_after=60
+                    )
+
+                    condition_response = await bot.wait_for('message', check=check, timeout=60.0)
+
+                    if condition_response.content.lower() != 'cancel':
+                        # Check if it's a number from the list or custom text
+                        try:
+                            condition_num = int(condition_response.content)
+                            if condition_num in conditions:
+                                condition_text = conditions[condition_num]
+                            else:
+                                condition_text = condition_response.content
+                        except ValueError:
+                            # Custom text
+                            condition_text = condition_response.content
+
+                        await init_items.add_condition(channel.name, index, condition_text)
+                        await condition_response.delete()
+                        await message.delete()
+                        init_items.initiative_last_msg = await init_items.show(channel.name, context)
+                        await add_initiative_reactions(init_items.initiative_last_msg)
+                    else:
+                        await condition_response.delete()
+
+                except ValueError:
+                    await channel.send("Invalid number. Cancelled.", delete_after=5)
+                except Exception as e:
+                    logger.error(f"Error adding condition: {e}")
+                    await channel.send("Error adding condition.", delete_after=5)
+
+            elif emoji == REACTION_HEAL:
+                # Remove condition - ask for index
+                prompt_msg = await channel.send(
+                    f"{user.mention} Which entry to remove condition from? Reply with the number (or 'cancel'):",
                     delete_after=30
                 )
 
@@ -586,11 +668,15 @@ def commands_initiative(bot, cm):
                 except ValueError:
                     await channel.send("Invalid number. Cancelled.", delete_after=5)
                 except Exception as e:
-                    logger.error(f"Error healing: {e}")
+                    logger.error(f"Error removing condition: {e}")
                     await channel.send("Error removing condition.", delete_after=5)
 
-            # Remove user's reaction
-            await message.remove_reaction(emoji, user)
+            # Remove user's reaction (only if message wasn't deleted)
+            try:
+                await message.remove_reaction(emoji, user)
+            except discord.errors.NotFound:
+                # Message was deleted, which is expected for most reactions
+                pass
 
         except Exception as e:
             logger.error(f"Error handling initiative reaction: {e}", exc_info=True)
