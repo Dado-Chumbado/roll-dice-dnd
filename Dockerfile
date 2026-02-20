@@ -15,4 +15,4 @@ RUN pip install poetry && poetry config virtualenvs.create false && poetry insta
 
 RUN chmod +x /app/start-bots.sh
 
-CMD ["/app/start-bots.sh"]
+CMD ["bash", "/app/start-bots.sh"]
