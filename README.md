@@ -1,13 +1,16 @@
-# Discord bot to roll dice and control initiative table
+# Discord & Telegram bot to roll dice and control initiative table
 
-:game_die: This Discord bot allows users to roll various types of dice for tabletop RPG games like Dungeons & Dragons. It supports standard rolls, private rolls, advantage, disadvantage, and more. The bot can be customized to suit different dice systems and constraints.
+:game_die: This bot allows users to roll various types of dice for tabletop RPG games like Dungeons & Dragons. It supports standard rolls, private rolls, advantage, disadvantage, and more. Available for both **Discord** and **Telegram**.
+
 Features
 
-- Standard Dice Rolls: Roll any combination of dice (e.g., 2d6, 1d20+5, 3d6-1d4, d100). 
-- Private Rolls: Send dice results directly on private messages. 
-- Advantage/Disadvantage Rolls: Automatically roll two or three d20s and choose the higher or lower result. 
+- Standard Dice Rolls: Roll any combination of dice (e.g., 2d6, 1d20+5, 3d6-1d4, d100).
+- Private Rolls: Send dice results directly on private messages (Discord only).
+- Advantage/Disadvantage Rolls: Automatically roll two or three d20s and choose the higher or lower result.
 - Critical Rolls: Roll dice maximizing the first die and roll the rest.
-- Control Initiative Table: Add or remove characters from the initiative table.
+- Control Initiative Table: Add or remove characters from the initiative table (Discord only).
+- NPC Initiative: Roll initiative for multiple NPC groups in a single command (Discord only).
+- Reaction Controls: Control the initiative table via emoji reactions on the table message (Discord only).
 - Custom Limits: Configure dice limits (max number of dice and die size) through environment variables.
 
 
@@ -35,8 +38,8 @@ This ensures the app runs using the environment managed by Poetry.
 Set up environment variables: Configure your .env file to set limits on dice rolls (optional):
 
 ```env
-DISCORD_TOKEN=your_discord_bot_token 
-``` 
+DISCORD_TOKEN=your_discord_bot_token
+```
 
 Install dependencies: Make sure you have Python 3.8+ installed. Install the required packages with:
 
@@ -91,6 +94,16 @@ You can run the bot after configuring the environment. You can run it within the
 poetry run python main.py
 ```
 
+### 6. Docker
+
+To build and run with Docker (recommended for server deployment):
+
+```bash
+docker compose up --build -d
+```
+
+The compose file uses `src/.env` automatically via `env_file`.
+
 # Usage
 
 Once the bot is running, invite it to your Discord server. Use the following commands to roll dice.
@@ -106,7 +119,7 @@ Roll any combination of dice (default is 1d20 if no arguments are passed).
 !roll d20
 ```
 ```bash
-Rafa - DM rolled 1d20 : 
+Rafa - DM rolled 1d20 :
 
 1d20 => [ 9 ]
 
@@ -118,20 +131,20 @@ Using a custom number of dice and modifier:
 !roll 3d6+8
 ```
 ```bash
-Rafa - DM rolled 3d6+8 : 
+Rafa - DM rolled 3d6+8 :
 
 3d6 => [ 1!, 3, 3 ]
 
   7 + 8 = 15
 ```
 
-Using a custom die size with subtraction operation: 
+Using a custom die size with subtraction operation:
 
 ```bash
 !roll 1d8-1d5+1
 ```
 ```bash
-Rafa - DM rolled 1d8-1d5+1 : 
+Rafa - DM rolled 1d8-1d5+1 :
 
 1d8 => [ 5 ]
 1d5 => [ 4 ]
@@ -146,7 +159,7 @@ Rolling multiple dice:
 ```
 
 ```bash
-Rafa - DM rolled 5d10+4d6+2d8-3d5+4 : 
+Rafa - DM rolled 5d10+4d6+2d8-3d5+4 :
 
 5d10 => [ 3, 4, 9, 5, 2 ]
 4d6 => [ 2, 4, 1!, 4 ]
@@ -174,7 +187,7 @@ Roll with critical damage, that maximize the first dice and roll the rest.
 !critical_damage d8+5
 ```
 ```bash
-Rafa - DM rolled 1d8+5 : 
+Rafa - DM rolled 1d8+5 :
 
 2d8 => [ 8!, 5 ]
 
@@ -190,7 +203,7 @@ Roll with advantage using two d20s, keeping the highest result.
 !advantage 5
 ```
 ```bash
-Rafa - DM rolled 2d20+5 : 
+Rafa - DM rolled 2d20+5 :
 
 1d20 => [ 13, ~~3~~ ]
 
@@ -201,7 +214,7 @@ Rafa - DM rolled 2d20+5 :
 !advantage d4+2
 ```
 ```bash
-Rafa - DM rolled 2d20+1d4+2 : 
+Rafa - DM rolled 2d20+1d4+2 :
 
 1d20 => [ 16, ~~11~~ ]
 1d4 => [ 1! ]
@@ -218,7 +231,7 @@ Roll with three d20s, keeping the highest result.
 !double_advantage
 ````
 ```bash
-Rafa - DM rolled 3d20 : 
+Rafa - DM rolled 3d20 :
 
 1d20 => [ 16, ~~7~~, ~~4~~ ]
 
@@ -235,7 +248,7 @@ Roll with disadvantage, keeping the lowest result.
 !disadvantage
 ```
 ```bash
-Rafa - DM rolled 2d20 : 
+Rafa - DM rolled 2d20 :
 
 1d20 => [ 4, ~~5~~ ]
 
@@ -246,19 +259,26 @@ Rafa - DM rolled 2d20 :
 
 It's a simple table that keeps track of initiative. The table can be reset, displayed, and manipulated (e.g., adding or removing characters).
 
-- Initiative Table: Maintains a list of characters with their initiative roll and dexterity bonus, along with optional conditions. The table can be reset, displayed, and manipulated (e.g., adding or removing characters). 
-- Advantage Rolls: Handles special initiative rolls where the player can roll with advantage. 
+- Initiative Table: Maintains a list of characters with their initiative roll and dexterity bonus, along with optional conditions. The table can be reset, displayed, and manipulated (e.g., adding or removing characters).
+- Advantage/Disadvantage Rolls: Handles special initiative rolls where the player can roll with advantage or disadvantage.
+- Reaction Controls: Control the table via emoji reactions — no commands needed for common actions.
+- NPC Batch Rolls: Roll initiative for multiple NPC groups in a single command.
 
 #### Commands:
 
-- roll_initiative: Rolls initiative for a character, with options for advantage and repeated rolls. 
-- roll_reset_initiative: Resets the initiative table, clearing all entries. 
-- remove_initiative: Removes an entry from the initiative table based on an index.
-- force_initiative: Manually adds a character to the initiative table, specifying their dice roll and dexterity modifier.
-- add_condition_initiative: Adds a condition (e.g., status effect) to a character in the initiative table. 
-- remove_condition_initiative: Removes a condition from a character in the initiative table. 
-- next_initiative: Advances to the next character in the initiative order. 
-- prev_initiative: Moves back to the previous character in the initiative order.
+- `!i` (`initiative`): Rolls initiative for a character, with options for advantage and repeated rolls.
+- `!iv` (`advantage_initiative`): Rolls initiative with advantage.
+- `!id` (`disadvantage_initiative`): Rolls initiative with disadvantage.
+- `!iclean` (`reset_initiative`): Resets the initiative table, clearing all entries.
+- `!iremove` (`remove_initiative`): Removes an entry from the initiative table by index.
+- `!iset` (`force_initiative`): Manually sets a character's initiative with a specific dice roll and dex modifier.
+- `!icond` (`add_condition`): Adds a condition (e.g., status effect) to a character by index.
+- `!icond-remove` (`remove_condition`): Removes a condition from a character by index.
+- `!in` (`next`): Advances to the next character in the initiative order.
+- `!ip` (`previous`): Moves back to the previous character in the initiative order.
+- `!npc-init` (`npc_initiative`): Rolls initiative for multiple NPC groups at once.
+- `!npc-iv` (`npc_advantage`): Rolls initiative with advantage for multiple NPC groups.
+- `!npc-id` (`npc_disadvantage`): Rolls initiative with disadvantage for multiple NPC groups.
 
 ## Table Display:
 
@@ -266,55 +286,115 @@ The show method generates a formatted table displaying the current initiative or
 
 ![discord-dice-bot](./readme-statics/img_3.png)
 
+## Reaction Controls:
+
+After the initiative table is posted, you can interact with it using emoji reactions directly on the message — no commands needed:
+
+| Reaction | Action |
+|----------|--------|
+| ⏮️ | Previous turn |
+| ⏭️ | Next turn |
+| 🔄 | Refresh table |
+| ❌ | Remove an entry (prompts for index) |
+| ☠️ | Mark an entry as dead (prompts for index) |
+| ➕ | Add a condition (prompts for index + condition from D&D 2024 list or custom text) |
+| ❤️ | Remove a condition (prompts for index) |
+
 #### Roll initiative:
 The default mode to roll initiative is passing the dexterity modifier to the command.
 The name will be filled in automatically based on the user's name.
 ```bash
-!initiative 5
+!i 5
 ```
 To force a different name, pass it in the command:
 ```bash
-!initiative 5 Name
+!i 5 Name
 ```
 
-It's also possible to roll the initiave with advantage:
+It's also possible to roll the initiative with advantage or disadvantage:
 
 ```bash
-!advantage_initiative 4
+!iv 4
+!id 2
 ```
 
-
-And for the DM to roll several times using one command:
+And to roll multiple times (e.g. multiple monsters of the same type):
 ```bash
-!initiative 2 Monster_name 4
+!i 2 Monster_name 4
 ```
-Where: 
-- 2 is the initiative roll
+Where:
+- 2 is the dex modifier
 - Monster_name is the name of the character
 - 4 is the quantity of rolls
 
-All the monsters will have and be named with the additional <number> in their name.
+All the monsters will be named with a sequential number appended (e.g. `Monster_name 1`, `Monster_name 2`, ...).
 
-Also to force initiatives, you can use the !force_initiative command.
-
+#### NPC batch initiative:
+Roll initiative for multiple NPC groups in a single command. Format: `count name dex` groups.
 ```bash
-!force_initiative 12 2 Player 
+!npc-init 3 Goblin 2 2 Kobold 1
+```
+Where each group is: `count name dex`
+- `3 Goblin 2` — 3 goblins with +2 dex
+- `2 Kobold 1` — 2 kobolds with +1 dex
+
+Also works with advantage (`!npc-iv`) and disadvantage (`!npc-id`).
+
+#### Force set initiative:
+```bash
+!iset 15 3 Fighter
 ```
 Where:
-- 12 is the initiative rolled in the die
-- 2 is the dexterity modifier
-- Player is the name of the character
+- 15 is the dice roll
+- 3 is the dex modifier
+- Fighter is the name of the character
 
-To remove a character from the initiative table, use the !remove_initiative command passing the index to be removed.
+To remove a character from the initiative table, use the `!iremove` command passing the index to be removed.
 ```bash
-!remove_initiative 3
+!iremove 3
 ```
 
-The commands `next` and `previous` will advance or move back to the next or previous character in the initiative table.
+The commands `!in` and `!ip` will advance or move back to the next or previous character in the initiative table.
 
-To add or remove conditions from characters in the initiative table, use the !add_condition_initiative and !remove_condition_initiative commands.
+To add or remove conditions from characters in the initiative table, use the `!icond` and `!icond-remove` commands.
 
-And finally to reset the initiative table, use the !reset_initiative command.
+And finally to reset the initiative table, use the `!iclean` command.
+
+# Telegram Bot
+
+The bot also runs on Telegram using the same core dice engine.
+
+## Setup
+
+Add the following to your `src/.env`:
+
+```env
+telegram_token=your_telegram_bot_token
+telegram_allowed_chats=   # Comma-separated chat IDs. Empty = allow all chats.
+```
+
+To find your chat ID, use the `/chatid` command inside the chat.
+
+## Telegram Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `/roll <expr>` | `/r` | Roll dice (default: d20) |
+| `/adv <expr>` | `/v` | Roll with advantage |
+| `/dis <expr>` | `/d` | Roll with disadvantage |
+| `/chatid` | | Show current chat ID |
+| `/help` | | Show help message |
+| `/start` | | Welcome message |
+
+**Examples:**
+```
+/r 2d6+3
+/adv
+/dis 1d20+5
+/r 1d8+1d6-2
+```
+
+> Note: Initiative table management is not available on Telegram.
 
 # Customization
 Command Configuration
@@ -324,23 +404,27 @@ You can modify the available commands by editing the config.json file:
 ```json
 {
     "roll": {
-        "default": "roll",
-        "advantage": "advantage",
-        "double_advantage": "double_advantage",
-        "disadvantage": "disadvantage",
-        "dm_roll": "dm_roll",
-        "critical_damage": "critical_damage"
+        "roll_dice": {"alias": "r", "description": "..."},
+        "advantage": {"alias": "v", "description": "..."},
+        "double_advantage": {"alias": "vv", "description": "..."},
+        "disadvantage": {"alias": "d", "description": "..."},
+        "dm_roll": {"alias": "dm", "description": "..."},
+        "critical_damage": {"alias": "critic", "description": "..."}
     },
     "initiative": {
-        "default": "initiative",
-        "advantage": "advantage_initiative",
-        "force": "force_initiative",
-        "reset": "reset_initiative",
-        "remove": "remove_initiative",
-        "next": "next",
-        "previous": "previous",
-        "add_condition": "add_condition",
-        "remove_condition": "remove_condition"
+        "roll_initiative": {"alias": "i", "description": "..."},
+        "advantage": {"alias": "iv", "description": "..."},
+        "disadvantage": {"alias": "id", "description": "..."},
+        "npc_initiative": {"alias": "npc-init", "description": "..."},
+        "npc_advantage": {"alias": "npc-iv", "description": "..."},
+        "npc_disadvantage": {"alias": "npc-id", "description": "..."},
+        "force": {"alias": "iset", "description": "..."},
+        "reset": {"alias": "iclean", "description": "..."},
+        "remove": {"alias": "iremove", "description": "..."},
+        "next": {"alias": "in", "description": "..."},
+        "previous": {"alias": "ip", "description": "..."},
+        "add_condition": {"alias": "icond", "description": "..."},
+        "remove_condition": {"alias": "icond-remove", "description": "..."}
     },
     "stats": {
         "player": "my-stats",
@@ -381,11 +465,15 @@ Plugin to generate magic surge based on normal and fey tables. Mode details in t
 
 ## Database statistics [alpha]
 
-To activate the database statistics, set the `database` environment variable to `true` in the .env file.
+To activate the database statistics, set the `save_stats_db` environment variable to `1` or `True` in the .env file. Leave it empty or omit it to disable.
+
+```env
+save_stats_db=1
+```
 
 In the first roll, the database table will be created.
 
-To access the database statistics, each player can use the `!stats` command.
+To access the database statistics, each player can use the `!my-stats` command.
 To get the session statistics, use the `!session-stats` command.
 
 ## Testing
