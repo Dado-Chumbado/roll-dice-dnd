@@ -1,0 +1,24 @@
+version: '3.3'
+
+services:
+  discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /var/lib/roll-dice-dnd:/data
+    restart: unless-stopped
+    env_file:
+      - ./src/.env
+    command: ["poetry", "run", "python3", "/app/src/main.py"]
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /var/lib/roll-dice-dnd:/data
+    restart: unless-stopped
+    env_file:
+      - ./src/.env
+    command: ["poetry", "run", "python3", "/app/src/telegram_bot/main.py"]
