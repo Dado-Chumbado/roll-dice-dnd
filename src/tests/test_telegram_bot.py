@@ -12,9 +12,9 @@ from telegram.ext import ContextTypes
 from telegram_bot.bot import (
     TelegramContext,
     is_chat_allowed,
-    adapt_for_telegram,
     _handle_roll
 )
+from telegram_bot.roll_view_telegram import get_roll_text_telegram, generate_dice_text_telegram
 
 
 class TestTelegramContext:
@@ -108,30 +108,86 @@ class TestIsChatAllowed:
             assert is_chat_allowed(update) is True
 
 
-class TestAdaptForTelegram:
-    """Test output formatting adaptation."""
+class TestTelegramRollView:
+    """Test Telegram-specific roll formatting."""
 
-    def test_replaces_sparkles_emoji(self):
-        """Test that sparkles shortcode is converted to unicode."""
-        text = "You rolled a natural 20! :sparkles:"
-        result = adapt_for_telegram(text)
-        assert "✨" in result
-        assert ":sparkles:" not in result
+    @pytest.mark.asyncio
+    async def test_generate_dice_text_uses_html_bold(self):
+        """Test that generate_dice_text_telegram uses HTML formatting for strikethrough."""
+        die = Mock()
+        die.value = 5
+        die.is_active = False
+        die.is_critical = False
+        die.is_fail = False
 
-    def test_removes_blockquote_markers(self):
-        """Test that Discord blockquote markers are removed."""
-        text = ">>> This is a quoted section"
-        result = adapt_for_telegram(text)
-        assert ">>> " not in result
-        assert "This is a quoted section" in result
+        rolled_die = Mock()
+        rolled_die.quantity_active = 1
+        rolled_die.dice_base = 6
+        rolled_die.quantity = 1
+        rolled_die.total = 5
+        rolled_die.get_list_valid_dice.return_value = [die]
 
-    def test_handles_multiple_replacements(self):
-        """Test multiple replacements in one text."""
-        text = ">>> Amazing! :sparkles: You got :sparkles:"
-        result = adapt_for_telegram(text)
-        assert ">>> " not in result
-        assert ":sparkles:" not in result
-        assert "✨" in result
+        text, op_desc = await generate_dice_text_telegram([rolled_die], is_sum=True)
+
+        assert "<s>" in text
+        assert "</s>" in text
+        assert "~~" not in text
+
+    @pytest.mark.asyncio
+    async def test_generate_dice_text_critical_uses_sparkles_unicode(self):
+        """Test that critical d20 uses unicode sparkles, not Discord shortcode."""
+        die = Mock()
+        die.value = 20
+        die.is_active = True
+        die.is_critical = True
+        die.is_fail = False
+
+        rolled_die = Mock()
+        rolled_die.quantity_active = 1
+        rolled_die.dice_base = 20
+        rolled_die.quantity = 1
+        rolled_die.total = 20
+        rolled_die.get_list_valid_dice.return_value = [die]
+
+        text, _ = await generate_dice_text_telegram([rolled_die], is_sum=True)
+
+        assert "✨" in text
+        assert ":sparkles:" not in text
+
+    @pytest.mark.asyncio
+    async def test_get_roll_text_telegram_uses_html_bold(self):
+        """Test that get_roll_text_telegram uses HTML bold tags."""
+        update = Mock(spec=Update)
+        update.effective_user = Mock(spec=User, id=1, username="testuser", first_name="Test")
+        update.effective_chat = Mock(spec=Chat, id=1, title="Test", username=None)
+        ctx = TelegramContext(update)
+
+        die = Mock()
+        die.value = 10
+        die.is_active = True
+        die.is_critical = False
+        die.is_fail = False
+
+        rolled_die = Mock()
+        rolled_die.quantity_active = 1
+        rolled_die.dice_base = 20
+        rolled_die.quantity = 1
+        rolled_die.total = 10
+        rolled_die.get_list_valid_dice.return_value = [die]
+
+        roll = Mock()
+        roll.rolled_sum_dice = [rolled_die]
+        roll.rolled_subtract_die = []
+        roll.additional = ""
+        roll.total_roll = 10
+
+        text = await get_roll_text_telegram(ctx, roll, "1d20", "")
+
+        assert "<b>" in text
+        assert "</b>" in text
+        assert "**" not in text
+        # Discord blockquote prefix should not appear
+        assert "\n> " not in text
 
 
 class TestHandleRoll:
@@ -160,7 +216,7 @@ class TestHandleRoll:
         """Test that empty args default to d20."""
         with patch.dict(os.environ, {"telegram_allowed_chats": ""}, clear=False):
             with patch("telegram_bot.bot.process_input_dice") as mock_process:
-                with patch("telegram_bot.bot.get_roll_text") as mock_get_text:
+                with patch("telegram_bot.bot.get_roll_text_telegram") as mock_get_text:
                     # Setup mocks
                     mock_roll = Mock()
                     mock_process.return_value = ([mock_roll], "1d20", "")
@@ -185,7 +241,7 @@ class TestHandleRoll:
         """Test custom dice expression."""
         with patch.dict(os.environ, {"telegram_allowed_chats": ""}, clear=False):
             with patch("telegram_bot.bot.process_input_dice") as mock_process:
-                with patch("telegram_bot.bot.get_roll_text") as mock_get_text:
+                with patch("telegram_bot.bot.get_roll_text_telegram") as mock_get_text:
                     # Setup mocks
                     mock_roll = Mock()
                     mock_process.return_value = ([mock_roll], "2d6+3", "")
@@ -210,7 +266,7 @@ class TestHandleRoll:
         """Test that advantage parameter is passed correctly."""
         with patch.dict(os.environ, {"telegram_allowed_chats": ""}, clear=False):
             with patch("telegram_bot.bot.process_input_dice") as mock_process:
-                with patch("telegram_bot.bot.get_roll_text") as mock_get_text:
+                with patch("telegram_bot.bot.get_roll_text_telegram") as mock_get_text:
                     # Setup mocks
                     mock_roll = Mock()
                     mock_process.return_value = ([mock_roll], "1d20", "")

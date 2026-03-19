@@ -19,6 +19,7 @@ services:
     volumes:
       - /var/lib/roll-dice-dnd:/data
     restart: unless-stopped
+    stop_grace_period: 30s
     env_file:
       - ./src/.env
     command: ["poetry", "run", "python3", "/app/src/telegram_bot/main.py"]
