@@ -4,6 +4,8 @@ from commands.initiative import commands_initiative
 from commands.stats import commands_stats
 from plugin_manager import load_plugins
 import logging
+from discord.ext import commands as discord_commands
+
 logger = logging.getLogger(__name__)
 
 def commands_setup(bot, config_manager):
@@ -11,6 +13,19 @@ def commands_setup(bot, config_manager):
     commands_dice(bot, config_manager)
     commands_initiative(bot, config_manager)
     commands_stats(bot, config_manager)
+
+    @bot.event
+    async def on_command_error(ctx, error):
+        ignored = (
+            discord_commands.CommandNotFound,
+            discord_commands.MissingRequiredArgument,
+            discord_commands.BadArgument,
+            discord_commands.CheckFailure,
+        )
+        if isinstance(error, ignored):
+            logger.debug(f"Ignored command error: {error}")
+            return
+        raise error
 
     # Load the plugins dynamically from the plugin folder
     plugins = load_plugins()

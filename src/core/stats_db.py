@@ -1,3 +1,4 @@
+import re
 import datetime
 import logging
 from contextlib import contextmanager
@@ -46,6 +47,19 @@ def connect_db():
         if should_close:
             pg_db.close()
 
+def normalize_dice_type(dice_type):
+    """Normalize and validate a dice type string. Returns None if input is None."""
+    if dice_type is None:
+        return None
+    normalized = dice_type.lower()
+    if re.match(r'^\d+$', normalized):
+        normalized = f"d{normalized}"
+    valid = {d.value for d in DiceType}
+    if normalized not in valid:
+        raise ValueError(f"Unknown dice type '{dice_type}'. Valid: {', '.join(sorted(valid))}")
+    return normalized
+
+
 def insert_roll(player_id, channel, dice_str, value, critical=False,
                 fail=False):
     with connect_db():
@@ -63,7 +77,8 @@ async def show_player_stats(context,
                             channel,
                             start_date=None,
                             end_date=None,
-                            specific_player=None):
+                            specific_player=None,
+                            dice_type=None):
     try:
         player_id = specific_player or context.author.id
 
@@ -80,6 +95,8 @@ async def show_player_stats(context,
                 RollDb.channel == channel,
                 RollDb.player_id == player_id
             )
+            if dice_type:
+                rs = rs.where(RollDb.dice == dice_type)
 
             dice_rolls = defaultdict(list)
             total_value = 0
@@ -100,13 +117,15 @@ async def show_player_stats(context,
         avg = total_value / total_rolls if total_rolls else 0
         display_name = get_display_name(player_id, channel)
 
-        stats = f"```🎲 Stats for {display_name}\n"
+        filter_label = f" [{dice_type.upper()} only]" if dice_type else ""
+        stats = f"```🎲 Stats for {display_name}{filter_label}\n"
         stats += f"Total rolls: {total_rolls}\n"
         stats += f"Total rolled value: {total_value}\n"
         stats += f"Average per roll: {avg:.2f}\n"
 
-        stats += f"💥 Critical hits (d20 only): {d20_critical}\n"
-        stats += f"💢 Failures (d20 only): {d20_fails}\n"
+        if not dice_type or dice_type == DiceType.D20.value:
+            stats += f"💥 Critical hits (d20 only): {d20_critical}\n"
+            stats += f"💢 Failures (d20 only): {d20_fails}\n"
 
         stats += f"\n🎯 Rolls by Dice:\n"
         for dice, values in dice_rolls.items():
@@ -121,7 +140,7 @@ async def show_player_stats(context,
         logging.error(f"An error occurred while fetching player stats: {e}")
         await context.send("An error occurred while fetching player stats.")
 
-def get_session_stats(channel, date=None, end=None):
+def get_session_stats(channel, date=None, end=None, dice_type=None):
     with connect_db():
         if not date:
             start_range = datetime.datetime.now().date() - datetime.timedelta(days=1)
@@ -130,9 +149,14 @@ def get_session_stats(channel, date=None, end=None):
             start_range = datetime.datetime.strptime(date, '%Y-%m-%d')
             end_range = datetime.datetime.strptime(end, '%Y-%m-%d') if end else start_range + datetime.timedelta(days=1)
 
-        rs = RollDb.select().where(
+        base_filter = [
             RollDb.created.between(start_range, end_range),
-            RollDb.channel == channel)
+            RollDb.channel == channel
+        ]
+        if dice_type:
+            base_filter.append(RollDb.dice == dice_type)
+
+        rs = RollDb.select().where(*base_filter)
 
         from peewee import fn, Case
 
@@ -146,10 +170,7 @@ def get_session_stats(channel, date=None, end=None):
             fn.SUM(
                 Case(None, [((RollDb.fail == True) & (RollDb.dice == "d20"), 1)], 0)
             ).alias("d20_fails")
-        ).where(
-            RollDb.created.between(start_range, end_range),
-            RollDb.channel == channel
-        ).group_by(RollDb.player_id).dicts()
+        ).where(*base_filter).group_by(RollDb.player_id).dicts()
 
         player_stats = {}
         for r in player_roll_counts:
@@ -176,18 +197,23 @@ def get_session_stats(channel, date=None, end=None):
         'dice_stats': dice_global_stats,
         'critical_hits': d20s_critical,
         'failures': d20s_fail,
-        'total_rolled': total_rolled
+        'total_rolled': total_rolled,
+        'dice_type': dice_type,
     }
 
-async def show_session_stats(ctx, channel, date=None, end_date=None):
+async def show_session_stats(ctx, channel, date=None, end_date=None, dice_type=None):
     try:
-        data = get_session_stats(channel, date, end_date)
+        data = get_session_stats(channel, date, end_date, dice_type)
         players = data['players']
+        active_dice_type = data['dice_type']
+        show_d20_stats = not active_dice_type or active_dice_type == DiceType.D20.value
 
-        text = f"```📊 STATISTICS {channel} from {date or 'Last session'}\n"
-        text += f"🎯 Total critical hits: {data['critical_hits']}\n"
-        text += f"💀 Total failures: {data['failures']}\n"
-        text += f"⚖️ Critical/failure ratio: {data['failures'] and data['critical_hits'] / data['failures']:.2f}\n"
+        filter_label = f" [{active_dice_type.upper()} only]" if active_dice_type else ""
+        text = f"```📊 STATISTICS {channel}{filter_label} from {date or 'Last session'}\n"
+        if show_d20_stats:
+            text += f"🎯 Total critical hits: {data['critical_hits']}\n"
+            text += f"💀 Total failures: {data['failures']}\n"
+            text += f"⚖️ Critical/failure ratio: {data['failures'] and data['critical_hits'] / data['failures']:.2f}\n"
 
         def calc_luck(player):
             total_diff = 0
@@ -223,7 +249,11 @@ async def show_session_stats(ctx, channel, date=None, end_date=None):
         text += "\n👥 Player Stats:\n"
         for pid, pstats in sorted(players.items(), key=lambda x: x[1]['total_rolls'], reverse=True):
             avg = pstats['total_value'] / pstats['total_rolls'] if pstats['total_rolls'] else 0
-            text += f"  - {get_display_name(pid, channel)}: 🎲 Rolls: {pstats['total_rolls']} | 💥 Crits: {pstats['d20_critical']} | 💢 Fails: {pstats['d20_fails']} | 📈 Avg: {avg:.2f} | 💰 Total: {pstats['total_value']}\n"
+            player_line = f"  - {get_display_name(pid, channel)}: 🎲 Rolls: {pstats['total_rolls']} |"
+            if show_d20_stats:
+                player_line += f" 💥 Crits: {pstats['d20_critical']} | 💢 Fails: {pstats['d20_fails']} |"
+            player_line += f" 📈 Avg: {avg:.2f} | 💰 Total: {pstats['total_value']}\n"
+            text += player_line
 
         text += f"\n💰 Total rolled: {data['total_rolled']}```"
         await ctx.send(text)

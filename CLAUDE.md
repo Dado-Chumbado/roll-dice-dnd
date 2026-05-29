@@ -11,7 +11,9 @@ This is a Discord bot for rolling dice and managing initiative tables for tablet
 ### Setup and Running
 - **Install dependencies**: `poetry install`
 - **Activate virtual environment**: `poetry shell`
-- **Run the bot**: `poetry run python src/main.py`
+- **Run the Discord bot**: `poetry run python src/main.py`
+- **Run the Telegram bot**: `poetry run python src/telegram_bot/main.py`
+- **Run both bots via Docker**: `docker-compose up`
 
 ### Testing
 - **Run all tests**: `poetry run pytest`
@@ -21,14 +23,20 @@ This is a Discord bot for rolling dice and managing initiative tables for tablet
 Note: pytest.ini sets `pythonpath = src` so imports work correctly in tests.
 
 ### Environment Setup
-- Copy `src/.env.example` to `src/.env` and configure `DISCORD_TOKEN`
+- Copy `src/.env.example` to `src/.env` and configure tokens
 - Copy `src/config.json.example` to `src/config.json` for command configuration
-- Optional environment variables in `.env`:
+- Environment variables in `src/.env`:
+  - `discord_token` — Discord bot token
+  - `telegram_token` — Telegram bot token
+  - `telegram_allowed_chats` — Comma-separated chat IDs to whitelist (empty = allow all)
+  - `command_char` (default: `!`) — Discord command prefix
   - `limit_of_dice_per_roll` (default: 100)
   - `limit_of_die_size` (default: 100)
-  - `command_char` (default: `!`)
   - `save_stats_db` (set to "True" or "1" to enable stats tracking)
   - `sentry_dsn` (optional, for error tracking)
+  - Database: `db`, `user`, `pass`, `host`, `port` (PostgreSQL, required when `save_stats_db` is enabled)
+  - D20 IRL integration: `D20_IRL_ENABLED`, `D20_IRL_URL`, `D20_IRL_USERNAME`, `D20_IRL_TOKEN`, `D20_IRL_COMMAND`
+  - Telegram command overrides: `TELEGRAM_CMD_ROLL`, `TELEGRAM_CMD_ADV`, `TELEGRAM_CMD_DIS`
 
 ## Architecture
 
@@ -51,12 +59,19 @@ Note: pytest.ini sets `pythonpath = src` so imports work correctly in tests.
 - `dice_engine.py` - Parses dice expressions, handles validation, processes rolls
 - `roll.py` - Core data models: `Dice`, `RolledDice`, `Roll`. Implements advantage/disadvantage/critical logic
 - `roll_view.py` - Formats roll results for Discord display
-- `initiative.py` - Initiative table management with file-based persistence
+- `initiative.py` - Initiative table management with file-based persistence to `data/`
 - `stats_db.py` - Database operations for statistics tracking
+- `dm_manager.py` - DM assignment per channel, persisted to `data/dm_settings.json`. Exposes a global `dm_manager` singleton
 - `helper.py` - Shared utility functions
 
+**src/telegram_bot/** - Telegram bot (shares `src/core/` with Discord bot):
+- `main.py` - Entry point; loads `.env` and starts polling
+- `bot.py` - Command handlers and `TelegramContext` adapter
+- `roll_view_telegram.py` - HTML-formatted roll output for Telegram
+- `d20_irl_client.py` - HTTP client for the Raspberry Pi physical dice API
+
 **src/db/** - Database layer:
-- `models.py` - Peewee ORM models for statistics tracking
+- `models.py` - Peewee ORM models (`PlayerStats`, `RollDb`) for PostgreSQL via Peewee
 
 **src/config.py** - ConfigManager that loads command aliases and descriptions from config.json
 
@@ -76,6 +91,10 @@ Note: pytest.ini sets `pythonpath = src` so imports work correctly in tests.
    - Implemented in `RolledDice.set_advantage()` in `core/roll.py`
    - Marks non-selected dice as inactive using `is_active` flag
    - Advantage: keeps highest roll, disadvantage: keeps lowest
+
+4. **Telegram/Discord shared core**:
+   - `TelegramContext` in `telegram_bot/bot.py` is an adapter that wraps a Telegram `Update` to expose `.author.id`, `.author.nick`, `.channel.name`, and `async send()` — the same interface Discord's `context` provides
+   - All core dice logic (`process_input_dice`, etc.) is platform-agnostic and works with either context
 
 ### Plugin System
 

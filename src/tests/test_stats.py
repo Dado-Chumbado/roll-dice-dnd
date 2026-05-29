@@ -1,60 +1,47 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from core.stats_db import show_player_stats, show_session_stats
+from core.stats_db import show_player_stats, show_session_stats, normalize_dice_type
 
 
-# Mock the player stats response
-mock_ps = MagicMock()
-mock_ps.total_dice_rolled = 100
-mock_ps.total_d20_rolled = 5
-mock_ps.total_d20_critical_rolled = 2
-mock_ps.total_d20_fails_rolled = 1
-mock_ps.total_d20_values_rolled = 32
-
-mock_ps.total_d4_values_rolled = 10
-mock_ps.total_d4_rolled = 8
-
-mock_ps.total_d6_values_rolled = 20
-mock_ps.total_d6_rolled = 86
-
-mock_ps.total_d8_values_rolled = 6
-mock_ps.total_d8_rolled = 24
-
-mock_ps.total_d10_values_rolled = 40
-mock_ps.total_d10_rolled = 16
-
-mock_ps.total_d12_values_rolled = 32
-mock_ps.total_d12_rolled = 43
-
-mock_ps.total_d100_values_rolled = 25
-mock_ps.total_d100_rolled = 142
-
-mock_ps.sum_dice_number_rolled = 200
-
-
-@patch('core.stats_db.PlayerStats.get', create=True)
+@patch('core.stats_db.get_display_name', return_value="Player1")
+@patch('core.stats_db.connect_db')
+@patch('core.stats_db.RollDb.select')
 @pytest.mark.asyncio
-async def test_show_player_stats(player_get):
-    # Return the mocked player-stats object used to build the message
-    player_get.return_value = mock_ps
+async def test_show_player_stats(mock_select, mock_connect_db, mock_display_name):
+    mock_connect_db.return_value.__enter__ = MagicMock(return_value=None)
+    mock_connect_db.return_value.__exit__ = MagicMock(return_value=False)
+
+    def _roll(dice, value, critical=False, fail=False):
+        r = MagicMock()
+        r.dice = dice
+        r.value = value
+        r.critical = critical
+        r.fail = fail
+        return r
+
+    rolls = [
+        _roll("d20", 20, critical=True),
+        _roll("d20", 1, fail=True),
+        _roll("d20", 15),
+        _roll("d6", 4),
+        _roll("d6", 6),
+    ]
+    mock_select.return_value.where.return_value = rolls
 
     mock_context = AsyncMock()
     mock_context.author.id = 1
-    mock_context.author.display_name = "Player1"
-    mock_context.channel.name = "General"
-    await show_player_stats(mock_context, mock_context.channel.name)
+    mock_context.channel.name = "general"
+    await show_player_stats(mock_context, "general")
 
-    # Assert
-    mock_context.send.assert_called_once_with(
-        "```You have rolled a total of 100 dice! \nD20 rolled 5 times! with "
-        "2 critical hits and 1 failures.\nThe sum of your d20's is 32.\n"
-        "Total of other dice:\n D20 rolled 5 times. The sum is 32 \n D4 rolled"
-        " 8 times. The sum is 10 \n D6 rolled 86 times. The sum is 20 \n D8 "
-        "rolled 24 times. The sum is 6 \n D10 rolled 16 times. The sum is 40"
-        " \n D12 rolled 43 times. The sum is 32 \n D100 rolled 142 times. "
-        "The sum is 25 \nTotal critical hits for D20: 2\nTotal failures for "
-        "D20: 1\nThe total of all rolled dice is: 200```"
-    )
+    sent = mock_context.send.call_args[0][0]
+    assert "🎲 Stats for Player1" in sent
+    assert "Total rolls: 5" in sent
+    assert "Total rolled value: 46" in sent
+    assert "Average per roll: 9.20" in sent
+    assert "Critical hits (d20 only): 1" in sent
+    assert "Failures (d20 only): 1" in sent
+    assert "D20: 3 rolls, sum 36, avg 12.00" in sent
+    assert "D6: 2 rolls, sum 10, avg 5.00" in sent
 
 
 mock_data = MagicMock()
@@ -94,3 +81,102 @@ mock_data.data = {
 #         "Unluckiest player: Player Unlucky with 6.25% failures\n"
 #         "Total rolled: 100```"
 #     )
+
+
+# --- normalize_dice_type tests ---
+
+def test_normalize_dice_type_none():
+    assert normalize_dice_type(None) is None
+
+def test_normalize_dice_type_valid_with_prefix():
+    assert normalize_dice_type("d20") == "d20"
+    assert normalize_dice_type("D6") == "d6"
+    assert normalize_dice_type("d100") == "d100"
+
+def test_normalize_dice_type_valid_number_only():
+    assert normalize_dice_type("20") == "d20"
+    assert normalize_dice_type("6") == "d6"
+
+def test_normalize_dice_type_invalid():
+    with pytest.raises(ValueError, match="Unknown dice type"):
+        normalize_dice_type("d99")
+    with pytest.raises(ValueError, match="Unknown dice type"):
+        normalize_dice_type("d3")
+
+
+# --- _parse_first_arg tests ---
+
+from commands.stats import _parse_first_arg
+
+def test_parse_first_arg_none():
+    assert _parse_first_arg(None) == (None, None)
+
+def test_parse_first_arg_valid_dice():
+    assert _parse_first_arg("d20") == ("d20", None)
+    assert _parse_first_arg("D6") == ("d6", None)
+    assert _parse_first_arg("20") == ("d20", None)
+
+def test_parse_first_arg_channel_name():
+    assert _parse_first_arg("general") == (None, "general")
+    assert _parse_first_arg("my-channel") == (None, "my-channel")
+
+def test_parse_first_arg_invalid_die_raises():
+    with pytest.raises(ValueError, match="Unknown dice type"):
+        _parse_first_arg("d99")
+
+
+# --- show_player_stats with dice_type filter ---
+
+def _make_roll(dice, value, critical=False, fail=False):
+    r = MagicMock()
+    r.dice = dice
+    r.value = value
+    r.critical = critical
+    r.fail = fail
+    return r
+
+
+@patch('core.stats_db.get_display_name', return_value="Player1")
+@patch('core.stats_db.connect_db')
+@patch('core.stats_db.RollDb.select')
+@pytest.mark.asyncio
+async def test_show_player_stats_filtered_d20(mock_select, mock_connect_db, mock_display_name):
+    mock_connect_db.return_value.__enter__ = MagicMock(return_value=None)
+    mock_connect_db.return_value.__exit__ = MagicMock(return_value=False)
+
+    rolls = [
+        _make_roll("d20", 20, critical=True),
+        _make_roll("d20", 1, fail=True),
+        _make_roll("d20", 15),
+    ]
+    mock_select.return_value.where.return_value.where.return_value = rolls
+
+    ctx = AsyncMock()
+    ctx.author.id = 1
+    await show_player_stats(ctx, "general", dice_type="d20")
+
+    sent = ctx.send.call_args[0][0]
+    assert "[D20 only]" in sent
+    assert "Critical hits" in sent
+    assert "Failures" in sent
+
+
+@patch('core.stats_db.get_display_name', return_value="Player1")
+@patch('core.stats_db.connect_db')
+@patch('core.stats_db.RollDb.select')
+@pytest.mark.asyncio
+async def test_show_player_stats_filtered_d6_no_d20_lines(mock_select, mock_connect_db, mock_display_name):
+    mock_connect_db.return_value.__enter__ = MagicMock(return_value=None)
+    mock_connect_db.return_value.__exit__ = MagicMock(return_value=False)
+
+    rolls = [_make_roll("d6", 4), _make_roll("d6", 6), _make_roll("d6", 2)]
+    mock_select.return_value.where.return_value.where.return_value = rolls
+
+    ctx = AsyncMock()
+    ctx.author.id = 1
+    await show_player_stats(ctx, "general", dice_type="d6")
+
+    sent = ctx.send.call_args[0][0]
+    assert "[D6 only]" in sent
+    assert "Critical hits" not in sent
+    assert "Failures" not in sent
