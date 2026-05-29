@@ -108,6 +108,16 @@ Plugins live in `src/plugins/`. Each plugin:
 
 Plugins are auto-discovered and loaded by `plugin_manager.load_plugins()`.
 
+**Character sheet plugin** (`src/plugins/character/`) — imports D&D Beyond PDFs and manages session state:
+- `pdf_extractor.py` — reads Widget annotations from PDF via `pypdf`; field mapping documented inside
+- `character_manager.py` — load/save JSON, `update_hp`, `use_slot`, `reset_slot`, `rest`, `update_inventory`
+- `sheet_formatter.py` — Discord formatting; `format_sheet(data, mode="simples"|"completa")`
+- `plugin_character.py` — Discord commands: `!importar`, `!ficha`, `!hp`, `!slot`, `!slots`, `!descanso`, `!inventario`, `!item`
+- `src/telegram_bot/character_telegram.py` — Telegram handlers for the same commands (`/ficha`, `/hp`, etc.)
+- `src/telegram_bot/sheet_formatter_telegram.py` — HTML formatting for Telegram
+
+Character JSON files stored in `data/characters/<nome>.json`. In Docker, volume-mounted at `/var/lib/roll-dice-dnd` → persists across rebuilds.
+
 ### Configuration System
 
 Commands are configured in `src/config.json`:

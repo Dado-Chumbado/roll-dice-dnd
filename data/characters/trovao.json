@@ -1,0 +1,372 @@
+{
+  "meta": {
+    "player": "Trovao",
+    "source": "pdf",
+    "synced_at": "2026-05-29T18:02:11.792482+00:00"
+  },
+  "base": {
+    "name": "Trovão",
+    "level": 3,
+    "class": "Barbarian",
+    "multiclass": null,
+    "race": "Goliath",
+    "background": "Custom Background",
+    "alignment": "Chaotic Neutral",
+    "size": "Medium",
+    "experience_points": "(Milestone)",
+    "hp_max": 27,
+    "armor_class": 19,
+    "initiative": 2,
+    "speed": "35 ft. (Walking)",
+    "proficiency_bonus": 2,
+    "hit_dice": "3d12",
+    "attributes": {
+      "strength": {
+        "score": 18,
+        "modifier": 4
+      },
+      "dexterity": {
+        "score": 14,
+        "modifier": 2
+      },
+      "constitution": {
+        "score": 18,
+        "modifier": 4
+      },
+      "intelligence": {
+        "score": 12,
+        "modifier": 1
+      },
+      "wisdom": {
+        "score": 13,
+        "modifier": 1
+      },
+      "charisma": {
+        "score": 14,
+        "modifier": 2
+      }
+    },
+    "saving_throws": {
+      "strength": {
+        "proficient": true,
+        "modifier": 6
+      },
+      "dexterity": {
+        "proficient": false,
+        "modifier": 2
+      },
+      "constitution": {
+        "proficient": true,
+        "modifier": 6
+      },
+      "intelligence": {
+        "proficient": false,
+        "modifier": 1
+      },
+      "wisdom": {
+        "proficient": false,
+        "modifier": 1
+      },
+      "charisma": {
+        "proficient": false,
+        "modifier": 2
+      }
+    },
+    "skills": {
+      "Acrobatics": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "DEX"
+      },
+      "AnimalHandling": {
+        "proficient": true,
+        "modifier": 3,
+        "ability": "WIS"
+      },
+      "Arcana": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "INT"
+      },
+      "Athletics": {
+        "proficient": false,
+        "modifier": 4,
+        "ability": "STR"
+      },
+      "Deception": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "CHA"
+      },
+      "History": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "INT"
+      },
+      "Insight": {
+        "proficient": true,
+        "modifier": 3,
+        "ability": "WIS"
+      },
+      "Intimidation": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "CHA"
+      },
+      "Investigation": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "INT"
+      },
+      "Medicine": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "WIS"
+      },
+      "Nature": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "INT"
+      },
+      "Perception": {
+        "proficient": true,
+        "modifier": 3,
+        "ability": "WIS"
+      },
+      "Performance": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "CHA"
+      },
+      "Persuasion": {
+        "proficient": true,
+        "modifier": 4,
+        "ability": "CHA"
+      },
+      "Religion": {
+        "proficient": false,
+        "modifier": 1,
+        "ability": "INT"
+      },
+      "SleightOfHand": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "DEX"
+      },
+      "Stealth": {
+        "proficient": false,
+        "modifier": 2,
+        "ability": "DEX"
+      },
+      "Survival": {
+        "proficient": true,
+        "modifier": 3,
+        "ability": "WIS"
+      }
+    },
+    "passive_perception": 13,
+    "passive_insight": 13,
+    "passive_investigation": 11,
+    "proficiencies_and_languages": "=== ARMOR === \nLight Armor, Medium Armor, Shields \n\n=== WEAPONS === \nMartial Weapons, Simple Weapons \n\n=== TOOLS === \nCook's Utensils \n\n=== LANGUAGES === \nCommon, Dwarvish, Giant, Goblin",
+    "actions_text": "=== ACTIONS === \nStandard Actions \n     Attack, Magic, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Utilize, Opportunity Attack, Grapple, Shove, Improvise, Two-Weapon Fighting, Interact with an Object, Study, Influence \n\nMagic Awareness • 2 / Long Rest \n     As an action, you can open your awareness to the presence of concentrated magic. Until the end of your next turn, you know the location of any spell or magic item within 60 ft, of you that isn’t behind total cover. When you sense a spell, you learn which school of magic it belongs to. \n\n=== REACTIONS ===\n\nStorm’s Thunder (Storm Giant) • 2 / Long Rest \n     When you take damage from a creature within 60 ft. of you, you can take a Reaction to deal 1d8 Thunder damage to that creature. \n\n=== SPECIAL === \nPush \n     Once per turn, when you hit a creature with an Unarmed Strike, you can deal damage to the target and also push it 5 ft. away from you. \n\nWild Surge \n     When you enter your rage, roll on the Wild Magic table to determine the magical effect produced. \nIf the effect requires a saving throw, the DC equals 14.",
+    "features_text": "=== BARBARIAN FEATURES === \n\n* Core Barbarian Traits • PHB-2024 51 \n\n* Rage • PHB-2024 51 \n\n* Unarmored Defense • PHB-2024 51 \nWhile not wearing armor, your base AC equals 16 + any Shield bonus. \n\n* Weapon Mastery • PHB-2024 52 \nYou are able to use the mastery properties of 2 kinds of Simple or Martial Melee weapons of your choice. Whenever you finish a Long Rest, you can change one of those weapon choices. \n\n* Danger Sense • PHB-2024 52 \nYou have Advantage on Dex. saving throws unless you have the Incapacitated condition. \n\n* Reckless Attack • PHB-2024 52 \nWhen you make your first attack roll on your turn, you can decide to attack recklessly, giving you Advantage on attack rolls using Str. until the start of your next turn, but attacks against you have Advantage during that time. \n\n* Barbarian Subclass • PHB-2024 52 \n\n   | Path of Wild Magic (TCoE) \n\n* Primal Knowledge • PHB-2024 52 \nYou gain proficiency in another Barbarian skill of your choice. \n\nWhile Raging, whenever you make an ability check using one of the following skills, you can make it as a Str. check even if it normally uses a different ability: Acrobatics, Intimidation, Perception, Stealth, or Survival.\n\n* Magic Awareness • TCoE \nAs an action, you can open your awareness to the presence of concentrated magic. Until the end of your next turn, you know the location of any spell or magic item within 60 ft. of you that isn’t behind total cover. When you sense a spell, you learn which school of magic it belongs to. \n\n   | 2 / Long Rest • 1 Action \n\n* Wild Surge • TCoE \nWhen you enter your rage, roll on the Wild Magic table to determine the magical effect produced. \nIf the effect requires a saving throw, the DC equals 14. \n\n   | Special \n\n\n=== GOLIATH SPECIES TRAITS === \n\n* Speed • PHB-2024 192 \nYour Speed is 35 ft. \n\n* Giant Ancestry • PHB-2024 192 \nChoose one supernatural boon from your ancestry, you can use it 2 times per Long Rest. \n\n   | Storm’s Thunder (Storm Giant) •  \nWhen you take damage from a creature within 60 ft. of you, you can take a Reaction to deal 1d8 Thunder damage to that creature. \n\n      | 2 / Long Rest • 1 Reaction \n\n* Large Form • PHB-2024 192 \nOnce per Long Rest as a Bonus Action, you can change your size to Large for 10 minutes or until you end it. For that duration, you have Advantage on Strength checks, and your Speed increases by 10 ft.  \n\n* Powerful Build • PHB-2024 192\n\nYou have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity. \n\n* Languages • PHB-2024 37 \nYour character knows at least three languages: Common plus two languages you roll or choose from the Standard Languages table. Knowledge of a language means your character can communicate in it, read it, and write it. \n\n* Ability Score Increases • PHB-2024 \nWhen determining your character’s ability scores, increase one score by 2 and a different one by 1, or increase three scores by 1. \n\n   | Increase three scores (+1 / +1 / +1) •  \nIncrease three different scores by 1. \n\n\n=== FEATS === \n\n* Weapon Mastery • PHB-2024 52 \n\n   | Heavy Crossbow (Push) •  \nPush. If you hit a creature with Heavy Crossbow, you can push the creature up to 10 ft. straight away from you if it’s Large or smaller. \n\n   | Mace (Sap) •  \nSap. If you hit a creature with a Mace, that creature has Disadvantage on its next attack roll before the start of your next turn. \n\n   | Sap (Mace): 1 Action \n\n   | Push (Heavy Crossbow): 1 Action \n\n* Tavern Brawler • PHB-2024 202 \nEnhanced Unarmed Strike. When you hit with your Unarmed Strike and deal damage, you can deal 1d4+4\n\nBludgeoning damage  instead of the normal damage of an Unarmed Strike. \n\nDamage Rerolls. Whenever you roll a damage die for your Unarmed Strike, you can reroll the die if it rolls a 1, and you must use the new roll. \n\nImprovised Weaponry. You have proficiency with improvised weapons. \n\nPush. When you hit a creature with an Unarmed Strike, you can deal damage to the target and also push it 5 ft. away from you. You can use this benefit only once per turn. \n\n   | Enhanced Unarmed Strike: 1 Action \n\n   | Push: Special",
+    "attacks": [
+      {
+        "name": "Club",
+        "bonus": "+6",
+        "damage": "1d4+4 Bludgeoning",
+        "notes": "Simple, Light, Slow"
+      },
+      {
+        "name": "Crossbow, Light",
+        "bonus": "+4",
+        "damage": "1d8+2 Piercing",
+        "notes": "Simple, Ammunition, Loading, Range, Two-Handed, Slow, Range (80/320)"
+      },
+      {
+        "name": "Greataxe",
+        "bonus": "+6",
+        "damage": "1d12+4 Slashing",
+        "notes": "Martial, Heavy, Two-Handed, Cleave"
+      },
+      {
+        "name": "Longbow",
+        "bonus": "+4",
+        "damage": "1d8+2 Piercing",
+        "notes": "Martial, Ammunition, Heavy, Range, Two-Handed, Slow, Range (150/600)"
+      },
+      {
+        "name": "Mace",
+        "bonus": "+6",
+        "damage": "1d6+4 Bludgeoning",
+        "notes": "Simple, Sap"
+      },
+      {
+        "name": "Unarmed Strike",
+        "bonus": "+6",
+        "damage": "5 Bludgeoning",
+        "notes": null
+      }
+    ],
+    "spell_slots_max": {},
+    "spells": [
+      {
+        "name": "Jump",
+        "prepared": false,
+        "save_hit": "--",
+        "cast_time": "1BA",
+        "range": "Touch",
+        "components": "V,S,M",
+        "duration": "1 minute",
+        "source": "📿 Medalhão do Caçador [Jump]",
+        "notes": "1 Charge, D: 1m, V/S/M"
+      }
+    ],
+    "personality_traits": "I don’t pay attention to the risks in a situation. Never tell me the odds.",
+    "ideals": "Freedom. Chains are meant to be broken, as are those who would forge them. (Chaotic)",
+    "bonds": "Something important was taken from me, and I aim to steal it back.",
+    "flaws": "An innocent person is in prison for a crime that I committed. I’m okay with that.",
+    "backstory": "Trovao veio de terras distantes, uma vila nos picos altos da costa da espada. saiu ao mundo para conseguir sua maior proeza, uma aposta que fez ao seu irmao. O Primeior que conseguir em uma aposta ganhar uma espada vorpal (praticamente impossivel) seria o lider da tribo. Trovao propoe a aposta mais pra conseguir sair da vila e aproveitar as tavernas do que realmente na esperanca de ganhar e voltar um dia. \n\nO mar veio com uma relacao passada, Trovao conheceu uma Goliath mestica com Tiefling chamada Torga SusurroDagua, pela qual a libertou (pode ser uma historia onde os marinheiros iriam mata-la e ele a libertou e fugiu com ela) \nA parte triste é que ela nao pode sair de alto mar, pois uma maldicao a impede de pisar em solo firme. Trovao chegou a cogitar ficar com ela e viver num barco a deriva, mas seu vicio por apostas e a dificuldade de viver sozinho no mar o fez desistir da ideia. Ele encontra Torga em suas viagens, e em seus sonhos.",
+    "allies_organizations": "=== Allies === \n\nLiliane - Lider xama dos lizard folks que \"entregou\" o amuleto pro Trovao pra ser usado no treinamento do fidaputa."
+  },
+  "session": {
+    "hp_current": 20,
+    "temp_hp": 0,
+    "spell_slots_used": {},
+    "currency": {
+      "cp": 0,
+      "sp": 7,
+      "ep": 0,
+      "gp": 42,
+      "pp": 2
+    },
+    "inventory": [
+      {
+        "name": "Flecha de Estupor 🏹 [1d4 semanas]",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "📿 Medalhão do Caçador [Jump]",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "7 dias de Saturada",
+        "qty": 1,
+        "weight": "30 lb."
+      },
+      {
+        "name": "🦾 Carapaxita Manopla Escudo (Shield-Gauntlet)",
+        "qty": 1,
+        "weight": "6 lb."
+      },
+      {
+        "name": "Club",
+        "qty": 1,
+        "weight": "2 lb."
+      },
+      {
+        "name": "Mace",
+        "qty": 1,
+        "weight": "4 lb."
+      },
+      {
+        "name": "Crossbow, Light",
+        "qty": 1,
+        "weight": "5 lb."
+      },
+      {
+        "name": "Greataxe",
+        "qty": 1,
+        "weight": "7 lb."
+      },
+      {
+        "name": "Longbow",
+        "qty": 1,
+        "weight": "2 lb."
+      },
+      {
+        "name": "Backpack",
+        "qty": 1,
+        "weight": "5 lb."
+      },
+      {
+        "name": "Potion of Healing ❤️",
+        "qty": 1,
+        "weight": "0.5 lb."
+      },
+      {
+        "name": "Moeda especial",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "Saco de oferendas das fadas",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "1 Saco com 11 gemas (5PO cada)",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "Oil",
+        "qty": 2,
+        "weight": "2 lb."
+      },
+      {
+        "name": "Rations",
+        "qty": 10,
+        "weight": "20 lb."
+      },
+      {
+        "name": "Rope",
+        "qty": 1,
+        "weight": "5 lb."
+      },
+      {
+        "name": "Bedroll",
+        "qty": 1,
+        "weight": "7 lb."
+      },
+      {
+        "name": "Tinderbox",
+        "qty": 1,
+        "weight": "1 lb."
+      },
+      {
+        "name": "Torch",
+        "qty": 10,
+        "weight": "10 lb."
+      },
+      {
+        "name": "Waterskin",
+        "qty": 1,
+        "weight": "5 lb."
+      },
+      {
+        "name": "Dice",
+        "qty": 2,
+        "weight": "--"
+      },
+      {
+        "name": "Moeda especial",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "Saco de oferendas das fadas",
+        "qty": 1,
+        "weight": "--"
+      },
+      {
+        "name": "1 Saco com 11 gemas (5PO cada)",
+        "qty": 1,
+        "weight": "--"
+      }
+    ],
+    "notes": ""
+  }
+}

@@ -155,31 +155,39 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     help_text = f"""🎲 **D&D Dice Roller Bot**
 
-**Rolling Dice:**
-• `/roll <expr>` or `/r <expr>` - Roll dice
-  Examples: `/r 2d6+3`, `/r d20`, `/r 1d8+1d6`
-
-• `/adv <expr>` or `/v <expr>` - Roll with advantage
-  Example: `/adv` (rolls 2d20, takes highest)
-
-• `/dis <expr>` or `/d <expr>` - Roll with disadvantage
-  Example: `/dis` (rolls 2d20, takes lowest)
+**Rolagem de Dados:**
+• `/roll <expr>` ou `/r <expr>` — Rolar dados
+  Exemplos: `/r 2d6+3`, `/r d20`, `/r 1d8+1d6`
+• `/adv <expr>` — Rolar com vantagem (2d20, maior)
+• `/dis <expr>` — Rolar com desvantagem (2d20, menor)
 {irl_section}
-**Dice Expressions:**
-• `d20` - Single d20 (default if no expression given)
-• `2d6` - Roll 2 six-sided dice
-• `1d8+3` - Roll d8 and add 3
-• `2d6+1d4` - Multiple dice types
-• `3d8-2` - Roll and subtract
+**Ficha de Personagem:**
+• `/ficha [nome]` — Resumo da ficha (HP, CA, atributos, ataques)
+• `/ficha completa [nome]` — Ficha completa
+• `/hp -8` ou `/hp +4 [nome]` — Dano ou cura
+• `/slot <nivel> [reset] [nome]` — Usa ou restaura slot de magia
+• `/slots [nome]` — Mostra slots disponíveis
+• `/descanso <curto|longo> [nome]` — Descansa
+• `/inventario [nome]` — Mostra inventário
+• `/item_add <item> [qty]` — Adiciona item ao inventário
+• `/item_rem <item> [qty]` — Remove item do inventário
+• `/moeda +10 po [nome]` — Atualiza moedas (pc, pp, pe, po, ppl)
+• `/ca <valor> [nome]` — Define CA manualmente
+• `/arma_add <nome> [atk] [dano] [notas]` — Adiciona arma
+• `/arma_rem <nome>` — Remove arma
+• `/arma_list [nome]` — Lista armas
 
-**Other Commands:**
-• `/help` - Show this help message
-• `/chatid` - Get chat ID for whitelisting
+> Para importar uma ficha, use `!importar` no Discord com o PDF em anexo.
 
-**Examples:**
-`/r 2d6+3` → Roll 2d6 and add 3
-`/adv` → Roll d20 with advantage
-`/dis 1d20+5` → Roll d20 with disadvantage, add 5
+**Expressões de Dados:**
+• `d20` — Um d20 (padrão)
+• `2d6` — 2 dados de 6
+• `1d8+3` — d8 mais 3
+• `2d6+1d4` — Múltiplos tipos
+
+**Outros:**
+• `/help` — Esta ajuda
+• `/chatid` — ID do chat para whitelist
 """
 
     await update.message.reply_text(help_text, parse_mode="Markdown")
@@ -313,6 +321,7 @@ def _get_cmd(env_var: str, default: str) -> list[str]:
 
 def create_telegram_bot(token: str) -> Application:
     """Create and configure the Telegram bot application."""
+    from telegram_bot.character_telegram import register_character_handlers
     app = Application.builder().token(token).build()
 
     roll_cmd = _get_cmd("TELEGRAM_CMD_ROLL", "roll") + ["r"]
@@ -327,6 +336,8 @@ def create_telegram_bot(token: str) -> Application:
     app.add_handler(CommandHandler(adv_cmd, advantage_command))
     app.add_handler(CommandHandler(dis_cmd, disadvantage_command))
     app.add_handler(CommandHandler("chatid", chatid_command))
+
+    register_character_handlers(app)
 
     # IRL integration is opt-in via D20_IRL_ENABLED=true
     if os.getenv("D20_IRL_ENABLED", "").strip().lower() in ("1", "true", "yes"):

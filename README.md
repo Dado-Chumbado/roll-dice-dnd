@@ -12,6 +12,7 @@ Features
 - NPC Initiative: Roll initiative for multiple NPC groups in a single command (Discord only).
 - Reaction Controls: Control the initiative table via emoji reactions on the table message (Discord only).
 - Custom Limits: Configure dice limits (max number of dice and die size) through environment variables.
+- **Character Sheet Management**: Import D&D Beyond character sheets via PDF, track HP, spell slots, and inventory during sessions (Discord + Telegram).
 
 
 ![discord-dice-bot](./readme-statics/img.png)
@@ -396,6 +397,67 @@ To find your chat ID, use the `/chatid` command inside the chat.
 
 > Note: Initiative table management is not available on Telegram.
 
+# Character Sheet Management
+
+Import character sheets exported from D&D Beyond and track HP, spell slots and inventory during sessions. Available on both **Discord** and **Telegram**.
+
+## How it works
+
+1. Export your character as PDF from D&D Beyond (Share → Export PDF)
+2. In Discord, send `!importar <nome>` with the PDF attached
+3. Use the commands below to manage your character during play
+
+> **Sync rule:** Running `!importar` again updates base stats (HP max, attributes, etc.) and resets HP to max, but preserves your current inventory and currency.
+
+> **Gear/armor changes:** Update in D&D Beyond and re-import — the bot does not recalculate AC or attack bonuses from manually added items.
+
+## Discord Commands
+
+| Command | Description |
+|---------|-------------|
+| `!importar <nome>` | Import character sheet from PDF (attach PDF to message) |
+| `!ficha [nome]` | Show compact character summary |
+| `!ficha completa [nome]` | Show full character sheet |
+| `!hp -8` / `!hp +4 [nome]` | Apply damage or healing |
+| `!slot <nivel> [reset] [nome]` | Use or restore a spell slot |
+| `!slots [nome]` | Show available spell slots |
+| `!descanso <curto\|longo> [nome]` | Short or long rest |
+| `!inventario [nome]` | Show inventory |
+| `!item adicionar <item> [qty]` | Add item to inventory |
+| `!item remover <item> [qty]` | Remove item from inventory |
+| `!moeda +10 po [nome]` | Add/remove coins (pc, pp, pe, po, ppl) |
+| `!ca <valor> [nome]` | Manually set Armor Class |
+| `!arma adicionar <nome> [atk] [dano] [notas] [nome]` | Add weapon |
+| `!arma remover <nome> [nome]` | Remove weapon |
+| `!arma listar [nome]` | List weapons |
+
+> If `[nome]` is omitted, commands default to your Discord display name.
+
+## Telegram Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ficha [nome]` | Compact character summary |
+| `/ficha completa [nome]` | Full character sheet |
+| `/hp -8` / `/hp +4 [nome]` | Apply damage or healing |
+| `/slot <nivel> [reset] [nome]` | Use or restore a spell slot |
+| `/slots [nome]` | Show available spell slots |
+| `/descanso <curto\|longo> [nome]` | Short or long rest |
+| `/inventario [nome]` | Show inventory |
+| `/item_add <item> [qty]` | Add item to inventory |
+| `/item_rem <item> [qty]` | Remove item from inventory |
+| `/moeda +10 po [nome]` | Add/remove coins (pc, pp, pe, po, ppl) |
+| `/ca <valor> [nome]` | Manually set Armor Class |
+| `/arma_add <nome> [atk] [dano] [notas]` | Add weapon |
+| `/arma_rem <nome>` | Remove weapon |
+| `/arma_list [nome]` | List weapons |
+
+> PDF import is Discord-only. Character data is shared between Discord and Telegram.
+
+## Storage
+
+Character data is stored as JSON files in `data/characters/<nome>.json`. When running via Docker, files are persisted on the host at `/var/lib/roll-dice-dnd/characters/` and survive container rebuilds.
+
 # Customization
 Command Configuration
 
@@ -460,8 +522,14 @@ The plugin system is managed by the plugin_manager.py module. To add a plugin, f
 A simple hello world plugin is installed by default.
 - [hello_world](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/hello_world)
 
-Plugin to generate magic surge based on normal and fey tables. Mode details in the plugin folder.
+Plugin to generate magic surge based on normal and fey tables. More details in the plugin folder.
 - [magic](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/magic)
+
+Plugin to roll attributes for new character creation (5d6 drop 2 lowest, or classic 4d6 drop 1).
+- [new_char](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/new_char)
+
+Plugin to import and manage D&D Beyond character sheets during sessions.
+- [character](https://github.com/Dado-Chumbado/roll-dice-dnd/tree/main/src/plugins/character)
 
 ## Database statistics [alpha]
 
