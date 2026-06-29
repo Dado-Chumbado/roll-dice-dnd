@@ -11,7 +11,7 @@ from plugins.character.character_manager import (
     update_currency, set_ca, add_weapon, remove_weapon,
     COIN_LABELS, resolve_coin,
 )
-from plugins.character.sheet_formatter import format_sheet
+from plugins.character.sheet_formatter import format_sheet, format_spells, format_spell_detail
 
 logger = logging.getLogger(__name__)
 current_folder = os.path.dirname(__file__)
@@ -526,3 +526,43 @@ class PluginCharacter(Plugin):
             if notes:
                 parts.append(notes)
             await ctx.send(f"➕ **{char}**: {' | '.join(parts)} adicionada.")
+
+        # ------------------------------------------------------------------
+        # !magias [nome]
+        # ------------------------------------------------------------------
+        @bot.command(
+            name=self.cm.get_prefix("character", "magias"),
+            help=self.cm.get_description("character", "magias"),
+        )
+        async def magias(ctx, player_name: str = None):
+            name = _resolve_name(ctx, player_name)
+            data = load_character(name)
+            if data is None:
+                await ctx.send(f"Ficha de **{name}** não encontrada.")
+                return
+            sheet = format_spells(data)
+            for chunk in _split_message(sheet):
+                await ctx.send(chunk)
+
+        # ------------------------------------------------------------------
+        # !magia <indice> [nome]
+        # ------------------------------------------------------------------
+        @bot.command(
+            name=self.cm.get_prefix("character", "magia"),
+            help=self.cm.get_description("character", "magia"),
+        )
+        async def magia(ctx, index: str = None, player_name: str = None):
+            if index is None:
+                await ctx.send("Uso: `!magia <índice> [nome]` — veja os índices com `!magias`")
+                return
+            try:
+                idx = int(index)
+            except ValueError:
+                await ctx.send("Uso: `!magia <índice> [nome]` — veja os índices com `!magias`")
+                return
+            name = _resolve_name(ctx, player_name)
+            data = load_character(name)
+            if data is None:
+                await ctx.send(f"Ficha de **{name}** não encontrada.")
+                return
+            await ctx.send(format_spell_detail(data, idx))

@@ -189,7 +189,95 @@ def format_sheet_full_telegram(data: dict) -> str:
         lines.append("<b>Moedas:</b> " + "  ".join(coins))
         lines.append("")
 
+    if base.get("proficiencies_and_languages"):
+        lines.append("<b>Proficiências e Idiomas</b>")
+        lines.append(html.escape(base["proficiencies_and_languages"]))
+        lines.append("")
+
+    if base.get("features_text"):
+        lines.append("<b>Habilidades e Traços</b>")
+        lines.append(html.escape(base["features_text"]))
+        lines.append("")
+
+    if base.get("actions_text"):
+        lines.append("<b>Ações</b>")
+        lines.append(html.escape(base["actions_text"]))
+        lines.append("")
+
+    traits = []
+    if base.get("personality_traits"):
+        traits.append(f"<i>Personalidade:</i> {html.escape(base['personality_traits'])}")
+    if base.get("ideals"):
+        traits.append(f"<i>Ideais:</i> {html.escape(base['ideals'])}")
+    if base.get("bonds"):
+        traits.append(f"<i>Vínculos:</i> {html.escape(base['bonds'])}")
+    if base.get("flaws"):
+        traits.append(f"<i>Fraquezas:</i> {html.escape(base['flaws'])}")
+    if traits:
+        lines.append("<b>Traços de Personalidade</b>")
+        lines.extend(traits)
+        lines.append("")
+
     synced = meta.get("synced_at", "?")[:10]
     lines.append(f"<i>Sync: {synced} | Jogador: {html.escape(meta.get('player','?'))}</i>")
 
+    return "\n".join(lines)
+
+
+def format_spells_telegram(data: dict) -> str:
+    base    = data["base"]
+    session = data["session"]
+    spells  = base.get("spells", [])
+    char    = base["name"]
+
+    if not spells:
+        return f"✨ <b>{html.escape(char)}</b> não possui magias registradas."
+
+    slots_max  = base.get("spell_slots_max", {})
+    slots_used = session.get("spell_slots_used", {})
+
+    lines = [f"✨ <b>Magias — {html.escape(char)}</b>"]
+    if slots_max:
+        slot_parts = []
+        for lvl in sorted(slots_max.keys(), key=int):
+            total     = slots_max[lvl]
+            remaining = total - slots_used.get(lvl, 0)
+            slot_parts.append(f"Nv{lvl}: {'◆'*remaining}{'◇'*(total-remaining)} ({remaining}/{total})")
+        lines.append("  ".join(slot_parts))
+    lines.append("")
+
+    for i, s in enumerate(spells):
+        prepared = "✅" if s.get("prepared") else "○ "
+        cast     = html.escape(s.get("cast_time") or "—")
+        rng      = html.escape(s.get("range") or "—")
+        dur      = html.escape(s.get("duration") or "—")
+        lines.append(f"{prepared} <code>[{i}]</code> <b>{html.escape(s['name'])}</b>  {cast} | {rng} | {dur}")
+
+    lines.append(f"\n<i>Use /magia &lt;índice&gt; para detalhes de uma magia.</i>")
+    return "\n".join(lines)
+
+
+def format_spell_detail_telegram(data: dict, index: int) -> str:
+    spells = data["base"].get("spells", [])
+    if not spells:
+        return "✨ Nenhuma magia registrada."
+    if index < 0 or index >= len(spells):
+        return f"✨ Índice inválido. Use /magias para ver a lista (0–{len(spells)-1})."
+
+    s    = spells[index]
+    char = data["base"]["name"]
+    lines = [
+        f"✨ <b>{html.escape(s['name'])}</b> — {html.escape(char)}",
+        f"Preparada: {'✅ Sim' if s.get('prepared') else '○  Não'}",
+        f"Tempo de conjuração: <b>{html.escape(s.get('cast_time') or '—')}</b>",
+        f"Alcance: <b>{html.escape(s.get('range') or '—')}</b>",
+        f"Componentes: <b>{html.escape(s.get('components') or '—')}</b>",
+        f"Duração: <b>{html.escape(s.get('duration') or '—')}</b>",
+    ]
+    if s.get("save_hit") and s["save_hit"] not in ("--", ""):
+        lines.append(f"Ataque/Salvaguarda: <b>{html.escape(s['save_hit'])}</b>")
+    if s.get("source"):
+        lines.append(f"Fonte: <i>{html.escape(s['source'])}</i>")
+    if s.get("notes"):
+        lines.append(f"Notas: {html.escape(s['notes'])}")
     return "\n".join(lines)

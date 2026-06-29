@@ -21,7 +21,7 @@ sentry-sdk = "^2.17.0"
 python-telegram-bot = "^21.0"
 Pillow = "^12.0"
 pdfplumber = "^0.11.9"
-pypdf = "^5.0"
+pypdf = "^6.13.3"
 deepl = "^1.30.0"
 
 

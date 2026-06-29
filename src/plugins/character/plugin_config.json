@@ -10,6 +10,8 @@
     "item":       {"alias": "item",       "description": "Adiciona ou remove item. Uso: !item adicionar <item> [qty] [jogador] ou !item remover <item> [qty] [jogador]"},
     "moeda":      {"alias": "moeda",      "description": "Atualiza moedas. Uso: !moeda +10 po [nome] (tipos: pc, pp, pe, po, ppl)"},
     "ca":         {"alias": "ca",         "description": "Define a Classe de Armadura manualmente. Uso: !ca <valor> [nome]"},
-    "arma":       {"alias": "arma",       "description": "Gerencia armas. Uso: !arma adicionar <nome> [atk] [dano] [notas] [jogador] ou !arma remover <nome> [jogador]"}
+    "arma":       {"alias": "arma",       "description": "Gerencia armas. Uso: !arma adicionar <nome> [atk] [dano] [notas] [jogador] ou !arma remover <nome> [jogador]"},
+    "magias":     {"alias": "magias",     "description": "Lista todas as magias. Uso: !magias [nome]"},
+    "magia":      {"alias": "magia",      "description": "Detalhes de uma magia pelo índice. Uso: !magia <indice> [nome]"}
   }
 }

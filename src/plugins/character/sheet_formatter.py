@@ -192,9 +192,97 @@ def format_sheet_full(data: dict) -> str:
         lines.append("**Moedas:** " + "  ".join(coins))
         lines.append("")
 
+    if base.get("proficiencies_and_languages"):
+        lines.append("**Proficiências e Idiomas**")
+        lines.append(base["proficiencies_and_languages"])
+        lines.append("")
+
+    if base.get("features_text"):
+        lines.append("**Habilidades e Traços**")
+        lines.append(base["features_text"])
+        lines.append("")
+
+    if base.get("actions_text"):
+        lines.append("**Ações**")
+        lines.append(base["actions_text"])
+        lines.append("")
+
+    traits = []
+    if base.get("personality_traits"):
+        traits.append(f"*Personalidade:* {base['personality_traits']}")
+    if base.get("ideals"):
+        traits.append(f"*Ideais:* {base['ideals']}")
+    if base.get("bonds"):
+        traits.append(f"*Vínculos:* {base['bonds']}")
+    if base.get("flaws"):
+        traits.append(f"*Fraquezas:* {base['flaws']}")
+    if traits:
+        lines.append("**Traços de Personalidade**")
+        lines.extend(traits)
+        lines.append("")
+
     synced = meta.get("synced_at", "?")[:10]
     lines.append(f"*Sync: {synced} | Jogador: {meta.get('player','?')}*")
 
+    return "\n".join(lines)
+
+
+def format_spells(data: dict) -> str:
+    base    = data["base"]
+    session = data["session"]
+    spells  = base.get("spells", [])
+    char    = base["name"]
+
+    if not spells:
+        return f"✨ **{char}** não possui magias registradas."
+
+    slots_max  = base.get("spell_slots_max", {})
+    slots_used = session.get("spell_slots_used", {})
+
+    lines = [f"✨ **Magias — {char}**"]
+    if slots_max:
+        slot_parts = []
+        for lvl in sorted(slots_max.keys(), key=int):
+            total     = slots_max[lvl]
+            remaining = total - slots_used.get(lvl, 0)
+            slot_parts.append(f"Nv{lvl}: {'◆'*remaining}{'◇'*(total-remaining)} ({remaining}/{total})")
+        lines.append("  ".join(slot_parts))
+    lines.append("")
+
+    for i, s in enumerate(spells):
+        prepared = "✅" if s.get("prepared") else "○ "
+        cast     = s.get("cast_time") or "—"
+        rng      = s.get("range") or "—"
+        dur      = s.get("duration") or "—"
+        lines.append(f"{prepared} `[{i}]` **{s['name']}**  {cast} | {rng} | {dur}")
+
+    lines.append(f"\n*Use `!magia <índice>` para detalhes de uma magia.*")
+    return "\n".join(lines)
+
+
+def format_spell_detail(data: dict, index: int) -> str:
+    spells = data["base"].get("spells", [])
+    if not spells:
+        return "✨ Nenhuma magia registrada."
+    if index < 0 or index >= len(spells):
+        return f"✨ Índice inválido. Use `!magias` para ver a lista (0–{len(spells)-1})."
+
+    s    = spells[index]
+    char = data["base"]["name"]
+    lines = [
+        f"✨ **{s['name']}** — {char}",
+        f"Preparada: {'✅ Sim' if s.get('prepared') else '○  Não'}",
+        f"Tempo de conjuração: **{s.get('cast_time') or '—'}**",
+        f"Alcance: **{s.get('range') or '—'}**",
+        f"Componentes: **{s.get('components') or '—'}**",
+        f"Duração: **{s.get('duration') or '—'}**",
+    ]
+    if s.get("save_hit") and s["save_hit"] not in ("--", ""):
+        lines.append(f"Ataque/Salvaguarda: **{s['save_hit']}**")
+    if s.get("source"):
+        lines.append(f"Fonte: *{s['source']}*")
+    if s.get("notes"):
+        lines.append(f"Notas: {s['notes']}")
     return "\n".join(lines)
 
 

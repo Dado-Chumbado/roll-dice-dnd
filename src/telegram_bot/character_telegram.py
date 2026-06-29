@@ -15,6 +15,8 @@ from plugins.character.character_manager import (
 from telegram_bot.sheet_formatter_telegram import (
     format_sheet_simple_telegram,
     format_sheet_full_telegram,
+    format_spells_telegram,
+    format_spell_detail_telegram,
 )
 from telegram_bot.bot import is_chat_allowed
 
@@ -456,6 +458,37 @@ async def arma_rem_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _send_html(update, f"➖ <b>{_html.escape(char)}</b>: arma <b>{_html.escape(weapon_name)}</b> removida.")
 
 
+async def magias_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_chat_allowed(update):
+        return
+    name = _player_name(update, context.args or [])
+    data = load_character(name)
+    if data is None:
+        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        return
+    await _send_html(update, format_spells_telegram(data))
+
+
+async def magia_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_chat_allowed(update):
+        return
+    args = context.args or []
+    if not args:
+        await update.message.reply_text("Uso: /magia <índice> [nome]")
+        return
+    try:
+        idx = int(args[0])
+    except ValueError:
+        await update.message.reply_text("Uso: /magia <índice> [nome]")
+        return
+    name = _player_name(update, args, index=1)
+    data = load_character(name)
+    if data is None:
+        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        return
+    await _send_html(update, format_spell_detail_telegram(data, idx))
+
+
 async def arma_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
@@ -496,4 +529,6 @@ def register_character_handlers(app) -> None:
     app.add_handler(CommandHandler("arma_add",   arma_add_command))
     app.add_handler(CommandHandler("arma_rem",   arma_rem_command))
     app.add_handler(CommandHandler("arma_list",  arma_list_command))
+    app.add_handler(CommandHandler("magias",     magias_command))
+    app.add_handler(CommandHandler("magia",      magia_command))
     logger.info("Character sheet handlers registered.")
