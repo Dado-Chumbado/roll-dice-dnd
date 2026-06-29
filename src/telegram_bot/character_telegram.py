@@ -61,18 +61,21 @@ def _hp_bar(current: int, maximum: int, width: int = 10) -> str:
 
 
 async def _send_html(update: Update, text: str) -> None:
+    msg = update.effective_message
+    if msg is None:
+        return
     if len(text) <= 4096:
-        await update.message.reply_text(text, parse_mode="HTML")
+        await msg.reply_text(text, parse_mode="HTML")
         return
     chunk, lines = "", text.split("\n")
     for line in lines:
         if len(chunk) + len(line) + 1 > 4096:
-            await update.message.reply_text(chunk, parse_mode="HTML")
+            await msg.reply_text(chunk, parse_mode="HTML")
             chunk = line
         else:
             chunk = chunk + "\n" + line if chunk else line
     if chunk:
-        await update.message.reply_text(chunk, parse_mode="HTML")
+        await msg.reply_text(chunk, parse_mode="HTML")
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +101,7 @@ async def ficha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data is None:
         available = list_characters()
         hint = f" Fichas: {', '.join(available)}" if available else ""
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"Ficha de '{_html.escape(name)}' não encontrada.{hint}",
             parse_mode="HTML",
         )
@@ -117,23 +120,23 @@ async def hp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
+        await update.effective_message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
         return
 
     name, rest_args = _split_name(update, args)
     if not rest_args:
-        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
+        await update.effective_message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
         return
     try:
         delta = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
+        await update.effective_message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
         return
 
     try:
         data = update_hp(name, delta)
     except FileNotFoundError as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     hp_cur = data["session"]["hp_current"]
@@ -158,12 +161,12 @@ async def slot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /slot [nome] <nivel> [reset]")
+        await update.effective_message.reply_text("Uso: /slot [nome] <nivel> [reset]")
         return
 
     name, rest_args = _split_name(update, args)
     if not rest_args:
-        await update.message.reply_text("Uso: /slot [nome] <nivel> [reset]")
+        await update.effective_message.reply_text("Uso: /slot [nome] <nivel> [reset]")
         return
 
     level    = rest_args[0]
@@ -172,7 +175,7 @@ async def slot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = reset_slot(name, level) if is_reset else use_slot(name, level)
     except (FileNotFoundError, ValueError) as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     slots_max  = data["base"]["spell_slots_max"]
@@ -197,7 +200,7 @@ async def slots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
-        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        await update.effective_message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
         return
 
     slots_max  = data["base"].get("spell_slots_max", {})
@@ -205,7 +208,7 @@ async def slots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     char = data["base"]["name"]
 
     if not slots_max:
-        await update.message.reply_text(f"<b>{_html.escape(char)}</b> não possui slots de magia.", parse_mode="HTML")
+        await update.effective_message.reply_text(f"<b>{_html.escape(char)}</b> não possui slots de magia.", parse_mode="HTML")
         return
 
     lines = [f"✨ <b>Slots — {_html.escape(char)}</b>"]
@@ -226,7 +229,7 @@ async def descanso_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
+        await update.effective_message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
         return
 
     # Detect tipo keyword
@@ -239,14 +242,14 @@ async def descanso_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             filtered.append(a)
 
     if not tipo:
-        await update.message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
+        await update.effective_message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
         return
 
     name = _resolve(update, filtered, index=0)
     try:
         data = rest(name, tipo)
     except (FileNotFoundError, ValueError) as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     char   = data["base"]["name"]
@@ -271,7 +274,7 @@ async def inventario_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
-        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        await update.effective_message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
         return
 
     char      = data["base"]["name"]
@@ -279,7 +282,7 @@ async def inventario_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     currency  = data["session"].get("currency", {})
 
     if not inventory:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"🎒 <b>{_html.escape(char)}</b> não possui itens.", parse_mode="HTML"
         )
         return
@@ -311,7 +314,7 @@ async def item_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if len(args) < 3 or args[0].lower() not in ("adicionar", "remover"):
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso:\n"
             "/item adicionar <nome> <item> [qty]\n"
             "/item remover <nome> <item> [qty]"
@@ -330,13 +333,13 @@ async def item_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         item_name = " ".join(rest_args)
 
     if not item_name:
-        await update.message.reply_text("Informe o nome do item.")
+        await update.effective_message.reply_text("Informe o nome do item.")
         return
 
     try:
         data = update_inventory(name, item_name, qty, add=(action == "adicionar"))
     except (FileNotFoundError, ValueError) as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     char  = data["base"]["name"]
@@ -357,29 +360,29 @@ async def moeda_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if len(args) < 2:
-        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
+        await update.effective_message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
         return
 
     name, rest_args = _split_name(update, args)
     if len(rest_args) < 2:
-        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
+        await update.effective_message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
         return
 
     try:
         delta = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
+        await update.effective_message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
         return
     try:
         key = resolve_coin(rest_args[1])
     except ValueError as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     try:
         data = update_currency(name, rest_args[1], delta)
     except FileNotFoundError as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     char    = data["base"]["name"]
@@ -402,23 +405,23 @@ async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /ca [nome] <valor>")
+        await update.effective_message.reply_text("Uso: /ca [nome] <valor>")
         return
 
     name, rest_args = _split_name(update, args)
     if not rest_args:
-        await update.message.reply_text("Uso: /ca [nome] <valor>")
+        await update.effective_message.reply_text("Uso: /ca [nome] <valor>")
         return
     try:
         value = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /ca [nome] <valor>")
+        await update.effective_message.reply_text("Uso: /ca [nome] <valor>")
         return
 
     try:
         data = set_ca(name, value)
     except (FileNotFoundError, ValueError) as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     char = data["base"]["name"]
@@ -436,7 +439,7 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args or args[0].lower() not in ("adicionar", "remover", "listar"):
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso:\n"
             "/arma adicionar <nome> <arma> [atk] [dano] [notas]\n"
             "/arma remover <nome> <arma>\n"
@@ -450,12 +453,12 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = _resolve(update, args, index=1)
         data = load_character(name)
         if data is None:
-            await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+            await update.effective_message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
             return
         attacks = data["base"].get("attacks", [])
         char    = data["base"]["name"]
         if not attacks:
-            await update.message.reply_text(f"<b>{_html.escape(char)}</b> não possui armas.", parse_mode="HTML")
+            await update.effective_message.reply_text(f"<b>{_html.escape(char)}</b> não possui armas.", parse_mode="HTML")
             return
         lines = [f"⚔️ <b>Armas — {_html.escape(char)}</b>"]
         for w in attacks:
@@ -467,7 +470,7 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if len(args) < 3:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"Uso: /arma {action} <nome> <arma>" + (" [atk] [dano] [notas]" if action == "adicionar" else "")
         )
         return
@@ -480,7 +483,7 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             data = remove_weapon(name, weapon_name)
         except (FileNotFoundError, ValueError) as e:
-            await update.message.reply_text(str(e))
+            await update.effective_message.reply_text(str(e))
             return
         char = data["base"]["name"]
         await _send_html(update, f"➖ <b>{_html.escape(char)}</b>: arma <b>{_html.escape(weapon_name)}</b> removida.")
@@ -503,13 +506,13 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     weapon_name = " ".join(remaining).strip()
     if not weapon_name:
-        await update.message.reply_text("Informe o nome da arma.")
+        await update.effective_message.reply_text("Informe o nome da arma.")
         return
 
     try:
         data = add_weapon(name, weapon_name, atk_bonus, damage, notes)
     except FileNotFoundError as e:
-        await update.message.reply_text(str(e))
+        await update.effective_message.reply_text(str(e))
         return
 
     char  = data["base"]["name"]
@@ -533,7 +536,7 @@ async def magias_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
-        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        await update.effective_message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
         return
     await _send_html(update, format_spells_telegram(data))
 
@@ -547,22 +550,22 @@ async def magia_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /magia [nome] <índice>")
+        await update.effective_message.reply_text("Uso: /magia [nome] <índice>")
         return
 
     name, rest_args = _split_name(update, args)
     if not rest_args:
-        await update.message.reply_text("Uso: /magia [nome] <índice>")
+        await update.effective_message.reply_text("Uso: /magia [nome] <índice>")
         return
     try:
         idx = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /magia [nome] <índice>")
+        await update.effective_message.reply_text("Uso: /magia [nome] <índice>")
         return
 
     data = load_character(name)
     if data is None:
-        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+        await update.effective_message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
         return
     await _send_html(update, format_spell_detail_telegram(data, idx))
 
