@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - /var/lib/roll-dice-dnd:/data
+      - /var/lib/roll-dice-dnd:/app/data
     restart: unless-stopped
     stop_grace_period: 30s
     env_file:
