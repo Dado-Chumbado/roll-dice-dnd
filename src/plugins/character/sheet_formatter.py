@@ -233,13 +233,15 @@ def format_spells(data: dict) -> str:
     spells  = base.get("spells", [])
     char    = base["name"]
 
-    if not spells:
-        return f"✨ **{char}** não possui magias registradas."
+    prepared = [(i, s) for i, s in enumerate(spells) if s.get("prepared")]
+
+    if not prepared:
+        return f"✨ **{char}** não possui magias preparadas."
 
     slots_max  = base.get("spell_slots_max", {})
     slots_used = session.get("spell_slots_used", {})
 
-    lines = [f"✨ **Magias — {char}**"]
+    lines = [f"✨ **Magias preparadas — {char}**"]
     if slots_max:
         slot_parts = []
         for lvl in sorted(slots_max.keys(), key=int):
@@ -249,12 +251,11 @@ def format_spells(data: dict) -> str:
         lines.append("  ".join(slot_parts))
     lines.append("")
 
-    for i, s in enumerate(spells):
-        prepared = "✅" if s.get("prepared") else "○ "
-        cast     = s.get("cast_time") or "—"
-        rng      = s.get("range") or "—"
-        dur      = s.get("duration") or "—"
-        lines.append(f"{prepared} `[{i}]` **{s['name']}**  {cast} | {rng} | {dur}")
+    for i, s in prepared:
+        cast = s.get("cast_time") or "—"
+        rng  = s.get("range") or "—"
+        dur  = s.get("duration") or "—"
+        lines.append(f"✅ `[{i}]` **{s['name']}**  {cast} | {rng} | {dur}")
 
     lines.append(f"\n*Use `!magia <índice>` para detalhes de uma magia.*")
     return "\n".join(lines)

@@ -488,10 +488,8 @@ class PluginCharacter(Plugin):
             # Check if last token looks like notes (not a dice expr and not +/- number)
             import re as _re
             dice_re = _re.compile(r'^\d*d\d+', _re.IGNORECASE)
-            atk_re  = _re.compile(r'^[+-]\d+$')
+            atk_re  = _re.compile(r'^[+-]?\d+$')
 
-            # Consume from right: notes (any free text after damage/atk)
-            # Simple heuristic: if last non-player token doesn't look like dice/atk → notes
             remaining = list(tokens)
             if len(remaining) >= 2 and not dice_re.match(remaining[-1]) and not atk_re.match(remaining[-1]):
                 notes = remaining[-1]
@@ -502,7 +500,8 @@ class PluginCharacter(Plugin):
                 remaining = remaining[:-1]
 
             if remaining and atk_re.match(remaining[-1]):
-                atk_bonus = remaining[-1]
+                raw = remaining[-1]
+                atk_bonus = raw if raw.startswith(("+", "-")) else f"+{raw}"
                 remaining = remaining[:-1]
 
             weapon_name = " ".join(remaining).strip()

@@ -24,7 +24,7 @@ from telegram_bot.bot import is_chat_allowed
 logger = logging.getLogger(__name__)
 
 _DICE_RE  = re.compile(r'^\d*d\d+', re.IGNORECASE)
-_ATK_RE   = re.compile(r'^[+-]\d+$')
+_ATK_RE   = re.compile(r'^[+-]?\d+$')
 _NUM_RE   = re.compile(r'^[+-]?\d+$')
 
 
@@ -497,7 +497,8 @@ async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         damage    = remaining[-1]
         remaining = remaining[:-1]
     if remaining and _ATK_RE.match(remaining[-1]):
-        atk_bonus = remaining[-1]
+        raw = remaining[-1]
+        atk_bonus = raw if raw.startswith(("+", "-")) else f"+{raw}"
         remaining = remaining[:-1]
 
     weapon_name = " ".join(remaining).strip()

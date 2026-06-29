@@ -228,15 +228,17 @@ def format_spells_telegram(data: dict) -> str:
     base    = data["base"]
     session = data["session"]
     spells  = base.get("spells", [])
-    char    = base["name"]
+    char    = data["base"]["name"]
 
-    if not spells:
-        return f"✨ <b>{html.escape(char)}</b> não possui magias registradas."
+    prepared = [(i, s) for i, s in enumerate(spells) if s.get("prepared")]
+
+    if not prepared:
+        return f"✨ <b>{html.escape(char)}</b> não possui magias preparadas."
 
     slots_max  = base.get("spell_slots_max", {})
     slots_used = session.get("spell_slots_used", {})
 
-    lines = [f"✨ <b>Magias — {html.escape(char)}</b>"]
+    lines = [f"✨ <b>Magias preparadas — {html.escape(char)}</b>"]
     if slots_max:
         slot_parts = []
         for lvl in sorted(slots_max.keys(), key=int):
@@ -246,14 +248,13 @@ def format_spells_telegram(data: dict) -> str:
         lines.append("  ".join(slot_parts))
     lines.append("")
 
-    for i, s in enumerate(spells):
-        prepared = "✅" if s.get("prepared") else "○ "
-        cast     = html.escape(s.get("cast_time") or "—")
-        rng      = html.escape(s.get("range") or "—")
-        dur      = html.escape(s.get("duration") or "—")
-        lines.append(f"{prepared} <code>[{i}]</code> <b>{html.escape(s['name'])}</b>  {cast} | {rng} | {dur}")
+    for i, s in prepared:
+        cast = html.escape(s.get("cast_time") or "—")
+        rng  = html.escape(s.get("range") or "—")
+        dur  = html.escape(s.get("duration") or "—")
+        lines.append(f"✅ <code>[{i}]</code> <b>{html.escape(s['name'])}</b>  {cast} | {rng} | {dur}")
 
-    lines.append(f"\n<i>Use /magia &lt;índice&gt; para detalhes de uma magia.</i>")
+    lines.append("<i>Use /magia [nome] &lt;índice&gt; para detalhes de uma magia.</i>")
     return "\n".join(lines)
 
 
