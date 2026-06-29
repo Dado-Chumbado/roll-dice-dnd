@@ -437,7 +437,7 @@ class PluginCharacter(Plugin):
                     return
                 lines = [f"⚔️ **Armas — {char}**"]
                 for w in attacks:
-                    atk   = f" | Atk: {w['atk_bonus']}" if w.get("atk_bonus") else ""
+                    atk   = f" | Atk: {w['bonus']}" if w.get("bonus") else ""
                     dmg   = f" | Dano: {w['damage']}" if w.get("damage") else ""
                     notes = f" | {w['notes']}" if w.get("notes") else ""
                     lines.append(f"  • **{w['name']}**{atk}{dmg}{notes}")

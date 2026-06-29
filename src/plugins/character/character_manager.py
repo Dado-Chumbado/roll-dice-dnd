@@ -175,7 +175,7 @@ def add_weapon(player_name: str, name: str, atk_bonus: str = "", damage: str = "
     """Add a weapon to the character's attack list."""
     data = _require(player_name)
     attacks = data["base"].setdefault("attacks", [])
-    attacks.append({"name": name, "atk_bonus": atk_bonus, "damage": damage, "notes": notes})
+    attacks.append({"name": name, "bonus": atk_bonus, "damage": damage, "notes": notes})
     save_character(player_name, data)
     return data
 

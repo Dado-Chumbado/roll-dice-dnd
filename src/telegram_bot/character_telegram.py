@@ -471,7 +471,7 @@ async def arma_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     lines = [f"⚔️ <b>Armas — {_html.escape(char)}</b>"]
     for w in attacks:
-        atk   = f" | Atk: {w['atk_bonus']}" if w.get("atk_bonus") else ""
+        atk   = f" | Atk: {w['bonus']}" if w.get("bonus") else ""
         dmg   = f" | Dano: {w['damage']}" if w.get("damage") else ""
         notes = f" | {_html.escape(w['notes'])}" if w.get("notes") else ""
         lines.append(f"  • <b>{_html.escape(w['name'])}</b>{atk}{dmg}{notes}")

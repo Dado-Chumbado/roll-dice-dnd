@@ -319,10 +319,17 @@ def _get_cmd(env_var: str, default: str) -> list[str]:
     return names if names else [default]
 
 
+async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error("Unhandled exception in Telegram handler", exc_info=context.error)
+    if isinstance(update, Update) and update.message:
+        await update.message.reply_text("Ocorreu um erro interno. Tente novamente.")
+
+
 def create_telegram_bot(token: str) -> Application:
     """Create and configure the Telegram bot application."""
     from telegram_bot.character_telegram import register_character_handlers
     app = Application.builder().token(token).build()
+    app.add_error_handler(_error_handler)
 
     roll_cmd = _get_cmd("TELEGRAM_CMD_ROLL", "roll") + ["r"]
     adv_cmd  = _get_cmd("TELEGRAM_CMD_ADV", "adv")
