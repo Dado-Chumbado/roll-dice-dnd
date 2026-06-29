@@ -1,6 +1,144 @@
+import os
 import re
 from datetime import datetime, timezone
 import pypdf
+
+# ---------------------------------------------------------------------------
+# Dictionary translations — applied at import time, stored in JSON
+# ---------------------------------------------------------------------------
+
+_DAMAGE_TYPE_PT = {
+    "Piercing": "Perfurante", "Slashing": "Cortante", "Bludgeoning": "Contundente",
+    "Fire": "Fogo", "Cold": "Frio", "Lightning": "Elétrico", "Thunder": "Trovão",
+    "Acid": "Ácido", "Poison": "Veneno", "Necrotic": "Necrótico", "Radiant": "Radiante",
+    "Psychic": "Psíquico", "Force": "Força", "Magical": "Mágico",
+}
+
+_SPEED_TYPE_PT = {
+    "Walking": "Caminhando", "Flying": "Voando", "Swimming": "Nadando",
+    "Climbing": "Escalando", "Burrowing": "Escavando",
+}
+
+_CAST_TIME_PT = {
+    "1 Action": "1 Ação", "1 Bonus Action": "1 Ação Bônus",
+    "1 Reaction": "1 Reação", "1 Minute": "1 Minuto", "10 Minutes": "10 Minutos",
+    "1 Hour": "1 Hora", "8 Hours": "8 Horas", "24 Hours": "24 Horas",
+}
+
+_RANGE_PT = {
+    "Self": "Si mesmo", "Touch": "Toque", "Sight": "Visão",
+    "Unlimited": "Ilimitado", "Special": "Especial",
+}
+
+_DURATION_PT = {
+    "Instantaneous": "Instantâneo", "Permanent": "Permanente", "Special": "Especial",
+    "Until dispelled": "Até ser dissipado", "Until dispelled or triggered": "Até ser dissipado ou ativado",
+    "Concentration, up to 1 round": "Concentração, até 1 rodada",
+    "Concentration, up to 1 minute": "Concentração, até 1 minuto",
+    "Concentration, up to 10 minutes": "Concentração, até 10 minutos",
+    "Concentration, up to 1 hour": "Concentração, até 1 hora",
+    "Concentration, up to 2 hours": "Concentração, até 2 horas",
+    "Concentration, up to 8 hours": "Concentração, até 8 horas",
+    "Concentration, up to 24 hours": "Concentração, até 24 horas",
+    "1 round": "1 rodada", "6 rounds": "6 rodadas",
+    "1 minute": "1 minuto", "10 minutes": "10 minutos",
+    "1 hour": "1 hora", "2 hours": "2 horas", "8 hours": "8 horas",
+    "24 hours": "24 horas", "7 days": "7 dias", "10 days": "10 dias",
+    "30 days": "30 dias",
+}
+
+_ALIGNMENT_PT = {
+    "Lawful Good": "Leal e Bom", "Neutral Good": "Neutro e Bom",
+    "Chaotic Good": "Caótico e Bom", "Lawful Neutral": "Leal e Neutro",
+    "True Neutral": "Neutro Verdadeiro", "Neutral": "Neutro",
+    "Chaotic Neutral": "Caótico e Neutro", "Lawful Evil": "Leal e Mau",
+    "Neutral Evil": "Neutro e Mau", "Chaotic Evil": "Caótico e Mau",
+}
+
+_SIZE_PT = {
+    "Tiny": "Minúsculo", "Small": "Pequeno", "Medium": "Médio",
+    "Large": "Grande", "Huge": "Enorme", "Gargantuan": "Colossal",
+}
+
+_RACE_PT = {
+    "Human": "Humano", "Elf": "Elfo", "High Elf": "Alto Elfo",
+    "Wood Elf": "Elfo da Floresta", "Dark Elf": "Elfo Negro", "Drow": "Drow",
+    "Dwarf": "Anão", "Hill Dwarf": "Anão das Colinas", "Mountain Dwarf": "Anão das Montanhas",
+    "Halfling": "Halfling", "Lightfoot Halfling": "Halfling Pés-Leves",
+    "Stout Halfling": "Halfling Robusto", "Gnome": "Gnomo",
+    "Forest Gnome": "Gnomo da Floresta", "Rock Gnome": "Gnomo das Rochas",
+    "Half-Elf": "Meio-Elfo", "Half-Orc": "Meio-Orc",
+    "Tiefling": "Tiefling", "Dragonborn": "Draconato",
+    "Aasimar": "Aasimar", "Goliath": "Goliath", "Tabaxi": "Tabaxi",
+    "Kenku": "Kenku", "Firbolg": "Firbolg", "Lizardfolk": "Homem-Lagarto",
+    "Triton": "Tritão", "Yuan-Ti Pureblood": "Yuan-Ti Sangue Puro",
+    "Bugbear": "Bugbear", "Goblin": "Goblin", "Hobgoblin": "Hobgoblin",
+    "Kobold": "Kobold", "Orc": "Orc", "Tortle": "Tortle",
+    "Changeling": "Mutante", "Kalashtar": "Kalashtar", "Shifter": "Mutante-Fera",
+    "Warforged": "Forjado", "Centaur": "Centauro", "Loxodon": "Loxodonte",
+    "Minotaur": "Minotauro", "Simic Hybrid": "Híbrido Simic", "Vedalken": "Vedalken",
+    "Leonin": "Leonino", "Satyr": "Sátiro", "Fairy": "Fada",
+    "Harengon": "Harengon", "Owlin": "Owlin",
+}
+
+_BACKGROUND_PT = {
+    "Acolyte": "Acólito", "Charlatan": "Charlatão", "Criminal": "Criminoso",
+    "Spy": "Espião", "Entertainer": "Artista", "Gladiator": "Gladiador",
+    "Folk Hero": "Herói do Povo", "Guild Artisan": "Artesão de Guilda",
+    "Guild Merchant": "Mercador de Guilda", "Hermit": "Eremita", "Noble": "Nobre",
+    "Knight": "Cavaleiro", "Outlander": "Forasteiro", "Sage": "Sábio",
+    "Sailor": "Marinheiro", "Pirate": "Pirata", "Soldier": "Soldado",
+    "Urchin": "Criança de Rua", "Haunted One": "Assombrado",
+    "City Watch": "Guarda da Cidade", "Clan Crafter": "Artesão do Clã",
+    "Cloistered Scholar": "Estudioso Enclausurado", "Courtier": "Cortesão",
+    "Faction Agent": "Agente de Facção", "Far Traveler": "Viajante Distante",
+    "Inheritor": "Herdeiro", "Knight of the Order": "Cavaleiro da Ordem",
+    "Mercenary Veteran": "Veterano Mercenário", "Urban Bounty Hunter": "Caçador de Recompensas Urbano",
+    "Waterdhavian Noble": "Nobre de Água Funda", "Witchlight Hand": "Ajudante da Luz Feiticeira",
+    "Athlete": "Atleta", "Feylost": "Perdido no Feywild",
+    "Rewarded": "Recompensado", "Ruined": "Arruinado",
+    "Wildspacer": "Viajante do Espaço Selvagem",
+}
+
+
+def _dict_translate(value: str, table: dict) -> str:
+    """Exact-match lookup; returns original if not found."""
+    return table.get(value, value)
+
+
+def _translate_speed(speed: str) -> str:
+    result = speed.replace(" ft.", " pés")
+    for en, pt in _SPEED_TYPE_PT.items():
+        result = result.replace(en, pt)
+    return result
+
+
+def _translate_damage(damage: str) -> str:
+    if not damage:
+        return damage
+    for en, pt in _DAMAGE_TYPE_PT.items():
+        damage = damage.replace(en, pt)
+    return damage
+
+
+def _translate_range(r: str) -> str:
+    if not r:
+        return r
+    result = _RANGE_PT.get(r, r)
+    result = result.replace(" ft.", " pés")
+    return result
+
+
+def _deepl_translate_batch(texts: list[str], api_key: str) -> list[str]:
+    """Translate a list of strings EN→PT-BR via DeepL in a single API call.
+    Returns the list unchanged if any error occurs."""
+    import deepl
+    try:
+        translator = deepl.Translator(api_key)
+        results = translator.translate_text(texts, source_lang="EN", target_lang="PT-BR")
+        return [r.text for r in results]
+    except Exception:
+        return texts
 
 # ---------------------------------------------------------------------------
 # Field names extracted by inspecting PUR0O550_141918267.pdf (Barbarian 3).
@@ -127,7 +265,7 @@ def _build_attacks(fields: dict) -> list:
         attacks.append({
             "name":   name,
             "bonus":  fields.get(atk_key, "").strip() or None,
-            "damage": fields.get(dmg_key, "").strip() or None,
+            "damage": _translate_damage(fields.get(dmg_key, "").strip()) or None,
             "notes":  fields.get(notes_key, "").strip() or None,
         })
     return attacks
@@ -166,10 +304,10 @@ def _build_spells(fields: dict) -> list:
             "name":       name,
             "prepared":   prepared,
             "save_hit":   fields.get(f"spellSaveHit{i}", "").strip() or None,
-            "cast_time":  fields.get(f"spellCastingTime{i}", "").strip() or None,
-            "range":      fields.get(f"spellRange{i}", "").strip() or None,
+            "cast_time":  _dict_translate(fields.get(f"spellCastingTime{i}", "").strip(), _CAST_TIME_PT) or None,
+            "range":      _translate_range(fields.get(f"spellRange{i}", "").strip()) or None,
             "components": fields.get(f"spellComponents{i}", "").strip() or None,
-            "duration":   fields.get(f"spellDuration{i}", "").strip() or None,
+            "duration":   _dict_translate(fields.get(f"spellDuration{i}", "").strip(), _DURATION_PT) or None,
             "source":     fields.get(f"spellSource{i}", "").strip() or None,
             "notes":      fields.get(f"spellNotes{i}", "").strip() or None,
         })
@@ -185,10 +323,10 @@ def _build_spells(fields: dict) -> list:
             "name":       name,
             "prepared":   prepared,
             "save_hit":   fields.get(f"SaveHit{i}", "").strip() or None,
-            "cast_time":  fields.get(f"CastingTime{i}", "").strip() or None,
-            "range":      fields.get(f"Range{i}", "").strip() or None,
+            "cast_time":  _dict_translate(fields.get(f"CastingTime{i}", "").strip(), _CAST_TIME_PT) or None,
+            "range":      _translate_range(fields.get(f"Range{i}", "").strip()) or None,
             "components": fields.get(f"Components{i}", "").strip() or None,
-            "duration":   fields.get(f"Duration{i}", "").strip() or None,
+            "duration":   _dict_translate(fields.get(f"Duration{i}", "").strip(), _DURATION_PT) or None,
             "source":     fields.get(f"Source{i}", "").strip() or None,
             "notes":      fields.get(f"Notes{i}", "").strip() or None,
         })
@@ -257,15 +395,15 @@ def import_pdf(pdf_path: str, player_name: str) -> dict:
         "level":             primary_level,
         "class":             primary_class,
         "multiclass":        multiclass_raw,
-        "race":              fields.get("RACE", "").strip(),
-        "background":        fields.get("BACKGROUND", "").strip(),
-        "alignment":         fields.get("ALIGNMENT", "").strip(),
-        "size":              fields.get("SIZE", "").strip(),
+        "race":              _dict_translate(fields.get("RACE", "").strip(), _RACE_PT),
+        "background":        _dict_translate(fields.get("BACKGROUND", "").strip(), _BACKGROUND_PT),
+        "alignment":         _dict_translate(fields.get("ALIGNMENT", "").strip(), _ALIGNMENT_PT),
+        "size":              _dict_translate(fields.get("SIZE", "").strip(), _SIZE_PT),
         "experience_points": fields.get("EXPERIENCE POINTS", "").strip(),
         "hp_max":            hp_max,
         "armor_class":       _int(fields.get("AC", "0")),
         "initiative":        _modifier(fields.get("Init", "0")),
-        "speed":             fields.get("Speed", "").strip(),
+        "speed":             _translate_speed(fields.get("Speed", "").strip()),
         "proficiency_bonus": _modifier(fields.get("ProfBonus", "0")),
         "hit_dice":          fields.get("Total", "").strip(),
         "attributes":        attributes,
@@ -317,5 +455,28 @@ def import_pdf(pdf_path: str, player_name: str) -> dict:
         "source":    "pdf",
         "synced_at": datetime.now(timezone.utc).isoformat(),
     }
+
+    # --- DeepL: translate free-text fields in one batch ---
+    api_key = os.getenv("DEEPL_API_KEY", "").strip()
+    if api_key:
+        _free_text_keys = [
+            "features_text", "actions_text", "proficiencies_and_languages",
+            "personality_traits", "ideals", "bonds", "flaws",
+            "backstory", "allies_organizations",
+        ]
+        texts   = [base.get(k) or "" for k in _free_text_keys]
+        indices = [i for i, t in enumerate(texts) if t]
+        if indices:
+            translated = _deepl_translate_batch([texts[i] for i in indices], api_key)
+            for pos, i in enumerate(indices):
+                base[_free_text_keys[i]] = translated[pos]
+
+        # Also translate spell notes in one batch
+        spells_with_notes = [(i, s) for i, s in enumerate(base.get("spells", [])) if s.get("notes")]
+        if spells_with_notes:
+            note_texts = [s["notes"] for _, s in spells_with_notes]
+            translated_notes = _deepl_translate_batch(note_texts, api_key)
+            for (i, _), translated in zip(spells_with_notes, translated_notes):
+                base["spells"][i]["notes"] = translated
 
     return {"meta": meta, "base": base, "session": session}
