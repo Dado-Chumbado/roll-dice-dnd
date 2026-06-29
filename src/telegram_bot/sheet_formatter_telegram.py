@@ -68,10 +68,11 @@ def format_sheet_simple_telegram(data: dict) -> str:
 
     attacks = base.get("attacks", [])
     if attacks:
-        atk_parts = [
-            f"{_b(a['name'])} {html.escape(a.get('bonus') or '—')} {html.escape(a.get('damage') or '—')}"
-            for a in attacks
-        ]
+        atk_parts = []
+        for a in attacks:
+            bonus = f" Atk:{html.escape(a['bonus'])}" if a.get("bonus") else ""
+            dmg   = f" {html.escape(a.get('damage', ''))}" if a.get("damage") else ""
+            atk_parts.append(f"{_b(a['name'])}{bonus}{dmg}")
         lines.append("⚔️ " + "  |  ".join(atk_parts))
 
     slots_max  = base.get("spell_slots_max", {})

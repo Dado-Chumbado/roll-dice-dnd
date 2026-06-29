@@ -55,6 +55,26 @@ _ALIGNMENT_PT = {
     "Neutral Evil": "Neutro e Mau", "Chaotic Evil": "Caótico e Mau",
 }
 
+_CLASS_PT = {
+    "Barbarian": "Bárbaro", "Bard": "Bardo", "Cleric": "Clérigo",
+    "Druid": "Druida", "Fighter": "Guerreiro", "Monk": "Monge",
+    "Paladin": "Paladino", "Ranger": "Patrulheiro", "Rogue": "Ladino",
+    "Sorcerer": "Feiticeiro", "Warlock": "Bruxo", "Wizard": "Mago",
+    "Artificer": "Artífice", "Blood Hunter": "Caçador de Sangue",
+}
+
+
+def _translate_class(raw: str) -> str:
+    """Translate class name(s), preserving level numbers and multiclass separators.
+    'Druid 3' → 'Druida 3'   'Fighter 5 / Wizard 3' → 'Guerreiro 5 / Mago 3'
+    """
+    if not raw:
+        return raw
+    def _replace(m):
+        return _CLASS_PT.get(m.group(0), m.group(0))
+    return re.sub(r'\b(' + '|'.join(re.escape(k) for k in _CLASS_PT) + r')\b', _replace, raw)
+
+
 _SIZE_PT = {
     "Tiny": "Minúsculo", "Small": "Pequeno", "Medium": "Médio",
     "Large": "Grande", "Huge": "Enorme", "Gargantuan": "Colossal",
@@ -393,8 +413,8 @@ def import_pdf(pdf_path: str, player_name: str) -> dict:
     base = {
         "name":              fields.get("CharacterName", "").strip(),
         "level":             primary_level,
-        "class":             primary_class,
-        "multiclass":        multiclass_raw,
+        "class":             _translate_class(primary_class),
+        "multiclass":        _translate_class(multiclass_raw) if multiclass_raw else None,
         "race":              _dict_translate(fields.get("RACE", "").strip(), _RACE_PT),
         "background":        _dict_translate(fields.get("BACKGROUND", "").strip(), _BACKGROUND_PT),
         "alignment":         _dict_translate(fields.get("ALIGNMENT", "").strip(), _ALIGNMENT_PT),
@@ -471,12 +491,31 @@ def import_pdf(pdf_path: str, player_name: str) -> dict:
             for pos, i in enumerate(indices):
                 base[_free_text_keys[i]] = translated[pos]
 
-        # Also translate spell notes in one batch
+        # Translate spell notes in one batch
         spells_with_notes = [(i, s) for i, s in enumerate(base.get("spells", [])) if s.get("notes")]
         if spells_with_notes:
             note_texts = [s["notes"] for _, s in spells_with_notes]
             translated_notes = _deepl_translate_batch(note_texts, api_key)
             for (i, _), translated in zip(spells_with_notes, translated_notes):
                 base["spells"][i]["notes"] = translated
+
+        # Translate inventory item names in one batch
+        inventory = session.get("inventory", [])
+        inv_indices = [i for i, item in enumerate(inventory) if item.get("name")]
+        if inv_indices:
+            inv_texts = [inventory[i]["name"] for i in inv_indices]
+            translated_inv = _deepl_translate_batch(inv_texts, api_key)
+            for i, translated in zip(inv_indices, translated_inv):
+                session["inventory"][i]["name"] = translated
+
+        # Translate weapon names and notes in one batch
+        attacks = base.get("attacks", [])
+        atk_to_translate = [(i, "name", a["name"]) for i, a in enumerate(attacks) if a.get("name")]
+        atk_to_translate += [(i, "notes", a["notes"]) for i, a in enumerate(attacks) if a.get("notes")]
+        if atk_to_translate:
+            atk_texts = [t for _, _, t in atk_to_translate]
+            translated_atk = _deepl_translate_batch(atk_texts, api_key)
+            for (i, field, _), translated in zip(atk_to_translate, translated_atk):
+                base["attacks"][i][field] = translated
 
     return {"meta": meta, "base": base, "session": session}

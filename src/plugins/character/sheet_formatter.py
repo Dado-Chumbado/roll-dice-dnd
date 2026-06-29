@@ -85,10 +85,11 @@ def format_sheet_simple(data: dict) -> str:
     # Attacks (compact)
     attacks = base.get("attacks", [])
     if attacks:
-        atk_parts = [
-            f"**{a['name']}** {a.get('bonus') or '—'} {a.get('damage') or '—'}"
-            for a in attacks
-        ]
+        atk_parts = []
+        for a in attacks:
+            bonus = f" Atk:{a['bonus']}" if a.get("bonus") else ""
+            dmg   = f" {a.get('damage')}" if a.get("damage") else ""
+            atk_parts.append(f"**{a['name']}**{bonus}{dmg}")
         lines.append("⚔️ " + "  |  ".join(atk_parts))
 
     # Spell slots (compact)
