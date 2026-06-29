@@ -1,5 +1,6 @@
 """Telegram handlers for character sheet commands."""
 
+import re
 import logging
 import html as _html
 
@@ -22,13 +23,34 @@ from telegram_bot.bot import is_chat_allowed
 
 logger = logging.getLogger(__name__)
 
+_DICE_RE  = re.compile(r'^\d*d\d+', re.IGNORECASE)
+_ATK_RE   = re.compile(r'^[+-]\d+$')
+_NUM_RE   = re.compile(r'^[+-]?\d+$')
 
-def _player_name(update: Update, args: list, index: int = 0) -> str:
-    """Return args[index] if present, else Telegram username/first_name."""
-    if len(args) > index:
-        return args[index].lower()
+
+def _default_name(update: Update) -> str:
     user = update.effective_user
     return (user.username or user.first_name or f"user{user.id}").lower()
+
+
+def _resolve(update: Update, args: list, index: int = 0) -> str:
+    """Return args[index].lower() if present, else Telegram username."""
+    if len(args) > index:
+        return args[index].lower()
+    return _default_name(update)
+
+
+def _is_number(s: str) -> bool:
+    return bool(_NUM_RE.match(s))
+
+
+def _split_name(update: Update, args: list) -> tuple[str, list]:
+    """If first arg is NOT a number/keyword, treat it as char name.
+    Returns (name, remaining_args).
+    """
+    if args and not _is_number(args[0]):
+        return args[0].lower(), args[1:]
+    return _default_name(update), args
 
 
 def _hp_bar(current: int, maximum: int, width: int = 10) -> str:
@@ -36,10 +58,6 @@ def _hp_bar(current: int, maximum: int, width: int = 10) -> str:
         return ""
     filled = round(max(0, min(current / maximum, 1)) * width)
     return "[" + "█" * filled + "░" * (width - filled) + "]"
-
-
-def _sign(n: int) -> str:
-    return f"+{n}" if n >= 0 else str(n)
 
 
 async def _send_html(update: Update, text: str) -> None:
@@ -58,7 +76,7 @@ async def _send_html(update: Update, text: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# /ficha [completa] [nome]
+# /ficha [nome] [completa]
 # ---------------------------------------------------------------------------
 
 async def ficha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -66,20 +84,22 @@ async def ficha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
 
-    if args and args[0].lower() == "completa":
-        mode = "completa"
-        name = _player_name(update, args, index=1)
-    else:
-        mode = "simples"
-        name = _player_name(update, args, index=0)
+    # Detect "completa" keyword anywhere in args
+    mode = "simples"
+    filtered = []
+    for a in args:
+        if a.lower() == "completa":
+            mode = "completa"
+        else:
+            filtered.append(a)
 
+    name = _resolve(update, filtered, index=0)
     data = load_character(name)
     if data is None:
         available = list_characters()
         hint = f" Fichas: {', '.join(available)}" if available else ""
         await update.message.reply_text(
-            f"Ficha de '{_html.escape(name)}' não encontrada.{hint}\n"
-            f"Use /importar para importar o PDF.",
+            f"Ficha de '{_html.escape(name)}' não encontrada.{hint}",
             parse_mode="HTML",
         )
         return
@@ -89,24 +109,27 @@ async def ficha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
-# /hp <delta> [nome]    ex: /hp -8   /hp +4   /hp 10
+# /hp [nome] <delta>     ex: /hp -8   /hp trovao +4
 # ---------------------------------------------------------------------------
 
 async def hp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
     args = context.args or []
-
     if not args:
-        await update.message.reply_text("Uso: /hp -8 ou /hp +4 [nome]")
+        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
+        return
+
+    name, rest_args = _split_name(update, args)
+    if not rest_args:
+        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
         return
     try:
-        delta = int(args[0])
+        delta = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /hp -8 ou /hp +4 [nome]")
+        await update.message.reply_text("Uso: /hp [nome] -8  ou  /hp [nome] +4")
         return
 
-    name = _player_name(update, args, index=1)
     try:
         data = update_hp(name, delta)
     except FileNotFoundError as e:
@@ -127,21 +150,24 @@ async def hp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
-# /slot <nivel> [reset] [nome]
+# /slot [nome] <nivel> [reset]
 # ---------------------------------------------------------------------------
 
 async def slot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
     args = context.args or []
-
     if not args:
-        await update.message.reply_text("Uso: /slot <nivel> [reset] [nome]")
+        await update.message.reply_text("Uso: /slot [nome] <nivel> [reset]")
         return
 
-    level = args[0]
-    is_reset = len(args) > 1 and args[1].lower() == "reset"
-    name = _player_name(update, args, index=2 if is_reset else 1)
+    name, rest_args = _split_name(update, args)
+    if not rest_args:
+        await update.message.reply_text("Uso: /slot [nome] <nivel> [reset]")
+        return
+
+    level    = rest_args[0]
+    is_reset = len(rest_args) > 1 and rest_args[1].lower() == "reset"
 
     try:
         data = reset_slot(name, level) if is_reset else use_slot(name, level)
@@ -168,7 +194,7 @@ async def slot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
-    name = _player_name(update, context.args or [])
+    name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
         await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
@@ -192,21 +218,31 @@ async def slots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
-# /descanso <curto|longo> [nome]
+# /descanso [nome] <curto|longo>
 # ---------------------------------------------------------------------------
 
 async def descanso_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
     args = context.args or []
-
-    if not args or args[0].lower() not in ("curto", "longo"):
-        await update.message.reply_text("Uso: /descanso curto  ou  /descanso longo [nome]")
+    if not args:
+        await update.message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
         return
 
-    tipo = args[0].lower()
-    name = _player_name(update, args, index=1)
+    # Detect tipo keyword
+    tipo = None
+    filtered = []
+    for a in args:
+        if a.lower() in ("curto", "longo"):
+            tipo = a.lower()
+        else:
+            filtered.append(a)
 
+    if not tipo:
+        await update.message.reply_text("Uso: /descanso [nome] curto  ou  /descanso [nome] longo")
+        return
+
+    name = _resolve(update, filtered, index=0)
     try:
         data = rest(name, tipo)
     except (FileNotFoundError, ValueError) as e:
@@ -232,7 +268,7 @@ async def descanso_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def inventario_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
-    name = _player_name(update, context.args or [])
+    name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
         await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
@@ -266,56 +302,54 @@ async def inventario_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 # ---------------------------------------------------------------------------
-# /item_add <nome> [qty] [nome_jogador]
-# /item_rem <nome> [qty] [nome_jogador]
+# /item adicionar <nome> <item> [qty]
+# /item remover <nome> <item> [qty]
 # ---------------------------------------------------------------------------
 
-async def _item_handler(update: Update, args: list, add: bool) -> None:
-    if not args:
-        cmd = "item_add" if add else "item_rem"
-        await update.message.reply_text(f"Uso: /{cmd} <item> [qty]")
+async def item_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_chat_allowed(update):
+        return
+    args = context.args or []
+    if len(args) < 3 or args[0].lower() not in ("adicionar", "remover"):
+        await update.message.reply_text(
+            "Uso:\n"
+            "/item adicionar <nome> <item> [qty]\n"
+            "/item remover <nome> <item> [qty]"
+        )
         return
 
-    # Last arg is qty if it's a digit, second-to-last if we also have a player name
-    # Simple approach: trailing integer = qty, rest = item name
-    if len(args) >= 2 and args[-1].isdigit():
-        qty       = int(args[-1])
-        item_name = " ".join(args[:-1])
+    action = args[0].lower()
+    name   = args[1].lower()
+    rest_args = args[2:]
+
+    if len(rest_args) >= 2 and rest_args[-1].isdigit():
+        qty       = int(rest_args[-1])
+        item_name = " ".join(rest_args[:-1])
     else:
         qty       = 1
-        item_name = " ".join(args)
+        item_name = " ".join(rest_args)
 
-    name = _player_name(update, [], index=0)  # always default to telegram user
+    if not item_name:
+        await update.message.reply_text("Informe o nome do item.")
+        return
 
     try:
-        data = update_inventory(name, item_name, qty, add=add)
+        data = update_inventory(name, item_name, qty, add=(action == "adicionar"))
     except (FileNotFoundError, ValueError) as e:
         await update.message.reply_text(str(e))
         return
 
     char  = data["base"]["name"]
-    emoji = "➕" if add else "➖"
-    verb  = "adicionado" if add else "removido"
-    await update.message.reply_text(
+    emoji = "➕" if action == "adicionar" else "➖"
+    verb  = "adicionado" if action == "adicionar" else "removido"
+    await _send_html(
+        update,
         f"{emoji} <b>{_html.escape(char)}</b>: {_html.escape(item_name)} x{qty} {verb}.",
-        parse_mode="HTML",
     )
 
 
-async def item_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_chat_allowed(update):
-        return
-    await _item_handler(update, context.args or [], add=True)
-
-
-async def item_rem_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_chat_allowed(update):
-        return
-    await _item_handler(update, context.args or [], add=False)
-
-
 # ---------------------------------------------------------------------------
-# /moeda <+/-delta> <tipo> [nome]   ex: /moeda +10 po   /moeda -3 pp trovao
+# /moeda [nome] <+/-delta> <tipo>   ex: /moeda trovao +10 po
 # ---------------------------------------------------------------------------
 
 async def moeda_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -323,31 +357,35 @@ async def moeda_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if len(args) < 2:
-        await update.message.reply_text("Uso: /moeda +10 po [nome]  (tipos: pc, pp, pe, po, ppl)")
+        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
         return
+
+    name, rest_args = _split_name(update, args)
+    if len(rest_args) < 2:
+        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
+        return
+
     try:
-        delta = int(args[0])
+        delta = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /moeda +10 po [nome]  (tipos: pc, pp, pe, po, ppl)")
+        await update.message.reply_text("Uso: /moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)")
         return
     try:
-        key = resolve_coin(args[1])
+        key = resolve_coin(rest_args[1])
     except ValueError as e:
         await update.message.reply_text(str(e))
         return
 
-    name = _player_name(update, args, index=2)
     try:
-        data = update_currency(name, args[1], delta)
+        data = update_currency(name, rest_args[1], delta)
     except FileNotFoundError as e:
         await update.message.reply_text(str(e))
         return
 
-    char     = data["base"]["name"]
-    currency = data["session"].get("currency", {})
-    new_val  = currency.get(key, 0)
-    label    = COIN_LABELS.get(key, args[1].upper())
-    verb     = "recebeu" if delta >= 0 else "gastou"
+    char    = data["base"]["name"]
+    new_val = data["session"].get("currency", {}).get(key, 0)
+    label   = COIN_LABELS.get(key, rest_args[1].upper())
+    verb    = "recebeu" if delta >= 0 else "gastou"
     await _send_html(
         update,
         f"💰 <b>{_html.escape(char)}</b> {verb} <b>{abs(delta)} {label}</b> — "
@@ -356,7 +394,7 @@ async def moeda_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
-# /ca <valor> [nome]
+# /ca [nome] <valor>
 # ---------------------------------------------------------------------------
 
 async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -364,57 +402,101 @@ async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /ca <valor> [nome]")
+        await update.message.reply_text("Uso: /ca [nome] <valor>")
+        return
+
+    name, rest_args = _split_name(update, args)
+    if not rest_args:
+        await update.message.reply_text("Uso: /ca [nome] <valor>")
         return
     try:
-        value = int(args[0])
+        value = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /ca <valor> [nome]")
+        await update.message.reply_text("Uso: /ca [nome] <valor>")
         return
-    name = _player_name(update, args, index=1)
+
     try:
         data = set_ca(name, value)
     except (FileNotFoundError, ValueError) as e:
         await update.message.reply_text(str(e))
         return
+
     char = data["base"]["name"]
     await _send_html(update, f"🛡️ <b>{_html.escape(char)}</b> — CA atualizada para <b>{value}</b>")
 
 
 # ---------------------------------------------------------------------------
-# /arma_add <nome> [atk] [dano] [notas]
-# /arma_rem <nome>
-# /arma_list [nome]
+# /arma adicionar <nome> <arma> [atk] [dano] [notas]
+# /arma remover <nome> <arma>
+# /arma listar [nome]
 # ---------------------------------------------------------------------------
 
-async def arma_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    import re as _re
+async def arma_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
     args = context.args or []
-    if not args:
-        await update.message.reply_text("Uso: /arma_add <nome> [atk] [dano] [notas]")
+    if not args or args[0].lower() not in ("adicionar", "remover", "listar"):
+        await update.message.reply_text(
+            "Uso:\n"
+            "/arma adicionar <nome> <arma> [atk] [dano] [notas]\n"
+            "/arma remover <nome> <arma>\n"
+            "/arma listar [nome]"
+        )
         return
 
-    name = _player_name(update, [], index=0)
+    action = args[0].lower()
 
-    dice_re = _re.compile(r'^\d*d\d+', _re.IGNORECASE)
-    atk_re  = _re.compile(r'^[+-]\d+$')
+    if action == "listar":
+        name = _resolve(update, args, index=1)
+        data = load_character(name)
+        if data is None:
+            await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
+            return
+        attacks = data["base"].get("attacks", [])
+        char    = data["base"]["name"]
+        if not attacks:
+            await update.message.reply_text(f"<b>{_html.escape(char)}</b> não possui armas.", parse_mode="HTML")
+            return
+        lines = [f"⚔️ <b>Armas — {_html.escape(char)}</b>"]
+        for w in attacks:
+            atk   = f" | Atk: {w['bonus']}" if w.get("bonus") else ""
+            dmg   = f" | Dano: {w['damage']}" if w.get("damage") else ""
+            notes = f" | {_html.escape(w['notes'])}" if w.get("notes") else ""
+            lines.append(f"  • <b>{_html.escape(w['name'])}</b>{atk}{dmg}{notes}")
+        await _send_html(update, "\n".join(lines))
+        return
 
-    remaining = list(args)
-    notes = ""
-    atk_bonus = ""
-    damage = ""
+    if len(args) < 3:
+        await update.message.reply_text(
+            f"Uso: /arma {action} <nome> <arma>" + (" [atk] [dano] [notas]" if action == "adicionar" else "")
+        )
+        return
 
-    if len(remaining) >= 2 and not dice_re.match(remaining[-1]) and not atk_re.match(remaining[-1]):
-        notes = remaining[-1]
+    name      = args[1].lower()
+    rest_args = args[2:]
+
+    if action == "remover":
+        weapon_name = " ".join(rest_args).strip()
+        try:
+            data = remove_weapon(name, weapon_name)
+        except (FileNotFoundError, ValueError) as e:
+            await update.message.reply_text(str(e))
+            return
+        char = data["base"]["name"]
+        await _send_html(update, f"➖ <b>{_html.escape(char)}</b>: arma <b>{_html.escape(weapon_name)}</b> removida.")
+        return
+
+    # adicionar — parse right-to-left: [notas] [dano] [atk] nome_arma
+    remaining = list(rest_args)
+    notes, atk_bonus, damage = "", "", ""
+
+    if len(remaining) >= 2 and not _DICE_RE.match(remaining[-1]) and not _ATK_RE.match(remaining[-1]):
+        notes     = remaining[-1]
         remaining = remaining[:-1]
-
-    if remaining and dice_re.match(remaining[-1]):
-        damage = remaining[-1]
+    if remaining and _DICE_RE.match(remaining[-1]):
+        damage    = remaining[-1]
         remaining = remaining[:-1]
-
-    if remaining and atk_re.match(remaining[-1]):
+    if remaining and _ATK_RE.match(remaining[-1]):
         atk_bonus = remaining[-1]
         remaining = remaining[:-1]
 
@@ -440,28 +522,14 @@ async def arma_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _send_html(update, f"➕ <b>{_html.escape(char)}</b>: {' | '.join(parts)} adicionada.")
 
 
-async def arma_rem_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_chat_allowed(update):
-        return
-    args = context.args or []
-    if not args:
-        await update.message.reply_text("Uso: /arma_rem <nome_arma>")
-        return
-    name        = _player_name(update, [], index=0)
-    weapon_name = " ".join(args).strip()
-    try:
-        data = remove_weapon(name, weapon_name)
-    except (FileNotFoundError, ValueError) as e:
-        await update.message.reply_text(str(e))
-        return
-    char = data["base"]["name"]
-    await _send_html(update, f"➖ <b>{_html.escape(char)}</b>: arma <b>{_html.escape(weapon_name)}</b> removida.")
-
+# ---------------------------------------------------------------------------
+# /magias [nome]
+# ---------------------------------------------------------------------------
 
 async def magias_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
-    name = _player_name(update, context.args or [])
+    name = _resolve(update, context.args or [])
     data = load_character(name)
     if data is None:
         await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
@@ -469,46 +537,33 @@ async def magias_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _send_html(update, format_spells_telegram(data))
 
 
+# ---------------------------------------------------------------------------
+# /magia [nome] <indice>
+# ---------------------------------------------------------------------------
+
 async def magia_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_chat_allowed(update):
         return
     args = context.args or []
     if not args:
-        await update.message.reply_text("Uso: /magia <índice> [nome]")
+        await update.message.reply_text("Uso: /magia [nome] <índice>")
+        return
+
+    name, rest_args = _split_name(update, args)
+    if not rest_args:
+        await update.message.reply_text("Uso: /magia [nome] <índice>")
         return
     try:
-        idx = int(args[0])
+        idx = int(rest_args[0])
     except ValueError:
-        await update.message.reply_text("Uso: /magia <índice> [nome]")
+        await update.message.reply_text("Uso: /magia [nome] <índice>")
         return
-    name = _player_name(update, args, index=1)
+
     data = load_character(name)
     if data is None:
         await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
         return
     await _send_html(update, format_spell_detail_telegram(data, idx))
-
-
-async def arma_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_chat_allowed(update):
-        return
-    name = _player_name(update, context.args or [])
-    data = load_character(name)
-    if data is None:
-        await update.message.reply_text(f"Ficha de '{_html.escape(name)}' não encontrada.", parse_mode="HTML")
-        return
-    attacks = data["base"].get("attacks", [])
-    char    = data["base"]["name"]
-    if not attacks:
-        await update.message.reply_text(f"<b>{_html.escape(char)}</b> não possui armas cadastradas.", parse_mode="HTML")
-        return
-    lines = [f"⚔️ <b>Armas — {_html.escape(char)}</b>"]
-    for w in attacks:
-        atk   = f" | Atk: {w['bonus']}" if w.get("bonus") else ""
-        dmg   = f" | Dano: {w['damage']}" if w.get("damage") else ""
-        notes = f" | {_html.escape(w['notes'])}" if w.get("notes") else ""
-        lines.append(f"  • <b>{_html.escape(w['name'])}</b>{atk}{dmg}{notes}")
-    await _send_html(update, "\n".join(lines))
 
 
 # ---------------------------------------------------------------------------
@@ -522,13 +577,10 @@ def register_character_handlers(app) -> None:
     app.add_handler(CommandHandler("slots",      slots_command))
     app.add_handler(CommandHandler("descanso",   descanso_command))
     app.add_handler(CommandHandler("inventario", inventario_command))
-    app.add_handler(CommandHandler("item_add",   item_add_command))
-    app.add_handler(CommandHandler("item_rem",   item_rem_command))
+    app.add_handler(CommandHandler("item",       item_command))
     app.add_handler(CommandHandler("moeda",      moeda_command))
     app.add_handler(CommandHandler("ca",         ca_command))
-    app.add_handler(CommandHandler("arma_add",   arma_add_command))
-    app.add_handler(CommandHandler("arma_rem",   arma_rem_command))
-    app.add_handler(CommandHandler("arma_list",  arma_list_command))
+    app.add_handler(CommandHandler("arma",       arma_command))
     app.add_handler(CommandHandler("magias",     magias_command))
     app.add_handler(CommandHandler("magia",      magia_command))
     logger.info("Character sheet handlers registered.")

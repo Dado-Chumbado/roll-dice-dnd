@@ -162,21 +162,23 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • `/dis <expr>` — Rolar com desvantagem (2d20, menor)
 {irl_section}
 **Ficha de Personagem:**
-• `/ficha [nome]` — Resumo da ficha (HP, CA, atributos, ataques)
-• `/ficha completa [nome]` — Ficha completa
-• `/hp -8` ou `/hp +4 [nome]` — Dano ou cura
-• `/slot <nivel> [reset] [nome]` — Usa ou restaura slot de magia
+• `/ficha [nome] [completa]` — Resumo ou ficha completa
+• `/hp [nome] -8` ou `/hp [nome] +4` — Dano ou cura
+• `/slot [nome] <nivel> [reset]` — Usa ou restaura slot de magia
 • `/slots [nome]` — Mostra slots disponíveis
-• `/descanso <curto|longo> [nome]` — Descansa
+• `/descanso [nome] <curto|longo>` — Descansa
 • `/inventario [nome]` — Mostra inventário
-• `/item_add <item> [qty]` — Adiciona item ao inventário
-• `/item_rem <item> [qty]` — Remove item do inventário
-• `/moeda +10 po [nome]` — Atualiza moedas (pc, pp, pe, po, ppl)
-• `/ca <valor> [nome]` — Define CA manualmente
-• `/arma_add <nome> [atk] [dano] [notas]` — Adiciona arma
-• `/arma_rem <nome>` — Remove arma
-• `/arma_list [nome]` — Lista armas
+• `/item adicionar <nome> <item> [qty]` — Adiciona item
+• `/item remover <nome> <item> [qty]` — Remove item
+• `/moeda [nome] +10 po` — Atualiza moedas (pc, pp, pe, po, ppl)
+• `/ca [nome] <valor>` — Define CA manualmente
+• `/arma adicionar <nome> <arma> [atk] [dano] [notas]` — Adiciona arma
+• `/arma remover <nome> <arma>` — Remove arma
+• `/arma listar [nome]` — Lista armas
+• `/magias [nome]` — Lista magias e slots
+• `/magia [nome] <indice>` — Detalhes de uma magia
 
+> `[nome]` é opcional — usa seu usuário Telegram quando omitido.
 > Para importar uma ficha, use `!importar` no Discord com o PDF em anexo.
 
 **Expressões de Dados:**

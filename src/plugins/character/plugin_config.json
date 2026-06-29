@@ -1,17 +1,17 @@
 {
   "character": {
     "sync":       {"alias": "importar",   "description": "Importa ficha via PDF do D&D Beyond (anexe o PDF). Uso: !importar <nome>"},
-    "ficha":      {"alias": "ficha",      "description": "Exibe a ficha completa. Uso: !ficha [nome]"},
-    "hp":         {"alias": "hp",         "description": "Atualiza o HP. Uso: !hp -8 ou !hp +4 [nome]"},
-    "slot":       {"alias": "slot",       "description": "Usa ou restaura um slot de magia. Uso: !slot <nivel> [reset] [nome]"},
+    "ficha":      {"alias": "ficha",      "description": "Exibe a ficha. Uso: !ficha [nome] [completa]"},
+    "hp":         {"alias": "hp",         "description": "Atualiza o HP. Uso: !hp [nome] -8  ou  !hp [nome] +4"},
+    "slot":       {"alias": "slot",       "description": "Usa ou restaura um slot de magia. Uso: !slot [nome] <nivel> [reset]"},
     "slots":      {"alias": "slots",      "description": "Exibe os slots de magia. Uso: !slots [nome]"},
-    "descanso":   {"alias": "descanso",   "description": "Descansa (curto ou longo). Uso: !descanso <curto|longo> [nome]"},
+    "descanso":   {"alias": "descanso",   "description": "Descansa (curto ou longo). Uso: !descanso [nome] <curto|longo>"},
     "inventario": {"alias": "inventario", "description": "Exibe o inventário. Uso: !inventario [nome]"},
-    "item":       {"alias": "item",       "description": "Adiciona ou remove item. Uso: !item adicionar <item> [qty] [jogador] ou !item remover <item> [qty] [jogador]"},
-    "moeda":      {"alias": "moeda",      "description": "Atualiza moedas. Uso: !moeda +10 po [nome] (tipos: pc, pp, pe, po, ppl)"},
-    "ca":         {"alias": "ca",         "description": "Define a Classe de Armadura manualmente. Uso: !ca <valor> [nome]"},
-    "arma":       {"alias": "arma",       "description": "Gerencia armas. Uso: !arma adicionar <nome> [atk] [dano] [notas] [jogador] ou !arma remover <nome> [jogador]"},
+    "item":       {"alias": "item",       "description": "Adiciona ou remove item. Uso: !item adicionar <nome> <item> [qty]  ou  !item remover <nome> <item> [qty]"},
+    "moeda":      {"alias": "moeda",      "description": "Atualiza moedas. Uso: !moeda [nome] +10 po  (tipos: pc, pp, pe, po, ppl)"},
+    "ca":         {"alias": "ca",         "description": "Define a Classe de Armadura. Uso: !ca [nome] <valor>"},
+    "arma":       {"alias": "arma",       "description": "Gerencia armas. Uso: !arma adicionar <nome> <arma> [atk] [dano] [notas]  |  !arma remover <nome> <arma>  |  !arma listar [nome]"},
     "magias":     {"alias": "magias",     "description": "Lista todas as magias. Uso: !magias [nome]"},
-    "magia":      {"alias": "magia",      "description": "Detalhes de uma magia pelo índice. Uso: !magia <indice> [nome]"}
+    "magia":      {"alias": "magia",      "description": "Detalhes de uma magia pelo índice. Uso: !magia [nome] <indice>"}
   }
 }
