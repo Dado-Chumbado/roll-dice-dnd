@@ -28,17 +28,19 @@ class ConfigManager:
         """
         self.config = _load_config(config_file_path)
 
-    def get_prefix(self, category, command):
+    def get_prefix(self, category, command, platform="discord"):
         """
         Retrieves the alias (prefix) for a command from the specified category.
-        Env var DISCORD_CMD_{CATEGORY}_{COMMAND} (uppercased) takes precedence over config.json.
+        Env var {PLATFORM}_CMD_{CATEGORY}_{COMMAND} (uppercased) takes precedence over config.json,
+        so each platform (discord, telegram, ...) can override the shared default independently.
 
         :param category: The command category (e.g., 'roll', 'initiative', 'stats')
         :param command: The specific command within the category (e.g., 'default', 'advantage')
+        :param platform: The platform requesting the prefix (e.g., 'discord', 'telegram')
         :return: The alias (prefix) for the command.
         :raises KeyError: If the category or command is not found.
         """
-        env_key = f"DISCORD_CMD_{category}_{command}".upper()
+        env_key = f"{platform}_CMD_{category}_{command}".upper()
         env_val = os.getenv(env_key, "").strip()
         if env_val:
             logger.debug(f"Prefix for {category}/{command} overridden by env {env_key}={env_val}")

@@ -3,9 +3,11 @@
 import io
 import os
 import logging
+from pathlib import Path
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+from config import ConfigManager
 from core.dice_engine import process_input_dice
 from telegram_bot.roll_view_telegram import get_roll_text_telegram
 from telegram_bot.d20_irl_client import D20IRLClient, D20IRLError, add_gif_loop_pause
@@ -153,13 +155,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • `/{irl_command_name} dis` - Roll with disadvantage (picks lowest)
 """ if irl_enabled else ""
 
+    config_path = Path(__file__).parent.parent / "config.json"
+    cm = ConfigManager(str(config_path))
+    roll_cmd, adv_cmd, dis_cmd = _resolve_roll_commands(cm)
+    roll_name, adv_name, dis_name = roll_cmd[0], adv_cmd[0], dis_cmd[0]
+
     help_text = f"""🎲 **D&D Dice Roller Bot**
 
 **Rolagem de Dados:**
-• `/roll <expr>` ou `/r <expr>` — Rolar dados
-  Exemplos: `/r 2d6+3`, `/r d20`, `/r 1d8+1d6`
-• `/adv <expr>` — Rolar com vantagem (2d20, maior)
-• `/dis <expr>` — Rolar com desvantagem (2d20, menor)
+• `/{roll_name} <expr>` — Rolar dados
+  Exemplos: `/{roll_name} 2d6+3`, `/{roll_name} d20`, `/{roll_name} 1d8+1d6`
+• `/{adv_name} <expr>` — Rolar com vantagem (2d20, maior)
+• `/{dis_name} <expr>` — Rolar com desvantagem (2d20, menor)
 {irl_section}
 **Ficha de Personagem:**
 • `/ficha [nome] [completa]` — Resumo ou ficha completa
@@ -314,11 +321,13 @@ Quick start: Just type `/r 2d6` to roll 2 six-sided dice!
     await update.message.reply_text(welcome_text, parse_mode="Markdown")
 
 
-def _get_cmd(env_var: str, default: str) -> list[str]:
-    """Read a command name from env, falling back to default. Supports comma-separated aliases."""
-    val = os.getenv(env_var, "").strip()
-    names = [v.strip() for v in val.split(",") if v.strip()] if val else []
-    return names if names else [default]
+def _resolve_roll_commands(cm: ConfigManager) -> tuple[list[str], list[str], list[str]]:
+    """Resolve roll/advantage/disadvantage command names from the shared config.json,
+    with TELEGRAM_CMD_{CATEGORY}_{COMMAND} env override, mirroring Discord's resolution."""
+    roll_cmd = [cm.get_prefix("roll", "roll_dice", platform="telegram")]
+    adv_cmd = [cm.get_prefix("roll", "advantage", platform="telegram")]
+    dis_cmd = [cm.get_prefix("roll", "disadvantage", platform="telegram")]
+    return roll_cmd, adv_cmd, dis_cmd
 
 
 async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -333,9 +342,9 @@ def create_telegram_bot(token: str) -> Application:
     app = Application.builder().token(token).build()
     app.add_error_handler(_error_handler)
 
-    roll_cmd = _get_cmd("TELEGRAM_CMD_ROLL", "roll") + ["r"]
-    adv_cmd  = _get_cmd("TELEGRAM_CMD_ADV", "adv")
-    dis_cmd  = _get_cmd("TELEGRAM_CMD_DIS", "dis")
+    config_path = Path(__file__).parent.parent / "config.json"
+    cm = ConfigManager(str(config_path))
+    roll_cmd, adv_cmd, dis_cmd = _resolve_roll_commands(cm)
 
     logger.info(f"Commands: roll={roll_cmd} adv={adv_cmd} dis={dis_cmd}")
 
