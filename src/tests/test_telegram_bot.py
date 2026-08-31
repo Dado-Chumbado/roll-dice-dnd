@@ -4,6 +4,7 @@ import os
 # Set env vars BEFORE any imports to prevent DB connection
 os.environ["save_stats_db"] = ""
 
+import json
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
 from telegram import Update, User, Chat, Message
@@ -12,9 +13,11 @@ from telegram.ext import ContextTypes
 from telegram_bot.bot import (
     TelegramContext,
     is_chat_allowed,
-    _handle_roll
+    _handle_roll,
+    _resolve_roll_commands,
 )
 from telegram_bot.roll_view_telegram import get_roll_text_telegram, generate_dice_text_telegram
+from config import ConfigManager
 
 
 class TestTelegramContext:
@@ -285,3 +288,59 @@ class TestHandleRoll:
 
                     # Verify adv parameter
                     assert mock_process.call_args[1]["adv"] is True
+
+
+class TestResolveRollCommands:
+    """Test that Telegram roll/adv/dis command names come from the shared config.json,
+    with per-platform env override, matching Discord's ConfigManager-based resolution."""
+
+    @pytest.fixture
+    def config_manager(self, tmp_path):
+        config_path = tmp_path / "config.json"
+        config_path.write_text(json.dumps({
+            "roll": {
+                "roll_dice": {"alias": "r", "description": "Roll"},
+                "advantage": {"alias": "v", "description": "Advantage"},
+                "disadvantage": {"alias": "d", "description": "Disadvantage"},
+            }
+        }))
+        return ConfigManager(str(config_path))
+
+    def test_defaults_come_from_shared_config_json(self, config_manager, monkeypatch):
+        for key in ("TELEGRAM_CMD_ROLL_ROLL_DICE", "TELEGRAM_CMD_ROLL_ADVANTAGE", "TELEGRAM_CMD_ROLL_DISADVANTAGE"):
+            monkeypatch.delenv(key, raising=False)
+
+        roll_cmd, adv_cmd, dis_cmd = _resolve_roll_commands(config_manager)
+
+        assert roll_cmd == ["r"]
+        assert adv_cmd == ["v"]
+        assert dis_cmd == ["d"]
+
+    def test_telegram_env_override_takes_precedence(self, config_manager, monkeypatch):
+        monkeypatch.setenv("TELEGRAM_CMD_ROLL_ADVANTAGE", "adv")
+
+        _, adv_cmd, _ = _resolve_roll_commands(config_manager)
+
+        assert adv_cmd == ["adv"]
+
+
+class TestHelpCommandReflectsResolvedNames:
+    """help_command's text must reflect the actual registered command names,
+    not a hardcoded /roll /r /adv /dis that can drift from what's really wired up."""
+
+    @pytest.mark.asyncio
+    async def test_help_text_shows_overridden_advantage_command(self, monkeypatch):
+        monkeypatch.setenv("TELEGRAM_CMD_ROLL_ADVANTAGE", "vantagem")
+
+        from telegram_bot.bot import help_command
+
+        update = Mock(spec=Update)
+        update.message = Mock(spec=Message)
+        update.message.reply_text = AsyncMock()
+        context = Mock(spec=ContextTypes.DEFAULT_TYPE)
+
+        await help_command(update, context)
+
+        sent_text = update.message.reply_text.call_args[0][0]
+        assert "/vantagem" in sent_text
+        assert "/adv" not in sent_text
